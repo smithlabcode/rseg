@@ -21,9 +21,13 @@
 #include "smithlab_utils.hpp"
 #include "smithlab_os.hpp"
 #include "OptionParser.hpp"
+#include "GenomicRegion.hpp"
 
 #include <numeric>
 #include <cmath>
+
+#include <tr1/unordered_map>
+using std::tr1::unordered_map; 
 
 using std::string;
 using std::vector;
@@ -57,13 +61,15 @@ lexico_equal(In first, In last, In first2) {
 
 static void
 sort_index(const bool VERBOSE, const size_t kmer, const string &prefix,
-	   const string &seq, vector<size_t> &ambigs) {
+	   const string &seq, vector<size_t> &ambigs,
+           const unordered_map<size_t, size_t> &invalid_pool) { 
   
   if (VERBOSE) cerr << "[BUILDING INDEX] ";
   vector<size_t> index;
   const string::const_iterator lim(seq.end() - kmer + 1);
   for (string::const_iterator j = seq.begin(); j != lim; ++j)
-    if (lexico_equal(prefix.begin(), prefix.end(), j))
+    if ((lexico_equal(prefix.begin(), prefix.end(), j)) &&
+       (!(invalid_pool.find(j - seq.begin()) != invalid_pool.end())))
       index.push_back(j - seq.begin());
   
   if (!index.empty()) {
@@ -98,8 +104,10 @@ sort_index(const bool VERBOSE, const size_t kmer, const string &prefix,
 
 static void
 sort_index(const bool VERBOSE, const bool BISULFITE,
+	   const bool AG_WILDCARD,
 	   const size_t kmer, const size_t prefix_len,
-	   const string &seq, vector<size_t> &ambigs) {
+	   const string &seq, vector<size_t> &ambigs,
+           const unordered_map<size_t, size_t> &invalid_pool) {
 
   static const float DENOM = CLOCKS_PER_SEC;
 
@@ -107,10 +115,12 @@ sort_index(const bool VERBOSE, const bool BISULFITE,
     static_cast<size_t>(pow(smithlab::alphabet_size, prefix_len));
   for (size_t i = 0; i < n_prefix; ++i) {
     const string prefix(i2mer(prefix_len, i));
-    if (!BISULFITE || prefix.find('C') == string::npos) {
+    if (!BISULFITE || 
+	((!AG_WILDCARD && prefix.find('C') == string::npos) ||
+	 (AG_WILDCARD && prefix.find('G') == string::npos))) {
       const clock_t start(clock());
       if (VERBOSE) cerr << "[PREFIX=" << prefix << "] ";
-      sort_index(VERBOSE, kmer, prefix, seq, ambigs);
+      sort_index(VERBOSE, kmer, prefix, seq, ambigs, invalid_pool);
       const clock_t end(clock());
       if (VERBOSE)
 	cerr << "[" << (end - start)/DENOM << " SEC] [DONE]" << endl;
@@ -287,13 +297,14 @@ main(int argc, const char **argv) {
     
     // Parameter variables
     size_t kmer = 0;
-    size_t prefix_len = 5;
+    size_t prefix_len = 0;
     string outfile;
     string fasta_suffix = "fa";
   
     bool VERBOSE = false;
     bool BISULFITE = false;
-  
+    bool AG_WILDCARD = false;
+    
     /****************** COMMAND LINE OPTIONS ********************/
     OptionParser opt_parse("deadzones", "program for finding deadzones",
 			   "<1-or-more-FASTA-chrom-files>");
@@ -303,6 +314,8 @@ main(int argc, const char **argv) {
     opt_parse.add_opt("prefix", 'p', "prefix length", false, prefix_len);
     opt_parse.add_opt("bisulfite", 'B', "get bisulfite deadzones", 
 		      false, BISULFITE);
+    opt_parse.add_opt("ag-wild", 'A', "A/G wildcard for bisulfite", 
+		      false, AG_WILDCARD);
     opt_parse.add_opt("suffix", 's', "suffix of FASTA files "
 		      "(assumes -c indicates dir)", false , fasta_suffix);
     opt_parse.add_opt("verbose", 'v', "print more run information", 
@@ -358,13 +371,28 @@ main(int argc, const char **argv) {
       cerr << "[PREPARING CONCATENATED SEQUENCE]" << endl;
     append_revcomp(long_seq);
     
-    if (BISULFITE)
-      replace(long_seq.begin(), long_seq.end(), 'C', 'T');
-    
+    if (BISULFITE) {
+      if (AG_WILDCARD)
+	replace(long_seq.begin(), long_seq.end(), 'G', 'A');
+      else 
+	replace(long_seq.begin(), long_seq.end(), 'C', 'T');
+    }
+
+    if (VERBOSE)
+      cerr << "[PREPARING INVALID INDEXES]" << endl;
+    unordered_map<size_t, size_t> invalid_pool; 
+    size_t max = seqoffsets[seqoffsets.size()-1]; 
+    for (size_t i = 0; i < seqoffsets.size(); i++) 
+     { for (size_t j=seqoffsets[i]-kmer+1; j<=seqoffsets[i]-1; j++)
+          invalid_pool[j] = 1; 
+       for (size_t j=max+(max-seqoffsets[i])-kmer+1; j<=max+(max-seqoffsets[i]-1); j++)
+          invalid_pool[j] = 1; 
+     }
+
     if (VERBOSE)
       cerr << "[IDENTIFYING AMBIGUOUS INDEXES]" << endl;
     vector<size_t> ambigs;
-    sort_index(VERBOSE, BISULFITE, kmer, prefix_len, long_seq, ambigs);
+    sort_index(VERBOSE, BISULFITE, AG_WILDCARD, kmer, prefix_len, long_seq, ambigs, invalid_pool);
     long_seq.clear();
     
     if (ambigs.empty()) {

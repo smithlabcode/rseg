@@ -28,7 +28,7 @@ COMMON_LIB = ../common
 
 SOURCES = $(wildcard *.cpp)
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
-PROGS =  rseg rseg-diff
+PROGS =  rseg rseg-diff deadzones join
 
 INCLUDEDIRS = $(SMITHLAB_CPP) $(COMMON_LIB)
 INCLUDEARGS = $(addprefix -I,$(INCLUDEDIRS))
@@ -51,7 +51,7 @@ endif
 all: $(PROGS)
 
 rseg: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
-	smithlab_utils.o OptionParser.o MappedRead.o RNG.o) \
+	smithlab_utils.o OptionParser.o RNG.o) \
 	$(addprefix $(COMMON_LIB)/, 	numerical_utils.o rseg_utils.o \
 	Distro.o SplitDistro.o Smoothing.o \
 	SortGenomicRegion.o LoadReadsByRegion.o ReadCounts.o  SelectBinSize.o \
@@ -59,13 +59,16 @@ rseg: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
 	EvaluateBoundaries.o)		
 
 rseg-diff: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
-	smithlab_utils.o OptionParser.o MappedRead.o RNG.o) \
+	smithlab_utils.o OptionParser.o RNG.o) \
 	$(addprefix $(COMMON_LIB)/, numerical_utils.o rseg_utils.o \
 	Distro.o SplitDistro.o Smoothing.o \
 	SortGenomicRegion.o LoadReadsByRegion.o ReadCounts.o SelectBinSize.o \
 	TwoStateScaleSplitHMM.o TwoStateScaleSplitResolveMixture.o \
 	ThreeStateScaleSplitHMM.o ThreeStateScaleSplitResolveMixture.o \
 	EvaluateBoundaries.o)		
+
+deadzones: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
+	smithlab_utils.o OptionParser.o)
 
 %.o: %.cpp %.hpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(INCLUDEARGS)
