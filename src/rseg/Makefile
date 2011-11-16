@@ -81,7 +81,7 @@ install: $(PROGS)
 	@install -m 755 $(PROGS) $(RSEG_ROOT)/bin
 
 clean:
-	@-rm -f $(PROGS) *.o *~
+	@-rm -f $(PROGS) *.o *~ $(SMITHLAB_CPP)/*.o $(COMMON_LIB)/*.o
 
 .PHONY: clean
 
