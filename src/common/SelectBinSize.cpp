@@ -75,8 +75,7 @@ select_bin_size_naive(const vector<SimpleGenomicRegion> &regions,
                       const vector<vector<SimpleGenomicRegion> > &reads,
                       const vector<vector<SimpleGenomicRegion> > &deads)
 {
-    cerr << "use naive method: ";
-
+    
     size_t total_genome_size = 0;
     for (size_t i = 0; i < regions.size(); ++i)
         total_genome_size += regions[i].get_width();
@@ -103,8 +102,7 @@ select_bin_size_waterman(const vector<SimpleGenomicRegion> &regions,
                          const vector<vector<SimpleGenomicRegion> > &deads,
                          const bool smooth)
 {
-    cerr << "use Waterman's formula: ";
-
+    
     const double ref_genome_size = 2287968180;
     const double ref_read_num = 10000000;
     const double ref_bin_size = smooth ? 1000 : 400;
@@ -136,7 +134,6 @@ select_bin_size_hideaki(const vector<SimpleGenomicRegion> &regions,
                         const vector<vector<SimpleGenomicRegion> > &deads,
                         const bool smooth)
 {
-    cerr << "use Hideaki's formula: ";
 
     const double ref_genome_size = 2287968180;
     const double ref_read_num = 10000000;
@@ -181,7 +178,6 @@ select_bin_size_hideaki_emp(const vector<SimpleGenomicRegion> &regions,
                             const vector<vector<SimpleGenomicRegion> > &deads,
                             const double max_dead_proportion)
 {
-    cerr << "use Hideaki's empirical method: ";
 
     size_t bin_size_low = 10;
     size_t bin_size_high = 20000;
