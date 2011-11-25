@@ -125,8 +125,7 @@ output_boundaries(const vector<vector<SimpleGenomicRegion> > &reads,
   for (size_t i = 0; i < reset_points.size(); ++i)
     if (reset_points[i] < rand_sample_size)
       reset_points_control.push_back(reset_points[i]);
-    else
-      break;
+    else break;
   reset_points_control.push_back(rand_sample_size);
   
   for (size_t i = 0; i < reset_points_control.size() - 1; ++i)
@@ -136,11 +135,10 @@ output_boundaries(const vector<vector<SimpleGenomicRegion> > &reads,
   vector<double> read_counts_control(rand_sample_size),
     scales_control(rand_sample_size);
   
-  for (size_t i = 0; i < rand_sample_size; ++i)
-    {
-      read_counts_control[i] = vals_control[i].first;
-      scales_control[i] = vals_control[i].second;
-    }
+  for (size_t i = 0; i < rand_sample_size; ++i) {
+    read_counts_control[i] = vals_control[i].first;
+    scales_control[i] = vals_control[i].second;
+  }
   vals_control.clear();
 
   vector<vector<vector<double> > > post_trans_scores_control;
@@ -161,8 +159,8 @@ output_boundaries(const vector<vector<SimpleGenomicRegion> > &reads,
   
   std::sort(boundary_scores_control.begin(), boundary_scores_control.end());
   double fdr = 0.05;
-  double cutoff = boundary_scores_control[
-					  static_cast<size_t>(boundary_scores_control.size() * (1 - fdr))];
+  
+  double cutoff = boundary_scores_control[static_cast<size_t>(boundary_scores_control.size() * (1 - fdr))];
   
   read_counts_control.clear();
   scales_control.clear();
@@ -466,430 +464,410 @@ output_domains(const vector<vector<SimpleGenomicRegion> > &reads,
 
 // end of functions for three-state modes
 int
-main(int argc, const char **argv) 
-{
-  string  deads_file, chroms_file, outdir(".");
+main(int argc, const char **argv)  {
+  try {
     
-  // expected size of a domain
-  double fg_size = -1;
+    string  deads_file, chroms_file, outdir(".");
   
-  // flags
-  bool use_viterbi = false;
-  bool VERBOSE = false;
-  bool WRITE_TRACKS = false;
-  bool Read_Counts_Requested = false;
-  bool Remove_Jackpot = true;
+    // expected size of a domain
+    double fg_size = -1;
+  
+    // flags
+    bool use_viterbi = false;
+    bool VERBOSE = false;
+    bool WRITE_TRACKS = false;
+    bool PRINT_READCOUNTS = false;
+    bool REMOVE_JACKPOT = true;
 
-  // mode
-  int mode = 2;
-  const int TEST_CONTROL_MODE = 2;
-  const int TEST_TEST_MODE = 3;
+    // mode
+    int mode = 2;
+    const int TEST_CONTROL_MODE = 2;
+    const int TEST_TEST_MODE = 3;
 
-  // name of emission distributions
-  string fg_name("nbdiff"), bg_name("nbdiff");
+    // name of emission distributions
+    string fg_name("nbdiff"), bg_name("nbdiff");
         
-  size_t desert_size = 20000;
-  size_t bin_size = 0;
-  bool waterman = false;
-  bool hideaki = false;
-  bool hideaki_emp = false;
-  bool smooth = true;
-  size_t max_iterations = 20;
-  size_t training_size = 0;
-  double tolerance = 1e-20;
-  double min_prob = 1e-20;
+    size_t desert_size = 20000;
+    size_t bin_size = 0;
+    bool waterman = false;
+    bool hideaki = false;
+    bool hideaki_emp = false;
+    bool smooth = true;
+    size_t max_iterations = 20;
+    size_t training_size = 0;
+    double tolerance = 1e-20;
+    double min_prob = 1e-20;
 
-  double max_dead_proportion = 0.5;
+    double max_dead_proportion = 0.5;
 
-  double posterior_cutoff = 0.5;     
-  size_t undef_region_cutoff = 3000; 
-  double cdf_cutoff = 0.1;
+    double posterior_cutoff = 0.5;     
+    size_t undef_region_cutoff = 3000; 
+    double cdf_cutoff = 0.1;
 
-  // Determines how many iterations are used during the initialization
-  // phase to find good starting values for the HMM
-  const size_t MAX_INITIALIZATION_ITR = 5;
+    // Determines how many iterations are used during the initialization
+    // phase to find good starting values for the HMM
+    const size_t MAX_INITIALIZATION_ITR = 5;
     
-  ////////////////////// COMMAND LINE OPTIONS /////////////////////////
-  OptionParser opt_parse("episeg", "This program segments genome according to mapped read density", "BED_file");
-  opt_parse.add_opt("fg", 'F', "Name of foreground emission distribution", false, fg_name);
-  opt_parse.add_opt("bg", 'B', "Name of background emission distribution", false, bg_name);
-  opt_parse.add_opt("chrom", 'c', "Name of the file with sizes of chromosomes", true, chroms_file);
-  opt_parse.add_opt("domain-size", 's', "Expected size of domain (Default 20000)", false, fg_size);
-  opt_parse.add_opt("bin-size", 'b', "Size of bins (default depends on # of reads)", false, bin_size);
-  opt_parse.add_opt("Waterman", '\0', "Using Waterman's method to determine bin size", false, waterman);
-  opt_parse.add_opt("Hideaki", '\0', "Using Hideaki's method to determine bin size", false, hideaki);
-  opt_parse.add_opt("Hideaki-emp", '\0', "Using Hideaki's empirical method to determine bin size (default)", false, hideaki_emp);
-  opt_parse.add_opt("smooth", '\0', "Whether the rate curve is smooth (default yes)", false, smooth);
-  opt_parse.add_opt("deadzone-file", 'd', "Filename of deadzones", false, deads_file);
-  opt_parse.add_opt("max-deadzone-prop", '\0',
-		    "Maximum deadzone proportion allowed for retened bins",
-		    false, max_dead_proportion);
-  opt_parse.add_opt("desert-size", 'S', "Desert size", false, desert_size);
-  opt_parse.add_opt("output-dir", 'o', "Output directory name (default CWD)", false, outdir);
-  opt_parse.add_opt("iteration", 'i', "Maximum number of iterations for HMM training", false, max_iterations);
-  opt_parse.add_opt("training-size", '\0', "Maximum number of data points for HMM training (default: all sample)", false, training_size);
-  opt_parse.add_opt("tolerance", 't', "Tolerance for convergence", false, tolerance);
-  opt_parse.add_opt("min_prob", 'p', "Minimum probability value", false, min_prob);
-  opt_parse.add_opt("Viterbi", 'V', "Options for Viterbi decoding (default PosteriorScores)", false, use_viterbi);
-  opt_parse.add_opt("posterior-cutoff", '\0', "Posterior threshold for signigicant bins", false, posterior_cutoff);
-  opt_parse.add_opt("undef-region-cutoff", '\0', "Minimum size of undefined region", false, undef_region_cutoff);
-  opt_parse.add_opt("cdf-cutoff", '\0', "Cutoff of cumulative probability for a true fg domain", false, cdf_cutoff); 
-  opt_parse.add_opt("tracks", 'T', "Whether write additional browser tracks", false, WRITE_TRACKS);
-  opt_parse.add_opt("mode", 'm', "Mode: 2 - test and control; 3 - test and test", false, mode);
-  opt_parse.add_opt("verbose", 'v', "Print more running information", false, VERBOSE);
-  opt_parse.add_opt("read_counts_requested", 'C', "Write reads counts file in each bin",
-		    false, Read_Counts_Requested);
-  //     opt_parse.add_opt("remove_jackpot", 'j', "Remove duplicate reads",
-  //                       false, Remove_Jackpot);
+    ////////////////////// COMMAND LINE OPTIONS /////////////////////////
+    OptionParser opt_parse("episeg", "This program segments genome according to mapped read density", "BED_file");
+    opt_parse.add_opt("fg", 'F', "Name of foreground emission distribution", false, fg_name);
+    opt_parse.add_opt("bg", 'B', "Name of background emission distribution", false, bg_name);
+    opt_parse.add_opt("chrom", 'c', "Name of the file with sizes of chromosomes", true, chroms_file);
+    opt_parse.add_opt("domain-size", 's', "Expected size of domain (Default 20000)", false, fg_size);
+    opt_parse.add_opt("bin-size", 'b', "Size of bins (default depends on # of reads)", false, bin_size);
+    opt_parse.add_opt("Waterman", '\0', "Using Waterman's method to determine bin size", false, waterman);
+    opt_parse.add_opt("Hideaki", '\0', "Using Hideaki's method to determine bin size", false, hideaki);
+    opt_parse.add_opt("Hideaki-emp", '\0', "Using Hideaki's empirical method to determine bin size (default)", false, hideaki_emp);
+    opt_parse.add_opt("smooth", '\0', "Whether the rate curve is smooth (default yes)", false, smooth);
+    opt_parse.add_opt("deadzone-file", 'd', "Filename of deadzones", false, deads_file);
+    opt_parse.add_opt("max-deadzone-prop", '\0',
+		      "Maximum deadzone proportion allowed for retened bins",
+		      false, max_dead_proportion);
+    opt_parse.add_opt("desert-size", 'S', "Desert size", false, desert_size);
+    opt_parse.add_opt("output-dir", 'o', "Output directory name (default CWD)", false, outdir);
+    opt_parse.add_opt("iteration", 'i', "Maximum number of iterations for HMM training", false, max_iterations);
+    opt_parse.add_opt("training-size", '\0', "Maximum number of data points for HMM training (default: all sample)", false, training_size);
+    opt_parse.add_opt("tolerance", 't', "Tolerance for convergence", false, tolerance);
+    opt_parse.add_opt("min_prob", 'p', "Minimum probability value", false, min_prob);
+    opt_parse.add_opt("Viterbi", 'V', "Options for Viterbi decoding (default PosteriorScores)", false, use_viterbi);
+    opt_parse.add_opt("posterior-cutoff", '\0', "Posterior threshold for signigicant bins", false, posterior_cutoff);
+    opt_parse.add_opt("undef-region-cutoff", '\0', "Minimum size of undefined region", false, undef_region_cutoff);
+    opt_parse.add_opt("cdf-cutoff", '\0', "Cutoff of cumulative probability for a true fg domain", false, cdf_cutoff); 
+    opt_parse.add_opt("tracks", 'T', "Whether write additional browser tracks", false, WRITE_TRACKS);
+    opt_parse.add_opt("mode", 'm', "Mode: 2 - test and control; 3 - test and test", false, mode);
+    opt_parse.add_opt("verbose", 'v', "Print more running information", false, VERBOSE);
+    opt_parse.add_opt("read_counts_requested", 'C', "Write reads counts file in each bin",
+		      false, PRINT_READCOUNTS);
+    //     opt_parse.add_opt("remove_jackpot", 'j', "Remove duplicate reads",
+    //                       false, REMOVE_JACKPOT);
 
-  vector<string> leftover_args;
-  opt_parse.parse(argc, argv, leftover_args);
+    vector<string> leftover_args;
+    opt_parse.parse(argc, argv, leftover_args);
 	
-  if (argc == 1 || opt_parse.help_requested())
-				
-    {
+    if (argc == 1 || opt_parse.help_requested()) {
       cerr << opt_parse.help_message() << endl;
       return EXIT_SUCCESS;
     }
-  if (opt_parse.about_requested())
-				
-    {
+    if (opt_parse.about_requested()) {
       cerr << opt_parse.about_message() << endl;
       return EXIT_SUCCESS;
     }
-  if (opt_parse.option_missing())
-				
-    {
+    if (opt_parse.option_missing()) {
       cerr << opt_parse.option_missing_message() << endl;
       return EXIT_SUCCESS;
     }
-  if (leftover_args.empty()) 
-				
-    {
+    if (leftover_args.empty()) {
       cerr << opt_parse.help_message() << endl;
       return EXIT_SUCCESS;
     }
-
-  if (leftover_args.size() < 2)
-    {
+    
+    if (leftover_args.size() < 2) {
       cerr << "Need two reads files" << endl;
       return EXIT_SUCCESS;
     }
 
-  const string reads_file_a = leftover_args[0];
-  const string reads_file_b = leftover_args[1];
+    const string reads_file_a = leftover_args[0];
+    const string reads_file_b = leftover_args[1];
 
 
-  /**********************************************************************/
-  try 
-    {
+    /**********************************************************************/
     
-      const string dataset_name_a = strip_path_and_bed_suffix(reads_file_a);
-      const string dataset_name_b = strip_path_and_bed_suffix(reads_file_b);
-      const string dataset_name = dataset_name_a + ":" + dataset_name_b;
+    const string dataset_name_a = strip_path_and_bed_suffix(reads_file_a);
+    const string dataset_name_b = strip_path_and_bed_suffix(reads_file_b);
+    const string dataset_name = dataset_name_a + ":" + dataset_name_b;
 
+    /***********************************
+     * STEP 1: READ IN THE DATA
+     */
+    
+    vector<SimpleGenomicRegion> regions;
+    vector<vector<SimpleGenomicRegion> > reads_a;
+    vector<vector<SimpleGenomicRegion> > reads_b;
+    vector<vector<SimpleGenomicRegion> > deads;
+    LoadReadsByRegion(VERBOSE, chroms_file, reads_file_a, reads_file_b,
+		      deads_file,desert_size, regions, reads_a, reads_b, deads);
+      
+    if (REMOVE_JACKPOT) {
+      if (VERBOSE)
+	cerr << "[Remove duplicate reads]" << std::endl;
+      remove_duplicate_reads(reads_a);
+      remove_duplicate_reads(reads_b);
+    }
+      
+    if (VERBOSE)
+      cerr << "[Selecting bin size] ";
+    if (bin_size == 0 && hideaki)
+      bin_size = select_bin_size_hideaki(regions, reads_a, deads, smooth);
+    if (bin_size == 0 && waterman)
+      bin_size = select_bin_size_waterman(regions, reads_a, deads, smooth);
+    if (bin_size == 0)
+      bin_size = select_bin_size_hideaki_emp(regions, reads_a, deads,
+					     max_dead_proportion);
+    if (VERBOSE)
+      cerr << "Bin size =  " << bin_size << endl;
+
+    /***********************************
+     * STEP 2: BIN THE READS
+     */ 
+    
+    // Obtain the binned reads
+    if (VERBOSE)
+      cerr << "[preparing data] binning reads " << dataset_name_a << endl;
+
+    vector<vector<double> > tmp_read_bins_a;
+    vector<vector<double> > tmp_scales;
+    vector<vector<SimpleGenomicRegion> > bin_boundaries_a;
+    BinReadsCorrectDeadZones(reads_a, deads, regions, bin_size,
+			     max_dead_proportion,
+			     bin_boundaries_a, tmp_read_bins_a, tmp_scales);
+
+
+    if (VERBOSE)
+      cerr << "[preparing data] binning reads " << dataset_name_b << endl;
+        
+    vector<vector<double> > tmp_read_bins_b;
+    vector<vector<SimpleGenomicRegion> > bin_boundaries_b;
+    BinReadsCorrectDeadZones(reads_b, deads, regions, bin_size,
+			     max_dead_proportion,
+			     bin_boundaries_b, tmp_read_bins_b, tmp_scales);
+    elim_empty_regions(regions, bin_boundaries_a, tmp_read_bins_a,
+		       tmp_read_bins_b, tmp_scales);
+
+    // collapse regions
+    vector<size_t> reset_points;
+    vector<double> read_bins_a;
+    collapse_read_bins(tmp_read_bins_a, read_bins_a, reset_points);
+    
+    vector<double> read_bins_b;
+    collapse_read_bins(tmp_read_bins_b, read_bins_b, reset_points);
+
+    vector<double> scales;
+    collapse_read_bins(tmp_scales, scales, reset_points);
+        
+    vector<double> read_bins(read_bins_a.size());
+    
+    const double max_count = bin_size;
+
+    for (size_t i = 0; i < read_bins.size(); ++i) {
+      read_bins_a[i] = min(read_bins_a[i], max_count);
+      read_bins_b[i] = min(read_bins_b[i], max_count);
+      read_bins[i] = read_bins_a[i] - read_bins_b[i];
+    }
+    
+    // release memories
+    reads_a.clear();
+    reads_b.clear();
+    tmp_read_bins_a.clear();
+    tmp_read_bins_b.clear();
+    bin_boundaries_b.clear();
+
+    // mode specific code        
+    if (mode == TEST_CONTROL_MODE) {
       /***********************************
-       * STEP 1: READ IN THE DATA
+       * STEP 3: ESTIMATE EMISSION PARAMS
+       */ 
+      
+      if (VERBOSE)
+	cerr << "[preparing data] estimating parameters" << endl;
+
+      fg_size =
+	(fg_size > 0) ? fg_size : 20000;
+
+      training_size =
+	(training_size == 0) ? read_bins.size() : training_size;
+
+      vector<double> read_bins_sample, read_bins_a_sample,
+	read_bins_b_sample, scales_sample;
+      vector<size_t> reset_points_sample;
+      pick_training_sample(
+			   read_bins, read_bins_a, read_bins_b, scales, reset_points,
+			   training_size, read_bins_sample, read_bins_a_sample,
+			   read_bins_b_sample, scales_sample, reset_points_sample);
+
+      vector<SplitDistro> distros;
+      distros.push_back(SplitDistro(fg_name));
+      distros.push_back(SplitDistro(bg_name));
+      double mixing = 0;
+      TwoStateSplitResolveMixture(read_bins_sample, read_bins_a_sample,
+				  read_bins_b_sample, scales_sample,
+				  MAX_INITIALIZATION_ITR, tolerance, VERBOSE,
+				  distros.front(), distros.back(), mixing);
+    
+      /***********************************
+       * STEP 4: TRAIN THE HMM
        */
     
-      vector<SimpleGenomicRegion> regions;
-      vector<vector<SimpleGenomicRegion> > reads_a;
-      vector<vector<SimpleGenomicRegion> > reads_b;
-      vector<vector<SimpleGenomicRegion> > deads;
-      LoadReadsByRegion(chroms_file.c_str(),
-			reads_file_a.c_str(), reads_file_b.c_str(),
-			deads_file.empty() ? 0 : deads_file.c_str(),
-			desert_size, VERBOSE,
-			regions, reads_a, reads_b, deads);
-      if (Remove_Jackpot)
-        {
-	  if (VERBOSE)
-	    cerr << "[Remove duplicate reads]" << std::endl;
-	  remove_duplicate_reads(reads_a);
-	  remove_duplicate_reads(reads_b);
-        }
+      vector<vector<double> > trans;
+      vector<double> start_trans, end_trans;
+      set_transitions(bin_size, fg_size, mixing, VERBOSE,
+		      start_trans, trans, end_trans);
+    
+      const TwoStateScaleSplitHMM hmm(min_prob, tolerance, max_iterations, VERBOSE);
+      hmm.BaumWelchTraining(
+			    read_bins_sample, read_bins_a_sample,
+			    read_bins_b_sample, scales_sample, reset_points_sample,
+			    start_trans, trans, end_trans, distros.front(), distros.back());
 
-      if (VERBOSE)
-	cerr << "[Selecting bin size] ";
-      if (bin_size == 0 && hideaki)
-	bin_size = select_bin_size_hideaki(regions, reads_a, deads, smooth);
-      if (bin_size == 0 && waterman)
-	bin_size = select_bin_size_waterman(regions, reads_a, deads, smooth);
-      if (bin_size == 0)
-	bin_size = select_bin_size_hideaki_emp(regions, reads_a, deads,
-					       max_dead_proportion);
-      if (VERBOSE)
-	cerr << "Bin size =  " << bin_size << endl;
+      clear_training_sample(read_bins_sample, read_bins_a_sample,
+			    read_bins_b_sample, scales_sample, reset_points_sample);
 
+    
+      if (VERBOSE)
+	report_final_values(distros, start_trans, trans, end_trans);
+    
       /***********************************
-       * STEP 2: BIN THE READS
-       */ 
+       * STEP 5: DECODE THE DOMAINS
+       */
     
-      // Obtain the binned reads
-      if (VERBOSE)
-	cerr << "[preparing data] binning reads " << dataset_name_a << endl;
-
-      vector<vector<double> > tmp_read_bins_a;
-      vector<vector<double> > tmp_scales;
-      vector<vector<SimpleGenomicRegion> > bin_boundaries_a;
-      BinReadsCorrectDeadZones(reads_a, deads, regions, bin_size,
-			       max_dead_proportion,
-			       bin_boundaries_a, tmp_read_bins_a, tmp_scales);
-
-
-      if (VERBOSE)
-	cerr << "[preparing data] binning reads " << dataset_name_b << endl;
-        
-      vector<vector<double> > tmp_read_bins_b;
-      vector<vector<SimpleGenomicRegion> > bin_boundaries_b;
-      BinReadsCorrectDeadZones(reads_b, deads, regions, bin_size,
-			       max_dead_proportion,
-			       bin_boundaries_b, tmp_read_bins_b, tmp_scales);
-      elim_empty_regions(regions, bin_boundaries_a, tmp_read_bins_a,
-			 tmp_read_bins_b, tmp_scales);
-
-      // collapse regions
-      vector<size_t> reset_points;
-      vector<double> read_bins_a;
-      collapse_read_bins(tmp_read_bins_a, read_bins_a, reset_points);
-    
-      vector<double> read_bins_b;
-      collapse_read_bins(tmp_read_bins_b, read_bins_b, reset_points);
-
-      vector<double> scales;
-      collapse_read_bins(tmp_scales, scales, reset_points);
-        
-      vector<double> read_bins(read_bins_a.size());
-    
-      const double max_count = bin_size;
-
-      for (size_t i = 0; i < read_bins.size(); ++i) 
-        {
-	  read_bins_a[i] = min(read_bins_a[i], max_count);
-	  read_bins_b[i] = min(read_bins_b[i], max_count);
-	  read_bins[i] = read_bins_a[i] - read_bins_b[i];
-        }
-
-      // release memories
-      reads_a.clear();
-      reads_b.clear();
-      tmp_read_bins_a.clear();
-      tmp_read_bins_b.clear();
-      bin_boundaries_b.clear();
-
-      // mode specific code        
-      if (mode == TEST_CONTROL_MODE)
-        {
-	  /***********************************
-	   * STEP 3: ESTIMATE EMISSION PARAMS
-	   */ 
-    
-	  if (VERBOSE)
-	    cerr << "[preparing data] estimating parameters" << endl;
-
-	  fg_size =
-	    (fg_size > 0) ? fg_size : 20000;
-
-	  training_size =
-	    (training_size == 0) ? read_bins.size() : training_size;
-
-	  vector<double> read_bins_sample, read_bins_a_sample,
-	    read_bins_b_sample, scales_sample;
-	  vector<size_t> reset_points_sample;
-	  pick_training_sample(
-			       read_bins, read_bins_a, read_bins_b, scales, reset_points,
-			       training_size, read_bins_sample, read_bins_a_sample,
-			       read_bins_b_sample, scales_sample, reset_points_sample);
-
-	  vector<SplitDistro> distros;
-	  distros.push_back(SplitDistro(fg_name));
-	  distros.push_back(SplitDistro(bg_name));
-	  double mixing = 0;
-	  TwoStateSplitResolveMixture(read_bins_sample, read_bins_a_sample,
-				      read_bins_b_sample, scales_sample,
-				      MAX_INITIALIZATION_ITR, tolerance, VERBOSE,
-				      distros.front(), distros.back(), mixing);
-    
-	  /***********************************
-	   * STEP 4: TRAIN THE HMM
-	   */
-    
-	  vector<vector<double> > trans;
-	  vector<double> start_trans, end_trans;
-	  set_transitions(bin_size, fg_size, mixing, VERBOSE,
-			  start_trans, trans, end_trans);
-    
-	  const TwoStateScaleSplitHMM hmm(min_prob, tolerance, max_iterations, VERBOSE);
-	  hmm.BaumWelchTraining(
-				read_bins_sample, read_bins_a_sample,
-				read_bins_b_sample, scales_sample, reset_points_sample,
-				start_trans, trans, end_trans, distros.front(), distros.back());
-
-	  clear_training_sample(read_bins_sample, read_bins_a_sample,
-				read_bins_b_sample, scales_sample, reset_points_sample);
-
-    
-	  if (VERBOSE)
-	    report_final_values(distros, start_trans, trans, end_trans);
-    
-	  /***********************************
-	   * STEP 5: DECODE THE DOMAINS
-	   */
-    
-	  vector<bool> classes;
-	  vector<double> scores;
-	  if (use_viterbi)
-	    hmm.ViterbiDecoding(read_bins, scales, reset_points,
-				start_trans, trans, end_trans,
-				distros.front(), distros.back(), classes);
-	  else
-	    hmm.PosteriorDecoding(read_bins, scales, reset_points,
-				  start_trans, trans, end_trans, 
-				  distros.front(), distros.back(), classes, scores);
-    
-	  /***********************************
-	   * STEP 6: WRITE THE RESULTS
-	   */
-
-	  // make sure the output dir is valid
-	  chk_and_mk_dirs(outdir);
-
-	  output_domains(reads_a, regions, read_bins, 
-			 scales, reset_points, bin_boundaries_a,
-			 hmm, distros, start_trans, trans, end_trans, classes,
-			 posterior_cutoff, undef_region_cutoff, cdf_cutoff,
-			 dataset_name, outdir, VERBOSE, WRITE_TRACKS);
-	  output_boundaries(reads_a, regions, read_bins, scales, reset_points,
-			    bin_boundaries_a,
-			    hmm, distros, start_trans, trans, end_trans, classes,
-			    dataset_name, outdir, VERBOSE, WRITE_TRACKS);
-            
-	  if (Read_Counts_Requested)
-            {
-	      const string file_name( path_join(outdir, dataset_name + "-counts.bed") );
-	      write_read_counts_by_bin(bin_boundaries_a,
-				       read_bins_a, read_bins_b, scales,
-				       classes, file_name, VERBOSE);
-            }
-        }
-      else if (mode == TEST_TEST_MODE)
-        {
-	  /***********************************
-	   * STEP 3: ESTIMATE EMISSION PARAMS
-	   */ 
-    
-	  if (VERBOSE)
-	    cerr << "[preparing data] estimating parameters" << endl;
-
-	  fg_size =
-	    (fg_size > 0) ? fg_size : 6000;
-            
-	  // All are using the fg name now
-	  training_size =
-	    (training_size == 0) ? read_bins.size() : training_size;
-            
-	  vector<double> read_bins_sample, read_bins_a_sample,
-	    read_bins_b_sample, scales_sample;
-	  vector<size_t> reset_points_sample;
-	  pick_training_sample(
-			       read_bins, read_bins_a, read_bins_b, scales, reset_points,
-			       training_size, read_bins_sample, read_bins_a_sample,
-			       read_bins_b_sample, scales_sample, reset_points_sample);
-
-	  vector<SplitDistro> distros;
-	  distros.push_back(SplitDistro(fg_name));
-	  distros.push_back(SplitDistro(bg_name));
-	  distros.push_back(SplitDistro(fg_name));
-            
-	  vector<double> mixing;
-	  ThreeStateScaleSplitResolveMixture(
-					     read_bins_sample, read_bins_a_sample,
-					     read_bins_b_sample, scales_sample,
-					     MAX_INITIALIZATION_ITR, tolerance, VERBOSE,
-					     distros.front(), distros[1], distros.back(), mixing);
-    
-	  /***********************************
-	   * STEP 4: TRAIN THE HMM
-	   */
-    
-	  vector<vector<double> > trans;
-	  vector<double> start_trans, end_trans;
-	  set_transitions(bin_size, fg_size, mixing, VERBOSE,
-			  start_trans, trans, end_trans);
-    
-	  const ThreeStateScaleSplitHMM hmm(min_prob, tolerance, max_iterations, VERBOSE);
-	  hmm.BaumWelchTraining(read_bins_sample, read_bins_a_sample,
-				read_bins_b_sample, scales_sample,
-				reset_points_sample,
-				start_trans, trans, end_trans,
-				distros.front(), distros[1], distros.back());
-
-	  clear_training_sample(read_bins_sample, read_bins_a_sample,
-				read_bins_b_sample, scales_sample, reset_points_sample);
-    
-	  if (VERBOSE)
-	    report_final_values(distros, start_trans, trans, end_trans);
-    
-	  /***********************************
-	   * STEP 5: DECODE THE DOMAINS
-	   */
-    
-	  vector<size_t> classes;
-	  vector<double> scores;
-	  if (use_viterbi)
-	    hmm.ViterbiDecoding(read_bins, scales, reset_points,
-				start_trans, trans, end_trans,
-				distros.front(), distros[1], distros.back(),
-				classes);
-	  else
-	    hmm.PosteriorDecoding(read_bins, scales, reset_points,
-				  start_trans, trans, end_trans, 
-				  distros.front(), distros[1], distros.back(),
-				  classes, scores);
-				
-	  /***********************************
-	   * STEP 6: WRITE THE RESULTS
-	   */
-
-	  // make sure the output dir is valid
-	  chk_and_mk_dirs(outdir);
-
-	  output_domains(reads_a, regions, read_bins, scales,
-			 reset_points, bin_boundaries_a,
-			 hmm, distros, start_trans, trans, end_trans, 
-			 classes, posterior_cutoff, undef_region_cutoff, cdf_cutoff,
-			 dataset_name, outdir, VERBOSE, WRITE_TRACKS);
-	  output_boundaries(reads_a, regions, read_bins, scales,
-			    reset_points, bin_boundaries_a,
-			    hmm, distros, start_trans, trans, end_trans, 
-			    classes, dataset_name, outdir, VERBOSE, WRITE_TRACKS);
-
-	  if (Read_Counts_Requested)
-            {
-	      const string file_name( path_join(outdir, dataset_name + "-counts.bed") );
-	      write_read_counts_by_bin(bin_boundaries_a,
-				       read_bins_a, read_bins_b, scales,
-				       classes, file_name, VERBOSE);
-            }
-        } 
+      vector<bool> classes;
+      vector<double> scores;
+      if (use_viterbi)
+	hmm.ViterbiDecoding(read_bins, scales, reset_points,
+			    start_trans, trans, end_trans,
+			    distros.front(), distros.back(), classes);
       else
-        {
-	  cerr << "Please specifc the following value for mode: if you want to compare "
-	       << "a test sample and a control sample " 
-	       << "and think there are two stats, use mode 2;"
-	       << "if you want to compare a test sample and another test sample "
-	       << "and think thre are three states, use mode 3" << std::endl;
-        }
+	hmm.PosteriorDecoding(read_bins, scales, reset_points,
+			      start_trans, trans, end_trans, 
+			      distros.front(), distros.back(), classes, scores);
+    
+      /***********************************
+       * STEP 6: WRITE THE RESULTS
+       */
+
+      // make sure the output dir is valid
+      chk_and_mk_dirs(outdir);
+
+      output_domains(reads_a, regions, read_bins, 
+		     scales, reset_points, bin_boundaries_a,
+		     hmm, distros, start_trans, trans, end_trans, classes,
+		     posterior_cutoff, undef_region_cutoff, cdf_cutoff,
+		     dataset_name, outdir, VERBOSE, WRITE_TRACKS);
+      output_boundaries(reads_a, regions, read_bins, scales, reset_points,
+			bin_boundaries_a,
+			hmm, distros, start_trans, trans, end_trans, classes,
+			dataset_name, outdir, VERBOSE, WRITE_TRACKS);
+            
+      if (PRINT_READCOUNTS)
+	{
+	  const string file_name( path_join(outdir, dataset_name + "-counts.bed") );
+	  write_read_counts_by_bin(bin_boundaries_a,
+				   read_bins_a, read_bins_b, scales,
+				   classes, file_name, VERBOSE);
+	}
     }
-  catch (SMITHLABException &e) 
-    {
-      cerr << "ERROR:\t" << e.what() << endl;
-      return EXIT_FAILURE;
+    else if (mode == TEST_TEST_MODE) {
+      /***********************************
+       * STEP 3: ESTIMATE EMISSION PARAMS
+       */ 
+      
+      if (VERBOSE)
+	cerr << "[preparing data] estimating parameters" << endl;
+
+      fg_size =
+	(fg_size > 0) ? fg_size : 6000;
+            
+      // All are using the fg name now
+      training_size =
+	(training_size == 0) ? read_bins.size() : training_size;
+            
+      vector<double> read_bins_sample, read_bins_a_sample,
+	read_bins_b_sample, scales_sample;
+      vector<size_t> reset_points_sample;
+      pick_training_sample(
+			   read_bins, read_bins_a, read_bins_b, scales, reset_points,
+			   training_size, read_bins_sample, read_bins_a_sample,
+			   read_bins_b_sample, scales_sample, reset_points_sample);
+
+      vector<SplitDistro> distros;
+      distros.push_back(SplitDistro(fg_name));
+      distros.push_back(SplitDistro(bg_name));
+      distros.push_back(SplitDistro(fg_name));
+            
+      vector<double> mixing;
+      ThreeStateScaleSplitResolveMixture(
+					 read_bins_sample, read_bins_a_sample,
+					 read_bins_b_sample, scales_sample,
+					 MAX_INITIALIZATION_ITR, tolerance, VERBOSE,
+					 distros.front(), distros[1], distros.back(), mixing);
+    
+      /***********************************
+       * STEP 4: TRAIN THE HMM
+       */
+    
+      vector<vector<double> > trans;
+      vector<double> start_trans, end_trans;
+      set_transitions(bin_size, fg_size, mixing, VERBOSE,
+		      start_trans, trans, end_trans);
+    
+      const ThreeStateScaleSplitHMM hmm(min_prob, tolerance, max_iterations, VERBOSE);
+      hmm.BaumWelchTraining(read_bins_sample, read_bins_a_sample,
+			    read_bins_b_sample, scales_sample,
+			    reset_points_sample,
+			    start_trans, trans, end_trans,
+			    distros.front(), distros[1], distros.back());
+
+      clear_training_sample(read_bins_sample, read_bins_a_sample,
+			    read_bins_b_sample, scales_sample, reset_points_sample);
+    
+      if (VERBOSE)
+	report_final_values(distros, start_trans, trans, end_trans);
+    
+      /***********************************
+       * STEP 5: DECODE THE DOMAINS
+       */
+    
+      vector<size_t> classes;
+      vector<double> scores;
+      if (use_viterbi)
+	hmm.ViterbiDecoding(read_bins, scales, reset_points,
+			    start_trans, trans, end_trans,
+			    distros.front(), distros[1], distros.back(),
+			    classes);
+      else
+	hmm.PosteriorDecoding(read_bins, scales, reset_points,
+			      start_trans, trans, end_trans, 
+			      distros.front(), distros[1], distros.back(),
+			      classes, scores);
+				
+      /***********************************
+       * STEP 6: WRITE THE RESULTS
+       */
+
+      // make sure the output dir is valid
+      chk_and_mk_dirs(outdir);
+
+      output_domains(reads_a, regions, read_bins, scales,
+		     reset_points, bin_boundaries_a,
+		     hmm, distros, start_trans, trans, end_trans, 
+		     classes, posterior_cutoff, undef_region_cutoff, cdf_cutoff,
+		     dataset_name, outdir, VERBOSE, WRITE_TRACKS);
+      output_boundaries(reads_a, regions, read_bins, scales,
+			reset_points, bin_boundaries_a,
+			hmm, distros, start_trans, trans, end_trans, 
+			classes, dataset_name, outdir, VERBOSE, WRITE_TRACKS);
+
+      if (PRINT_READCOUNTS) {
+	const string file_name( path_join(outdir, dataset_name + "-counts.bed") );
+	write_read_counts_by_bin(bin_boundaries_a,
+				 read_bins_a, read_bins_b, scales,
+				 classes, file_name, VERBOSE);
+      }
+    } 
+    else {
+      cerr << "Please specifc the following value for mode: if you want to compare "
+	   << "a test sample and a control sample " 
+	   << "and think there are two stats, use mode 2;"
+	   << "if you want to compare a test sample and another test sample "
+	   << "and think thre are three states, use mode 3" << std::endl;
     }
-  catch (std::bad_alloc &ba) 
-    {
-      cerr << "ERROR: could not allocate memory" << endl;
-      return EXIT_FAILURE;
-    }
+  }
+  catch (SMITHLABException &e) {
+    cerr << "ERROR:\t" << e.what() << endl;
+    return EXIT_FAILURE;
+  }
+  catch (std::bad_alloc &ba) {
+    cerr << "ERROR: could not allocate memory" << endl;
+    return EXIT_FAILURE;
+  }
   return EXIT_SUCCESS;
 }
