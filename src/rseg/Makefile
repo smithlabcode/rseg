@@ -23,7 +23,10 @@ ifndef RSEG_ROOT
 $(error Must define RSEG_ROOT variable)
 endif
 
-SMITHLAB_CPP = ../smithlib
+ifndef SMITHLAB_CPP
+$(error Must define SMITHLAB_CPP variable)
+endif
+
 COMMON_LIB = ../common
 
 SOURCES = $(wildcard *.cpp)
@@ -36,7 +39,7 @@ INCLUDEARGS = $(addprefix -I,$(INCLUDEDIRS))
 LIBS += -lgsl -lgslcblas 
 
 CXX = g++
-CXXFLAGS = -Wall -fmessage-length=50
+CXXFLAGS = -Wall -fPIC -fmessage-length=50
 OPTFLAGS = -O2
 DEBUGFLAGS = -g -lefence -L$(HOME)/lib
 
@@ -81,7 +84,6 @@ install: $(PROGS)
 	@install -m 755 $(PROGS) $(RSEG_ROOT)/bin
 
 clean:
-	@-rm -f $(PROGS) *.o *~ $(SMITHLAB_CPP)/*.o $(COMMON_LIB)/*.o
+	@-rm -f $(PROGS) *.o *~
 
 .PHONY: clean
-
