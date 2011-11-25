@@ -24,25 +24,23 @@
 
 #include "GenomicRegion.hpp"
 
-
-
 void
-LoadReadsByRegion(const char *regions_file, 
-		  const char *reads_file, 
-		  const char *deads_file,
+LoadReadsByRegion(const bool VERBOSE,
+		  const std::string &regions_file, 
+		  const std::string &reads_file, 
+		  const std::string &deads_file,
 		  const size_t desert_size, 
-		  const int VERBOSE,
 		  std::vector<SimpleGenomicRegion> &regions, 
 		  std::vector<std::vector<SimpleGenomicRegion> > &reads,
 		  std::vector<std::vector<SimpleGenomicRegion> > &deads);
 
 void
-LoadReadsByRegion(const char *regions_file, 
-		  const char *reads_file_a, 
-		  const char *reads_file_b, 
-		  const char *deads_file,
+LoadReadsByRegion(const bool VERBOSE,
+		  const std::string &regions_file, 
+		  const std::string &reads_file_a, 
+		  const std::string &reads_file_b, 
+		  const std::string &deads_file,
 		  const size_t desert_size, 
-		  const int VERBOSE,
 		  std::vector<SimpleGenomicRegion> &regions, 
 		  std::vector<std::vector<SimpleGenomicRegion> > &reads_a,
 		  std::vector<std::vector<SimpleGenomicRegion> > &reads_b,
