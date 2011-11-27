@@ -23,7 +23,6 @@
 #include <cmath>
 #include <fstream>
 #include <algorithm>
-#include <utility>
 #include <iterator>
 #include <iostream>
 
@@ -36,7 +35,7 @@
 #include "TwoStateScaleHMM.hpp"
 #include "EvaluateBoundaries.hpp"
 #include "LoadReadsByRegion.hpp"
-#include "SelectBinSize.hpp"
+// #include "SelectBinSize.hpp"
 #include "OptionParser.hpp"
 #include "rseg_utils.hpp"
 
@@ -56,12 +55,10 @@ using std::pair;
 const size_t MAX_INITIALIZATION_ITR = 3;
 
 static void
-output_boundaries(const vector<SimpleGenomicRegion> &regions,
-                  const vector<vector<SimpleGenomicRegion> > &bin_bounds,
+output_boundaries(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
                   const vector<double> &tmp_read_bins,
                   const vector<double> &scales,
                   const vector<bool> &tmp_classes,
-                  const vector<double> &tmp_scores,
                   const vector<size_t> &reset_points,
                   const TwoStateScaleHMM &hmm,
                   const vector<Distro> &distros,
@@ -70,8 +67,10 @@ output_boundaries(const vector<SimpleGenomicRegion> &regions,
                   const vector<double> &end_trans,
                   const string &dataset_name, const string &outdir, 
                   const bool VERBOSE, const bool WRITE_TRACKS,
-                  const bool Both_Domain_Ends = true) 
-{
+                  const bool Both_Domain_Ends = true) {
+
+  static const double FDR = 0.05;
+  
   static const string BED_SUFF = string(".bed");
   static const string WIG_SUFF = string(".wig");
   static const string DOMAINS_TAG = string("-domains");
@@ -103,14 +102,13 @@ output_boundaries(const vector<SimpleGenomicRegion> &regions,
     
   transitions.push_back(tmp_classes.size());
   size_t j = 0;
-  for (int i = 0; static_cast<size_t>(i) < f_to_b_scores.size(); ++i) 
-    {
-      if (abs(i - transitions[j]) > abs(i - transitions[j + 1]))
-	++j;
-      tmp_boundary_scores[i] = (tmp_classes[transitions[j]]) ?
-	b_to_f_scores[i] : f_to_b_scores[i];
-    }
-
+  for (int i = 0; static_cast<size_t>(i) < f_to_b_scores.size(); ++i) {
+    if (abs(i - transitions[j]) > abs(i - transitions[j + 1]))
+      ++j;
+    tmp_boundary_scores[i] = (tmp_classes[transitions[j]]) ?
+      b_to_f_scores[i] : f_to_b_scores[i];
+  }
+  
   vector<vector<double> > boundary_scores;
   expand_bins(tmp_boundary_scores, reset_points, boundary_scores);
     
@@ -136,10 +134,9 @@ output_boundaries(const vector<SimpleGenomicRegion> &regions,
 					  b_to_f_scores_control[i]);
 
   std::sort(boundary_scores_control.begin(), boundary_scores_control.end());
-  double fdr = 0.05;
-  double cutoff = boundary_scores_control[
-					  static_cast<size_t>(boundary_scores_control.size() * (1 - fdr))];
-
+  const size_t bc_idx = static_cast<size_t>(boundary_scores_control.size()*(1 - FDR));
+  const double cutoff = boundary_scores_control[bc_idx];
+  
   read_counts_control.clear();
   b_to_f_scores_control.clear();
   f_to_b_scores_control.clear();
@@ -150,36 +147,31 @@ output_boundaries(const vector<SimpleGenomicRegion> &regions,
   BoundEval be(1, 1);
   if (Both_Domain_Ends)
     be.evaluate(bin_bounds, reset_points, tmp_classes, tmp_boundary_scores,
-		f_to_f_scores, f_to_b_scores,
-		b_to_f_scores, b_to_b_scores,
-		cutoff, Both_Domain_Ends,
-		boundaries);
-  else
-    be.evaluate(bin_bounds, reset_points, tmp_classes, tmp_boundary_scores,
-		f_to_f_scores, f_to_b_scores,
-		b_to_f_scores, b_to_b_scores,
-		cutoff, boundaries);
-    
+		f_to_f_scores, f_to_b_scores, b_to_f_scores, b_to_b_scores,
+		cutoff, Both_Domain_Ends, boundaries);
+  else be.evaluate(bin_bounds, reset_points, tmp_classes, tmp_boundary_scores,
+		   f_to_f_scores, f_to_b_scores, b_to_f_scores, b_to_b_scores,
+		   cutoff, boundaries);
+  
   // write result files
-  const string boundary_file_name(
-				  path_join(outdir, dataset_name + BOUNDARY_TAG + BED_SUFF));
-  WriteBEDFile(boundary_file_name, boundaries);
+  const string boundary_filename(path_join(outdir, dataset_name + 
+					   BOUNDARY_TAG + BED_SUFF));
   if (VERBOSE)
-    cerr << "Boundary file: " + boundary_file_name << std::endl;
-
-  if (WRITE_TRACKS)
-    {
-      const string bound_scores_file_name(
-					  path_join(outdir, dataset_name + "-boundary-scores" + WIG_SUFF));
-      write_wigfile(boundary_scores, bin_bounds, bound_scores_file_name);
-      if (VERBOSE)
-	cerr << "Boundary score file: " + bound_scores_file_name << std::endl;
-    }
+    cerr << "Boundary file: " + boundary_filename << endl;
+  WriteBEDFile(boundary_filename, boundaries);
+  
+  if (WRITE_TRACKS) {
+    const string bound_scores_filename(path_join(outdir, dataset_name + 
+						 "-boundary-scores" + WIG_SUFF));
+    if (VERBOSE)
+      cerr << "Boundary score file: " + bound_scores_filename << endl;
+    write_wigfile(boundary_scores, bin_bounds, bound_scores_filename);
+  }
 }
 
+
 static void
-output_domains(const vector<SimpleGenomicRegion> &regions,
-	       const vector<vector<SimpleGenomicRegion> > &bin_bounds,
+output_domains(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
 	       const vector<double> &tmp_read_bins,
                const vector<double> &tmp_scales,
 	       const vector<bool> &tmp_classes,
@@ -194,8 +186,7 @@ output_domains(const vector<SimpleGenomicRegion> &regions,
                const size_t undef_region_cutoff,
                const double cdf_cutoff, 
 	       const string dataset_name, const string outdir, 
-	       const bool VERBOSE, const bool WRITE_TRACKS) 
-{
+	       const bool VERBOSE, const bool WRITE_TRACKS) {
   
   static const string BED_SUFF = string(".bed");
   static const string WIG_SUFF = string(".wig");
@@ -228,14 +219,15 @@ output_domains(const vector<SimpleGenomicRegion> &regions,
     path_join(outdir ,dataset_name + DOMAINS_TAG + BED_SUFF);
   write_bed_file(domains, domain_file_name);
   if (VERBOSE)
-    cerr << "Domains file: " + domain_file_name << std::endl;
+    cerr << "Domains file: " + domain_file_name << endl;
     
   if (WRITE_TRACKS)
     {
-      const string scores_file_name(path_join(outdir, dataset_name + SCORES_TAG + WIG_SUFF));
+      const string scores_file_name(path_join(outdir, dataset_name + 
+					      SCORES_TAG + WIG_SUFF));
       write_wigfile(scores, bin_bounds, scores_file_name);
       if (VERBOSE)
-	cerr << "Bin score file: " + scores_file_name << std::endl;
+	cerr << "Bin score file: " + scores_file_name << endl;
     }
 }
 
@@ -259,9 +251,9 @@ main(int argc, const char **argv) {
     bool VERBOSE = false;
     bool WRITE_TRACKS = false;
     bool PRINT_READCOUNTS = false;
-    bool Remove_Jackpot = true;
+    //     bool Remove_Jackpot = true;
     bool Both_Domain_Ends = true;
-
+    
     // names of statistical distributions to use
     string fg_name = "nbd";
     string bg_name = "nbd";
@@ -289,20 +281,20 @@ main(int argc, const char **argv) {
     ////////////////////// PARSING COMMAND LINE OPTIONS /////////////////////////
     OptionParser opt_parse("episeg", "This program segments genome according "
 			   "to mapped read density", "BED_file");
-    opt_parse.add_opt("fg", 'F', "Name of foreground emission distribution", false, fg_name);
-    opt_parse.add_opt("bg", 'B', "Name of background emission distribution", false, bg_name);
+    opt_parse.add_opt("fg", 'F', "foreground emission distribution name", false, fg_name);
+    opt_parse.add_opt("bg", 'B', "background emission distribution name", false, bg_name);
     opt_parse.add_opt("chrom", 'c', "Name of the file with sizes of chromosomes", 
 		      true, chroms_file);
     opt_parse.add_opt("domain-size", 's', "Expected size of domain (Default 20000)", 
 		      false, fg_size);
     opt_parse.add_opt("bin-size", 'b', "Size of bins (default depends on # of reads)", 
 		      false, bin_size);
-    opt_parse.add_opt("Waterman", '\0', "Using Waterman's method to determine bin size", 
+    opt_parse.add_opt("Waterman", '\0', "using Waterman's method for bin size", 
 		      false, waterman);
-    opt_parse.add_opt("Hideaki", '\0', "Using Hideaki's method to determine bin size", 
+    opt_parse.add_opt("Hideaki", '\0', "Using Hideaki's method for bin size", 
 		      false, hideaki);
-    opt_parse.add_opt("Hideaki-emp", '\0', "Using Hideaki's empirical method to "
-		      "determine bin size (default)", false, hideaki_emp);
+    opt_parse.add_opt("Hideaki-emp", '\0', "Using Hideaki's empirical method for "
+		      "bin size (default)", false, hideaki_emp);
     opt_parse.add_opt("smooth", '\0', "Indicate whether the rate curve is assumed smooth", 
 		      false, smooth);
     opt_parse.add_opt("deadzone-file", 'd', "Filename of deadzones", false, deads_file);
@@ -375,30 +367,26 @@ main(int argc, const char **argv) {
     vector<SimpleGenomicRegion> regions;
     vector<vector<SimpleGenomicRegion> > reads;
     vector<vector<SimpleGenomicRegion> > deads;
-
-    LoadReadsByRegion(VERBOSE, chroms_file, reads_file,
-		      deads_file, desert_size, regions, reads, deads);
     
-    if (Remove_Jackpot) {
-      if (VERBOSE)
-	cerr << "[Remove duplicate reads]" << std::endl;
-      remove_duplicate_reads(reads);
-    }
+    vector<vector<double> > tmp_read_bins;
+    vector<vector<SimpleGenomicRegion> > boundaries;
+    LoadReadsByRegion(VERBOSE, chroms_file, reads_file, deads_file, 
+		      bin_size, regions, deads, tmp_read_bins,
+		      boundaries);
     
-    if (VERBOSE)
-      cerr << "[Selecting bin size] ";
-    
-    if (bin_size == 0) {
-      if (hideaki)
-	bin_size = select_bin_size_hideaki(regions, reads, deads, smooth);
-      else if (waterman)
-	bin_size = select_bin_size_waterman(regions, reads, deads, smooth);
-      else 
-	bin_size = select_bin_size_hideaki_emp(regions, reads, deads,
-					       max_dead_proportion);
-    }
-    if (VERBOSE)
-      cerr << "Bin size =  " << bin_size << endl;
+    //     if (VERBOSE)
+    //       cerr << "[Selecting bin size] ";
+    //     if (bin_size == 0) {
+    //       if (hideaki)
+    // 	bin_size = select_bin_size_hideaki(regions, reads, deads, smooth);
+    //       else if (waterman)
+    // 	bin_size = select_bin_size_waterman(regions, reads, deads, smooth);
+    //       else 
+    // 	bin_size = select_bin_size_hideaki_emp(regions, reads, deads,
+    // 					       max_dead_proportion);
+    //     }
+    //     if (VERBOSE)
+    //       cerr << "Bin size =  " << bin_size << endl;
     
     /***********************************
      * STEP 2: BIN THE READS
@@ -407,26 +395,31 @@ main(int argc, const char **argv) {
     if (VERBOSE)
       cerr << "[formatting data] binning reads" << endl;
     
-    vector<vector<double> > tmp_read_bins;
     vector<vector<double> > tmp_scales;
-    vector<vector<SimpleGenomicRegion> > bin_boundaries;
-    BinReadsCorrectDeadZones(reads, deads, regions, bin_size,
-			     max_dead_proportion,
-			     bin_boundaries, tmp_read_bins, tmp_scales);
+    vector<vector<SimpleGenomicRegion> > bin_boundaries(boundaries);
+
+    BinReadsCorrectDeadZones(deads, regions, bin_size, tmp_scales);
     elim_empty_regions(regions, bin_boundaries, tmp_read_bins, tmp_scales);
-        
+
+    /*
+      !!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!
+      THIS IS WHERE WE NEED TO DEAL WITH THE DEADZONES AND THE DESERTS
+      !!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!
+    */
+    
     vector<double> read_bins;
     vector<double> scales;
     vector<size_t> reset_points;
     collapse_read_bins(tmp_read_bins, read_bins, reset_points);
     collapse_read_bins(tmp_scales, scales, reset_points);
-
+    
     const double max_count = bin_size;
     for (size_t i = 0; i < read_bins.size(); ++i)
       read_bins[i] = min(read_bins[i], max_count);
     
     // release unused memory
-    vector<vector<SimpleGenomicRegion> >().swap(reads);
     vector<vector<SimpleGenomicRegion> >().swap(deads);
     vector<vector<double> >().swap(tmp_read_bins);
     vector<vector<double> >().swap(tmp_scales);
@@ -441,6 +434,8 @@ main(int argc, const char **argv) {
     vector<Distro> distros;
     distros.push_back(Distro(fg_name));
     distros.push_back(Distro(bg_name));
+
+    assert(read_bins.size() == scales.size());
 
     double mixing = 0;
     TwoStateResolveMixture(read_bins, scales, MAX_INITIALIZATION_ITR, 
@@ -482,14 +477,14 @@ main(int argc, const char **argv) {
      */
     // make sure the output dir is valid
     chk_and_mk_dirs(outdir);
-        
-    output_domains(regions, bin_boundaries,
+    
+    output_domains(bin_boundaries,
 		   read_bins, scales, classes, scores, reset_points,
 		   hmm, distros, start_trans, trans, end_trans, 
 		   posterior_cutoff, undef_region_cutoff, cdf_cutoff,
 		   dataset_name, outdir.c_str(), VERBOSE, WRITE_TRACKS);
-    output_boundaries(regions, bin_boundaries,
-		      read_bins, scales, classes, scores, reset_points,
+    output_boundaries(bin_boundaries,
+		      read_bins, scales, classes, reset_points,
 		      hmm, distros, start_trans, trans, end_trans, 
 		      dataset_name, outdir,
 		      VERBOSE, WRITE_TRACKS, Both_Domain_Ends);
@@ -501,15 +496,13 @@ main(int argc, const char **argv) {
 			       read_counts_file_name, VERBOSE);
     }
   }
-  catch (SMITHLABException &e) 
-    {
-      cerr << "ERROR:\t" << e.what() << endl;
-      return EXIT_FAILURE;
-    }
-  catch (std::bad_alloc &ba) 
-    {
-      cerr << "ERROR: could not allocate memory" << endl;
-      return EXIT_FAILURE;
-    }
+  catch (SMITHLABException &e) {
+    cerr << "ERROR:\t" << e.what() << endl;
+    return EXIT_FAILURE;
+  }
+  catch (std::bad_alloc &ba) {
+    cerr << "ERROR: could not allocate memory" << endl;
+    return EXIT_FAILURE;
+  }
   return EXIT_SUCCESS;
 }
