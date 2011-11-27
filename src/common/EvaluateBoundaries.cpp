@@ -24,10 +24,6 @@
 #include "EvaluateBoundaries.hpp"
 #include "numerical_utils.hpp"
 
-#include <gsl/gsl_cdf.h>
-#include <gsl/gsl_randist.h>
-#include <gsl/gsl_rng.h>
-
 using std::vector;
 using std::pair;
 using std::make_pair;

@@ -25,13 +25,10 @@
 #include "smithlab_utils.hpp"
 #include "GenomicRegion.hpp"
 
-using std::vector;
-
-
 struct Domain {
-  vector<double> vals;
+  std::vector<double> vals;
   size_t state;
-  Domain(const vector<double> &v, 
+  Domain(const std::vector<double> &v, 
 	 size_t start, size_t end, bool s) : state(s) {
     vals.insert(vals.end(), v.begin() + start, v.begin() + end);
   }
@@ -43,75 +40,75 @@ class BoundEval {
 public:
   BoundEval(const size_t b, const double bw);
   void 
-  evaluate(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
-	   const vector<vector<bool> > &classes,
-	   const vector<vector<double> > &scores,
-	   vector<vector<GenomicRegion> > &boundary_scores,
-	   vector<vector<GenomicRegion> > &boundary_peaks,
-	   vector<vector<size_t> > &boundary_sizes) const;
+  evaluate(const std::vector<std::vector<SimpleGenomicRegion> > &bin_bounds,
+	   const std::vector<std::vector<bool> > &classes,
+	   const std::vector<std::vector<double> > &scores,
+	   std::vector<std::vector<GenomicRegion> > &boundary_scores,
+	   std::vector<std::vector<GenomicRegion> > &boundary_peaks,
+	   std::vector<std::vector<size_t> > &boundary_sizes) const;
   void 
-  evaluate(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
-	   const vector<vector<size_t> > &classes,
-	   const vector<vector<double> > &scores,
-	   vector<vector<GenomicRegion> > &boundary_scores,
-	   vector<vector<GenomicRegion> > &boundary_peaks,
-	   vector<vector<size_t> > &boundary_sizes) const;
+  evaluate(const std::vector<std::vector<SimpleGenomicRegion> > &bin_bounds,
+	   const std::vector<std::vector<size_t> > &classes,
+	   const std::vector<std::vector<double> > &scores,
+	   std::vector<std::vector<GenomicRegion> > &boundary_scores,
+	   std::vector<std::vector<GenomicRegion> > &boundary_peaks,
+	   std::vector<std::vector<size_t> > &boundary_sizes) const;
   void 
-  evaluate(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
-	   const vector<vector<bool> > &classes,
-	   const vector<vector<double> > &scores,
-	   vector<vector<GenomicRegion> > &boundaries) const;
+  evaluate(const std::vector<std::vector<SimpleGenomicRegion> > &bin_bounds,
+	   const std::vector<std::vector<bool> > &classes,
+	   const std::vector<std::vector<double> > &scores,
+	   std::vector<std::vector<GenomicRegion> > &boundaries) const;
 
   void
-  evaluate(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
-	   const vector<vector<size_t> > &classes,
-	   const vector<vector<double> > &scores,
-	   vector<vector<GenomicRegion> > &boundaries) const;
+  evaluate(const std::vector<std::vector<SimpleGenomicRegion> > &bin_bounds,
+	   const std::vector<std::vector<size_t> > &classes,
+	   const std::vector<std::vector<double> > &scores,
+	   std::vector<std::vector<GenomicRegion> > &boundaries) const;
 
   void  
-  evaluate(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
-           const vector<vector<bool> > &classes,
-           const vector<vector<double> > &scores,
-           const vector<vector<double> > &fg_to_fg_trans_score,
-           const vector<vector<double> > &fg_to_bg_trans_score,
-           const vector<vector<double> > &bg_to_fg_trans_score,
-           const vector<vector<double> > &bg_to_bg_trans_score,
-           vector<vector<GenomicRegion> > &boundaries,
-           vector<vector<GenomicRegion> > &boundary_peaks,
-           vector<vector<size_t> > &boundary_sizes) const;
+  evaluate(const std::vector<std::vector<SimpleGenomicRegion> > &bin_bounds,
+           const std::vector<std::vector<bool> > &classes,
+           const std::vector<std::vector<double> > &scores,
+           const std::vector<std::vector<double> > &fg_to_fg_trans_score,
+           const std::vector<std::vector<double> > &fg_to_bg_trans_score,
+           const std::vector<std::vector<double> > &bg_to_fg_trans_score,
+           const std::vector<std::vector<double> > &bg_to_bg_trans_score,
+           std::vector<std::vector<GenomicRegion> > &boundaries,
+           std::vector<std::vector<GenomicRegion> > &boundary_peaks,
+           std::vector<std::vector<size_t> > &boundary_sizes) const;
     
-    void  
-    evaluate(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
-             const vector<size_t> &reset_points,
-             const vector<bool> &classes,
-             const vector<double> &trans_scores,
-             const vector<double> &fg_to_fg_trans_score,
-             const vector<double> &fg_to_bg_trans_score,
-             const vector<double> &bg_to_fg_trans_score,
-             const vector<double> &bg_to_bg_trans_score,
-             const double cutoff,
-             vector<GenomicRegion> &boundaries) const;
+  void  
+  evaluate(const std::vector<std::vector<SimpleGenomicRegion> > &bin_bounds,
+	   const std::vector<size_t> &reset_points,
+	   const std::vector<bool> &classes,
+	   const std::vector<double> &trans_scores,
+	   const std::vector<double> &fg_to_fg_trans_score,
+	   const std::vector<double> &fg_to_bg_trans_score,
+	   const std::vector<double> &bg_to_fg_trans_score,
+	   const std::vector<double> &bg_to_bg_trans_score,
+	   const double cutoff,
+	   std::vector<GenomicRegion> &boundaries) const;
 
-    void  
-    evaluate(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
-             const vector<size_t> &reset_points,
-             const vector<size_t> &classes,
-             const vector<double> &trans_scores,
-             const vector<vector<vector<double> > > &post_trans,
-             const double cutoff,
-             vector<GenomicRegion> &boundaries) const;
-    void  
-    evaluate(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
-             const vector<size_t> &reset_points,
-             const vector<bool> &classes,
-             const vector<double>  &trans_scores,
-             const vector<double> &fg_to_fg_trans_score,
-             const vector<double> &fg_to_bg_trans_score,
-             const vector<double> &bg_to_fg_trans_score,
-             const vector<double> &bg_to_bg_trans_score,
-             const double cutoff,
-             const bool Both_Domain_Ends,
-             vector<GenomicRegion> &boundaries) const;
+  void  
+  evaluate(const std::vector<std::vector<SimpleGenomicRegion> > &bin_bounds,
+	   const std::vector<size_t> &reset_points,
+	   const std::vector<size_t> &classes,
+	   const std::vector<double> &trans_scores,
+	   const std::vector<std::vector<std::vector<double> > > &post_trans,
+	   const double cutoff,
+	   std::vector<GenomicRegion> &boundaries) const;
+  void  
+  evaluate(const std::vector<std::vector<SimpleGenomicRegion> > &bin_bounds,
+	   const std::vector<size_t> &reset_points,
+	   const std::vector<bool> &classes,
+	   const std::vector<double>  &trans_scores,
+	   const std::vector<double> &fg_to_fg_trans_score,
+	   const std::vector<double> &fg_to_bg_trans_score,
+	   const std::vector<double> &bg_to_fg_trans_score,
+	   const std::vector<double> &bg_to_bg_trans_score,
+	   const double cutoff,
+	   const bool Both_Domain_Ends,
+	   std::vector<GenomicRegion> &boundaries) const;
 private:
   size_t boundary_size;
   double bandwidth;
