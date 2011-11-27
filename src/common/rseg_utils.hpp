@@ -63,9 +63,9 @@ pick_training_sample(const vector<double> &read_bins,
                      vector<size_t> &reset_points_sample);
 void
 clear_training_sample(vector<double> &read_bins_sample,
-                     vector<double> &read_bins_a_sample,
-                     vector<double> &read_bins_b_sample,
-                     vector<double> &scales_sample,
+		      vector<double> &read_bins_a_sample,
+		      vector<double> &read_bins_b_sample,
+		      vector<double> &scales_sample,
                       vector<size_t> &reset_points_sample);
 
 double
@@ -73,40 +73,40 @@ get_max_count_cutoff(const vector<double> &values);
 
 void
 benjamini_hochberg_procedure(const vector<double> &scores,
-							 const vector<double> &scores_bg,
-							 vector< pair<double, size_t> > &p_values,
-							 double &cutoff,
-							 const double fdr);
+			     const vector<double> &scores_bg,
+			     vector< pair<double, size_t> > &p_values,
+			     double &cutoff,
+			     const double fdr);
 
 size_t
 get_bin_size(const vector<SimpleGenomicRegion> &regions,
-			 const vector<vector<SimpleGenomicRegion> > &reads,
-			 const vector<vector<SimpleGenomicRegion> > &deads, int VERBOSE);
+	     const vector<vector<SimpleGenomicRegion> > &reads,
+	     const vector<vector<SimpleGenomicRegion> > &deads, int VERBOSE);
 
 void
 set_transitions(const size_t bin_size, const double fg_size,
-				const vector<double> &mixing,
-				const bool VERBOSE,
-				vector<double> &start_trans, 
-				vector<vector<double> > &trans,
-				vector<double> &end_trans);
+		const vector<double> &mixing,
+		const bool VERBOSE,
+		vector<double> &start_trans, 
+		vector<vector<double> > &trans,
+		vector<double> &end_trans);
 void
 set_transitions(const size_t bin_size, const double fg_size,
-				const double mixing, const bool VERBOSE,
-				vector<double> &start_trans, 
-				vector<vector<double> > &trans,
-				vector<double> &end_trans);
+		const double mixing, const bool VERBOSE,
+		vector<double> &start_trans, 
+		vector<vector<double> > &trans,
+		vector<double> &end_trans);
 
 void
 report_final_values(const vector<Distro> &distros,
-					const vector<double> &start_trans,
-					const vector<vector<double> > &trans,
-					const vector<double> &end_trans);
+		    const vector<double> &start_trans,
+		    const vector<vector<double> > &trans,
+		    const vector<double> &end_trans);
 void
 report_final_values(const vector<SplitDistro> &distros,
-					const vector<double> &start_trans,
-					const vector<vector<double> > &trans,
-					const vector<double> &end_trans);
+		    const vector<double> &start_trans,
+		    const vector<vector<double> > &trans,
+		    const vector<double> &end_trans);
 
 void
 remove_duplicate_reads(vector<SimpleGenomicRegion>  &reads);
@@ -150,20 +150,20 @@ write_read_counts_by_bin(const vector< vector<SimpleGenomicRegion> > &bin_bounda
 
 void
 elim_empty_regions(vector<SimpleGenomicRegion> &regions, 
-				   vector<vector<SimpleGenomicRegion> > &bounds, 
-				   vector<vector<double> > &read_bins);
+		   vector<vector<SimpleGenomicRegion> > &bounds, 
+		   vector<vector<double> > &read_bins);
 
 void
 elim_empty_regions(vector<SimpleGenomicRegion> &regions, 
-				   vector<vector<SimpleGenomicRegion> > &bounds, 
-				   vector<vector<double> > &read_bins,
+		   vector<vector<SimpleGenomicRegion> > &bounds, 
+		   vector<vector<double> > &read_bins,
                    vector< vector<double> > &scales);
 
 void
 elim_empty_regions(vector<SimpleGenomicRegion> &regions, 
-				   vector<vector<SimpleGenomicRegion> > &bounds, 
-				   vector<vector<double> > &read_bins_a, 
-				   vector<vector<double> > &read_bins_b,
+		   vector<vector<SimpleGenomicRegion> > &bounds, 
+		   vector<vector<double> > &read_bins_a, 
+		   vector<vector<double> > &read_bins_b,
                    vector<vector<double> > &scales);
 
 string
@@ -171,20 +171,20 @@ strip_path_and_bed_suffix(const string &full_path);
 
 void
 write_wigfile(const vector<vector<double> > &scores,
-			  const vector<vector<SimpleGenomicRegion> > &bin_bounds,
-			  const string &wigfile_name);
+	      const vector<vector<SimpleGenomicRegion> > &bin_bounds,
+	      const string &wigfile_name);
 void
 write_bed_file(const vector<vector<GenomicRegion> > &regions,
-			   const string &bed_file);
+	       const string &bed_file);
 
 template <class T> void
 expand_bins(const vector<T> &tmp_bins, const vector<size_t> &resets,
-			vector<vector<T> > &bins);
+	    vector<vector<T> > &bins);
 
 void
 collapse_read_bins(const vector<vector<double> > &tmp_read_bins, 
-				   vector<double> &read_bins,
-				   vector<size_t> &reset_points);
+		   vector<double> &read_bins,
+		   vector<size_t> &reset_points);
 void
 build_domains(const vector<vector<SimpleGenomicRegion> > &bins,
               const vector<vector<bool> > &classes,
