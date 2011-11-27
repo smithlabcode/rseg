@@ -29,10 +29,11 @@ LoadReadsByRegion(const bool VERBOSE,
 		  const std::string &regions_file, 
 		  const std::string &reads_file, 
 		  const std::string &deads_file,
-		  const size_t desert_size, 
+		  const size_t bin_size, 
 		  std::vector<SimpleGenomicRegion> &regions, 
-		  std::vector<std::vector<SimpleGenomicRegion> > &reads,
-		  std::vector<std::vector<SimpleGenomicRegion> > &deads);
+		  std::vector<std::vector<SimpleGenomicRegion> > &deads,
+		  std::vector<std::vector<double> > &the_bins,
+		  std::vector<std::vector<SimpleGenomicRegion> > &boundaries);
 
 void
 LoadReadsByRegion(const bool VERBOSE,
@@ -40,10 +41,11 @@ LoadReadsByRegion(const bool VERBOSE,
 		  const std::string &reads_file_a, 
 		  const std::string &reads_file_b, 
 		  const std::string &deads_file,
-		  const size_t desert_size, 
+		  const size_t bin_size, 
 		  std::vector<SimpleGenomicRegion> &regions, 
-		  std::vector<std::vector<SimpleGenomicRegion> > &reads_a,
-		  std::vector<std::vector<SimpleGenomicRegion> > &reads_b,
-		  std::vector<std::vector<SimpleGenomicRegion> > &deads);
+		  std::vector<std::vector<SimpleGenomicRegion> > &deads,
+		  std::vector<std::vector<double> > &bins_a,
+		  std::vector<std::vector<double> > &bins_b,
+		  std::vector<std::vector<SimpleGenomicRegion> > &boundaries);
 
 #endif
