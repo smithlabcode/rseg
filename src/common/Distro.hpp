@@ -27,10 +27,6 @@
 #include <iostream>
 #include <string>
 
-#include <gsl/gsl_rng.h>
-
-using std::vector;
-
 class Distro_ {
 public:
   
@@ -40,10 +36,7 @@ public:
   Distro_& operator=(const Distro_ &);
   virtual ~Distro_();
   
-  void seed(int s);
-
   virtual size_t required_params() const = 0;
-  virtual double sample() const = 0;
   virtual void estimate_params_ml(const std::vector<double> &) = 0;
   virtual void estimate_params_ml(const std::vector<double> &vals,
                                   const std::vector<double> &scales,
@@ -76,7 +69,6 @@ protected:
   std::vector<double> workspace_vals;
   std::vector<double> workspace_probs;
 
-  gsl_rng *rng;
 };
 
 Distro_ *
@@ -96,9 +88,6 @@ public:
   Distro& operator=(const Distro &);
   ~Distro();
   
-  void seed(int s) {d->seed(s);}
-  
-  double operator()() const {return d->sample();}
   double operator()(double val) const;
   double operator()(const std::vector<double> &) const;
   void estimate_params_ml(const std::vector<double> &);
@@ -118,7 +107,6 @@ public:
   std::vector<double> get_params() const {return d->get_params();}
   
   void set_params(const std::vector<double> &p) {d->set_params(p);}
-  double sample() const {return d->sample();}
   
   static double 
   log_sum_log_vec(const std::vector<double> &vals, size_t limit);
@@ -143,7 +131,6 @@ public:
   ExpDistro(const ExpDistro &rhs);
   ExpDistro& operator=(const ExpDistro &rhs);
   ~ExpDistro() {}
-  double sample() const;
   size_t required_params() const {return 1;}
   void estimate_params_ml(const std::vector<double> &vals);
     void estimate_params_ml(const std::vector<double> &vals,
@@ -167,30 +154,6 @@ public:
   PoisDistro(const PoisDistro &rhs);
   PoisDistro& operator=(const PoisDistro &rhs);
   ~PoisDistro() {}
-  double sample() const;
-  size_t required_params() const {return 1;}
-  void estimate_params_ml(const std::vector<double> &vals);
-  void estimate_params_ml(const std::vector<double> &vals,
-			  const std::vector<double> &probs);
-    void estimate_params_ml(const std::vector<double> &vals,
-                          const std::vector<double> &scales,
-                          const std::vector<double> &probs);
-  double log_likelihood(double val) const;
-    double log_likelihood(const double &val, const double &scale) const;
-};
-
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-// GEOMETRIC
-
-class GeoDistro : public Distro_ {
-public:
-  GeoDistro() : Distro_(std::vector<double>(1, 0)) {}
-  GeoDistro(std::vector<double> p) : Distro_(p) {}
-  GeoDistro(const GeoDistro &rhs);
-  GeoDistro& operator=(const GeoDistro &rhs);
-  ~GeoDistro() {}
-  double sample() const;
   size_t required_params() const {return 1;}
   void estimate_params_ml(const std::vector<double> &vals);
   void estimate_params_ml(const std::vector<double> &vals,
@@ -215,7 +178,6 @@ public:
   NegBinomDistro& operator=(const NegBinomDistro &rhs);
   ~NegBinomDistro() {}
   void set_helpers();
-  double sample() const;
   size_t required_params() const {return 2;}
   void set_params(const std::vector<double> &p);
   void estimate_params_ml(const std::vector<double> &vals);
@@ -238,133 +200,6 @@ private:
   double p_helper;
   double n_log_p_minus_lngamma_n_helper;
   double log_q_helper;
-};
-
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-// EMPIRICAL
-
-class EmpiricalDistro : public Distro_ {
-public:
-
-  EmpiricalDistro() : Distro_(std::vector<double>(2, 0)) {}
-  EmpiricalDistro(std::vector<double> p) : Distro_(p) {}
-  EmpiricalDistro(const EmpiricalDistro &rhs);
-  EmpiricalDistro& operator=(const EmpiricalDistro &rhs);
-  ~EmpiricalDistro() {}
-  
-  void set_params(const std::vector<double> &p) {params = p;}
-  double sample() const;
-  size_t required_params() const {return 2;}
-  void estimate_params_ml(const std::vector<double> &vals);
-  void estimate_params_ml(const std::vector<double> &vals,
-			  const std::vector<double> &probs);
-  void estimate_params_ml(const std::vector<double> &vals,
-                          const std::vector<double> &scales,
-                          const std::vector<double> &probs);
-  double log_likelihood(double val) const;
-    double log_likelihood(const double &val, const double &scale) const;
-
-
-private:
-
-  static void get_breaks(std::vector<double> data,
-			 size_t n_vals,
-			 size_t n_class,
-			 double max_val,
-			 std::vector<double> &breaks);
-  static void get_breaks(const std::vector<double> &data,
-			 const std::vector<double> &weights,
-			 size_t n_vals,
-			 size_t n_class,
-			 double max_val,
-			 std::vector<double> &breaks);
-
-  static void make_hist(const std::vector<double> &data,
-			size_t n_vals,
-			size_t n_class,
-			double max_val,
-			std::vector<double> &breaks,
-			std::vector<double> &hist);
-  
-  static void make_weighted_hist(const std::vector<double> &data,
-				 const std::vector<double> &weights,
-				 size_t n_vals,
-				 size_t n_class,
-				 double max_val,
-				 std::vector<double> &breaks,
-				 std::vector<double> &hist);
-
-  static double
-  estimate_bandwidth(const std::vector<double> &vals);
-  static double
-  estimate_number_of_classes(const std::vector<double> &vals);
-  
-  static double
-  estimate_bandwidth(const std::vector<double> &vals,
-		     const std::vector<double> &probs);
-  static double
-  estimate_number_of_classes(const std::vector<double> &vals,
-			     const std::vector<double> &probs);
-  
-  static void make_cumulative(std::vector<double> &vals);
-  
-  static size_t find_bin(const std::vector<double> &bins,
-			 const double val);
-
-  static const size_t max_classes = 10000;
-  static const double MIN_PROB;
-  
-  std::vector<double> breaks;
-  std::vector<double> log_hist;
-  std::vector<double> hist;
-  std::vector<double> cumulative;
-};
-
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-// DISCRETE EMPIRICAL
-
-class DiscEmpDistro : public Distro_ {
-public:
-  
-  DiscEmpDistro() : Distro_(std::vector<double>(2, 0)) {}
-  DiscEmpDistro(std::vector<double> p) : Distro_(p) {}
-  DiscEmpDistro(const DiscEmpDistro &rhs);
-  DiscEmpDistro& operator=(const DiscEmpDistro &rhs);
-  void set_params(const std::vector<double> &p) {params = p;}
-  ~DiscEmpDistro() {}
-  double sample() const;
-  size_t required_params() const {return 2;}
-  void estimate_params_ml(const std::vector<double> &vals);
-  void estimate_params_ml(const std::vector<double> &vals,
-			  const std::vector<double> &probs);
-  void estimate_params_ml(const std::vector<double> &vals,
-                          const std::vector<double> &scales,
-                          const std::vector<double> &probs);
-  double log_likelihood(double val) const;
-    double log_likelihood(const double &val, const double &scale) const;
-
-private:
-
-  static size_t find_bin(const std::vector<double> &bins, const double val);
-  static void make_hist(const std::vector<double> &data, size_t n_vals, 
-			size_t n_classes, double max_val, std::vector<double> &hist);
-  
-  static void make_weighted_hist(const std::vector<double> &data,
-				 const std::vector<double> &weights, size_t n_vals,
-				 size_t n_classes, double max_val, 
-				 std::vector<double> &hist);
-  
-  static void make_cumulative(std::vector<double> &vals);
-  
-  static const double MIN_PROB;
-  
-  size_t n_classes;
-  double max_val;
-  std::vector<double> log_hist;
-  std::vector<double> hist;
-  std::vector<double> cumulative;
 };
 
 #endif
