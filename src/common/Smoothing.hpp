@@ -31,13 +31,6 @@ KernelSmoothing(const double bandwidth,
 		const std::vector<double> &x_target, 
 		std::vector<double> &y_target);
 
-void
-LocalLinearRegression(const double bandwidth,
-		      const std::vector<double> &x_values, 
-		      const std::vector<double> &y_values,
-		      const std::vector<double> &x_target, 
-		      std::vector<double> &y_target);
-
 
 void
 KernelSmoothing(const double bandwidth,
