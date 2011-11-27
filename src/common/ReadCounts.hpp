@@ -1,5 +1,4 @@
-/*
- * Copyright (C) 2011 University of Southern California
+/* Copyright (C) 2011 University of Southern California
  *                    Andrew D Smith and Qiang Song
  * Author: Qiang Song and Andrew D. Smith
  *
@@ -27,72 +26,63 @@
 
 using std::vector;
 
+// void
+// BinReads(const std::vector<std::vector<SimpleGenomicRegion> > &reads,
+// 	 const std::vector<SimpleGenomicRegion> &regions,
+// 	 const size_t bin_size,
+// 	 std::vector<std::vector<double> > &bins);
+
+
+// void
+// BinReadsExtendOverDeadZones(const std::vector<std::vector<SimpleGenomicRegion> > 
+// 			    &reads, 
+// 			    const std::vector<std::vector<SimpleGenomicRegion> > 
+// 			    &dead_zones,
+// 			    const std::vector<SimpleGenomicRegion> &regions,
+// 			    const size_t bin_size,
+// 			    std::vector<std::vector<SimpleGenomicRegion> > 
+// 			    &boundaries,
+// 			    std::vector<std::vector<double> > &bins);
+
+
+
+// void
+// BinReadsCorrectDeadZones(const std::vector<std::vector<SimpleGenomicRegion> > &reads, 
+// 			 const std::vector<std::vector<SimpleGenomicRegion> > &dead_zones,
+// 			 const std::vector<SimpleGenomicRegion> &regions,
+// 			 const size_t bin_size,
+// 			 const double max_dead_proportion,
+// 			 std::vector<std::vector<SimpleGenomicRegion> > 
+// 			 &boundaries,
+// 			 std::vector<std::vector<double> > &bins);
+
 void
-BinReads(const std::vector<std::vector<SimpleGenomicRegion> > &reads,
-	 const std::vector<SimpleGenomicRegion> &regions,
-	 const size_t bin_size,
-	 std::vector<std::vector<double> > &bins);
-
-
-void
-BinReadsExtendOverDeadZones(const std::vector<std::vector<SimpleGenomicRegion> > 
-			    &reads, 
-			    const std::vector<std::vector<SimpleGenomicRegion> > 
-			    &dead_zones,
-			    const std::vector<SimpleGenomicRegion> &regions,
-			    const size_t bin_size,
-			    std::vector<std::vector<SimpleGenomicRegion> > 
-			    &boundaries,
-			    std::vector<std::vector<double> > &bins);
-
-
-
-void
-BinReadsCorrectDeadZones(const std::vector<std::vector<SimpleGenomicRegion> > 
-			 &reads, 
-			 const std::vector<std::vector<SimpleGenomicRegion> > 
-			 &dead_zones,
-			 const std::vector<SimpleGenomicRegion> &regions,
+BinReadsCorrectDeadZones(const vector<vector<SimpleGenomicRegion> > &dead_zones,
+			 const vector<SimpleGenomicRegion> &regions,
 			 const size_t bin_size,
-			 const double max_dead_proportion,
-			 std::vector<std::vector<SimpleGenomicRegion> > 
-			 &boundaries,
-			 std::vector<std::vector<double> > &bins);
+			 vector< vector<double> > &dead_scales);
 
-void
-BinReadsCorrectDeadZones(
-    const vector<vector<SimpleGenomicRegion> > &reads, 
-    const vector<vector<SimpleGenomicRegion> > &dead_zones,
-    const vector<SimpleGenomicRegion> &regions,
-    const size_t bin_size,
-    const double max_dead_proportion,
-    vector<vector<SimpleGenomicRegion> > &boundaries,
-    vector<vector<double> > &bins,
-    vector< vector<double> > &dead_scales);
+// void
+// BinReadsCorrectDeadZones(const vector<vector<double> > &the_bins, 
+// 			 //     const vector<vector<SimpleGenomicRegion> > &reads, 
+// 			 const vector<vector<SimpleGenomicRegion> > &dead_zones,
+// 			 const size_t bin_size,
+// 			 const double max_dead_proportion,
+// 			 const double desert_size,
+// 			 vector<SimpleGenomicRegion> &regions,
+// 			 const vector<vector<SimpleGenomicRegion> > &boundaries,
+// 			 vector<vector<double> > &read_counts);
 
-void
-BinReadsCorrectDeadZones(
-    const vector<vector<SimpleGenomicRegion> > &reads, 
-    const vector<vector<SimpleGenomicRegion> > &dead_zones,
-    const size_t bin_size,
-    const double max_dead_proportion,
-    const double desert_size,
-    vector<SimpleGenomicRegion> &regions,
-    vector<vector<SimpleGenomicRegion> > &boundaries,
-    vector<vector<double> > &read_counts);
-
-void
-BinReadsCorrectDeadZones(
-    const vector<SimpleGenomicRegion> &chrom_regions,
-    const vector<vector<SimpleGenomicRegion> > &reads, 
-    const vector<vector<SimpleGenomicRegion> > &dead_zones,
-    const size_t bin_size,
-    const double max_dead_proportion,
-    const double desert_size,
-    vector<SimpleGenomicRegion> &regions,
-    vector<vector<SimpleGenomicRegion> > &boundaries,
-    vector<vector<double> > &read_counts,
-    vector<vector<double> > &dead_scales);
-
+// void
+// BinReadsCorrectDeadZones(const vector<SimpleGenomicRegion> &chrom_regions,
+// 			 const vector<vector<SimpleGenomicRegion> > &reads, 
+// 			 const vector<vector<SimpleGenomicRegion> > &dead_zones,
+// 			 const size_t bin_size,
+// 			 const double max_dead_proportion,
+// 			 const double desert_size,
+// 			 vector<SimpleGenomicRegion> &regions,
+// 			 vector<vector<SimpleGenomicRegion> > &boundaries,
+// 			 vector<vector<double> > &read_counts,
+// 			 vector<vector<double> > &dead_scales);
 
 #endif
