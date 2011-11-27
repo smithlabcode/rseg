@@ -27,14 +27,7 @@
 #include <iostream>
 #include <string>
 
-// #include <ext/hash_map>
 #include <tr1/unordered_map>
-// #include <hash_map>
-
-using std::tr1::unordered_map;
-
-#include <gsl/gsl_rng.h>
-#include "gsl/gsl_sf_zeta.h"
 
 class SplitDistro_ {
 public:
@@ -45,18 +38,16 @@ public:
   virtual ~SplitDistro_();
   
   virtual size_t required_params() const = 0;
-  virtual double sample() const = 0;
-  void seed(int s);
   
-    virtual double get_mean() const = 0;
+  virtual double get_mean() const = 0;
   double operator()(double val) const;
   double operator()(const std::vector<double> &) const;
   
   virtual double log_likelihood(double val) const = 0;
-    virtual double log_likelihood(const double val, const double scale) const = 0;
+  virtual double log_likelihood(const double val, const double scale) const = 0;
   double log_likelihood(const std::vector<double> &vals) const;
-    double log_likelihood(const std::vector<double> &vals,
-                          const std::vector<double> &scales) const;
+  double log_likelihood(const std::vector<double> &vals,
+			const std::vector<double> &scales) const;
   double log_likelihood(std::vector<double>::const_iterator a,
 			std::vector<double>::const_iterator b) const;
   virtual void
@@ -86,7 +77,6 @@ protected:
   std::vector<double> workspace_vals_a;
   std::vector<double> workspace_vals_b;
   std::vector<double> workspace_probs;
-  gsl_rng *rng;
 };
 
 SplitDistro_ *
@@ -106,7 +96,7 @@ public:
   SplitDistro& operator=(const SplitDistro &);
   ~SplitDistro();
 
-    double get_mean() const {return d->get_mean();}
+  double get_mean() const {return d->get_mean();}
     
 
   double operator()(double val) const;
@@ -116,10 +106,10 @@ public:
   void estimate_params_ml(const std::vector<double> &,
 			  const std::vector<double> &,
 			  const std::vector<double> &);
-    void estimate_params_ml(const std::vector<double> &vals_a,
-                            const std::vector<double> &vals_b,
-                            const std::vector<double> &scales,
-                            const std::vector<double> &probs);
+  void estimate_params_ml(const std::vector<double> &vals_a,
+			  const std::vector<double> &vals_b,
+			  const std::vector<double> &scales,
+			  const std::vector<double> &probs);
 
   double
   log_likelihood(const std::vector<double> &) const;
@@ -130,11 +120,10 @@ public:
   log_likelihood(std::vector<double>::const_iterator a,
 		 std::vector<double>::const_iterator b) const;
   double log_likelihood(double val) const;
-    double log_likelihood(const double val, const double scale) const;
+  double log_likelihood(const double val, const double scale) const;
   std::string tostring() const;
   std::vector<double> get_params() const {return d->get_params();}
   void set_params(const std::vector<double> &p) {d->set_params(p);}
-  double sample() const {return d->sample();}
 
   static double 
   log_sum_log_vec(const std::vector<double> &vals, size_t limit);
@@ -163,20 +152,19 @@ public:
   SkellamDistro& operator=(const SkellamDistro &rhs);
   ~SkellamDistro() {}
     
-    double get_mean() const {return params[0] - params[1];}
-  double sample() const;
+  double get_mean() const {return params[0] - params[1];}
   size_t required_params() const {return 2;}
   double log_likelihood(double val) const;
-    double log_likelihood(const double val, const double scale) const;
+  double log_likelihood(const double val, const double scale) const;
   void estimate_params_ml(const std::vector<double> &vals_a, 
 			  const std::vector<double> &vals_b);
   void estimate_params_ml(const std::vector<double> &vals_a,
 			  const std::vector<double> &vals_b,
 			  const std::vector<double> &probs);
-    void estimate_params_ml(const std::vector<double> &vals_a,
-                            const std::vector<double> &vals_b,
-                            const std::vector<double> &scales,
-                            const std::vector<double> &probs);
+  void estimate_params_ml(const std::vector<double> &vals_a,
+			  const std::vector<double> &vals_b,
+			  const std::vector<double> &scales,
+			  const std::vector<double> &probs);
 };
 
 
@@ -195,20 +183,19 @@ public:
   GaussianDistro& operator=(const GaussianDistro &rhs);
   ~GaussianDistro() {}
 
-    double get_mean() const {return params[0];}
-  double sample() const;
+  double get_mean() const {return params[0];}
   size_t required_params() const {return 2;}
   double log_likelihood(double val) const;
-    double log_likelihood(const double val, const double scale) const;
+  double log_likelihood(const double val, const double scale) const;
   void estimate_params_ml(const std::vector<double> &vals_a, 
 			  const std::vector<double> &vals_b);
   void estimate_params_ml(const std::vector<double> &vals_a,
 			  const std::vector<double> &vals_b,
 			  const std::vector<double> &probs);
-    void estimate_params_ml(const std::vector<double> &vals_a,
-                            const std::vector<double> &vals_b,
-                            const std::vector<double> &scales,
-                            const std::vector<double> &probs);
+  void estimate_params_ml(const std::vector<double> &vals_a,
+			  const std::vector<double> &vals_b,
+			  const std::vector<double> &scales,
+			  const std::vector<double> &probs);
 };
 
 
@@ -227,42 +214,31 @@ public:
   NegBinomDiffDistro& operator=(const NegBinomDiffDistro &rhs);
   ~NegBinomDiffDistro() {}
 
-    double get_mean() const {return params[0] - params[2];}
+  double get_mean() const {return params[0] - params[2];}
   
-  double sample() const;
   size_t required_params() const {return 4;}
-//   void gsl_bfgs_estimate_params_ml(const std::vector<double> &vals_a, 
-//                                const std::vector<double> &vals_b);
-//   void bfgs_estimate_params_ml(const std::vector<double> &vals_a, 
-//                                const std::vector<double> &vals_b);
   void hq_estimate_params_ml(const std::vector<double> &vals_a, 
-			  const std::vector<double> &vals_b);
+			     const std::vector<double> &vals_b);
   void andrew_estimate_params_ml(const std::vector<double> &vals_a, 
-                          const std::vector<double> &vals_b);
+				 const std::vector<double> &vals_b);
   void estimate_params_ml(const std::vector<double> &vals_a, 
                           const std::vector<double> &vals_b);
-//   void gsl_bfgs_estimate_params_ml(const std::vector<double> &vals_a,
-// 			  const std::vector<double> &vals_b,
-// 			  const std::vector<double> &probs);
-//   void bfgs_estimate_params_ml(const std::vector<double> &vals_a,
-// 			  const std::vector<double> &vals_b,
-// 			  const std::vector<double> &probs);
   void hq_estimate_params_ml(const std::vector<double> &vals_a,
-			  const std::vector<double> &vals_b,
-  			  const std::vector<double> &probs);
+			     const std::vector<double> &vals_b,
+			     const std::vector<double> &probs);
   void andrew_estimate_params_ml(const std::vector<double> &vals_a,
+				 const std::vector<double> &vals_b,
+				 const std::vector<double> &probs);
+  void estimate_params_ml(const std::vector<double> &vals_a,
 			  const std::vector<double> &vals_b,
 			  const std::vector<double> &probs);
   void estimate_params_ml(const std::vector<double> &vals_a,
 			  const std::vector<double> &vals_b,
+			  const std::vector<double> &scales,
 			  const std::vector<double> &probs);
-    void estimate_params_ml(const std::vector<double> &vals_a,
-                            const std::vector<double> &vals_b,
-                            const std::vector<double> &scales,
-                            const std::vector<double> &probs);
 
   double log_likelihood(double val) const;
-    double log_likelihood(const double val, const double scale) const;
+  double log_likelihood(const double val, const double scale) const;
 
   void set_params(const std::vector<double> &p) {
     SplitDistro_::set_params(p); 
@@ -276,8 +252,7 @@ private:
   static const double min_allowed_alpha;
   static const double alpha_allowed_error;
   
-  mutable unordered_map<int, double> ll_hash;
-//  mutable std::hash_map<int, double> ll_hash;
+  mutable std::tr1::unordered_map<int, double> ll_hash;
 
   double r1;
   double p1;
@@ -290,71 +265,6 @@ private:
   double c;
   
   double r1_log_p1_M_lnG_r1_P_r2_log_p2_M_lnG_r2;
-};
-
-
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-// DISCRETE EMPIRICAL SPLIT DISTRIBUTION
-//
-// First parameter is the minimum value
-// Second parameter is the maximum value
-// Third parameter is the mean value
-//
-class DiscEmpSplitDistro : public SplitDistro_ {
-public:
-  DiscEmpSplitDistro() : SplitDistro_(std::vector<double>(3, 0)) {}
-  DiscEmpSplitDistro(std::vector<double> p) : SplitDistro_(p) {}
-  DiscEmpSplitDistro(const DiscEmpSplitDistro &rhs);
-  DiscEmpSplitDistro& operator=(const DiscEmpSplitDistro &rhs);
-  void set_params(const std::vector<double> &p) {params = p;}
-  ~DiscEmpSplitDistro() {}
-
-    double get_mean() const
-    {
-        std::cerr << "DiscEmpSplitDistro::get_mean:  not well defined" << std::endl;
-        return 0;
-    }
-    
-    double sample() const;
-  size_t required_params() const {return 3;}
-  void estimate_params_ml(const std::vector<double> &vals_a, 
-			  const std::vector<double> &vals_b);
-  void estimate_params_ml(const std::vector<double> &vals_a, 
-			  const std::vector<double> &vals_b,
-			  const std::vector<double> &probs);
-    void estimate_params_ml(const std::vector<double> &vals_a,
-                            const std::vector<double> &vals_b,
-                            const std::vector<double> &scales,
-                            const std::vector<double> &probs);
-  double log_likelihood(double val) const;
-    double log_likelihood(const double val, const double scale) const;
-
-private:
-  
-  static size_t find_bin(const std::vector<double> &bins, const double val);
-  static void make_hist(const std::vector<double> &data, 
-			const size_t n_classes, const double max_val, 
-			const double min_val, std::vector<double> &hist);
-  
-  static void make_weighted_hist(const std::vector<double> &data,
-				 const std::vector<double> &weights,
-				 const size_t n_classes, const double max_val, 
-				 const double min_val, std::vector<double> &hist);
-  static void make_cumulative(std::vector<double> &vals);
-  
-  static const double MIN_PROB;
-  static const double smoothing_parameter;
-  
-  size_t n_classes;
-  double max_val;
-  double min_val;
-  std::vector<double> log_hist;
-  std::vector<double> hist;
-  std::vector<double> cumulative;
 };
 
 #endif
