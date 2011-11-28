@@ -19,230 +19,152 @@
  * 02110-1301 USA
  */
 
+#ifndef RSEG_UTILS_HPP
+#define RSEG_UTILS_HPP
+
 #include <vector>
 #include <string>
-#include <algorithm>
-#include <iostream>
-#include <fstream>
-#include <iterator>
-#include <utility>
-
-#include <cmath>
-#include <cassert>
 
 #include "GenomicRegion.hpp"
 #include "Distro.hpp"
 #include "SplitDistro.hpp"
 
-
-using std::vector;
-using std::string;
-using std::cin;
-using std::cerr;
-using std::cout;
-using std::endl;
-using std::numeric_limits;
-using std::max;
-using std::min;
-using std::pair;
-
-double 
-get_mean(const SplitDistro &distro);
-
 void
-pick_training_sample(const vector<double> &read_bins,
-                     const vector<double> &read_bins_a,
-                     const vector<double> &read_bins_b,
-                     const vector<double> &scales,
-                     const vector<size_t> &reset_points,
+pick_training_sample(const std::vector<double> &read_bins,
+                     const std::vector<double> &read_bins_a,
+                     const std::vector<double> &read_bins_b,
+                     const std::vector<double> &scales,
+                     const std::vector<size_t> &reset_points,
                      const size_t training_sample_size,
-                     vector<double> &read_bins_sample,
-                     vector<double> &read_bins_a_sample,
-                     vector<double> &read_bins_b_sample,
-                     vector<double> &scales_sample,
-                     vector<size_t> &reset_points_sample);
+                     std::vector<double> &read_bins_sample,
+                     std::vector<double> &read_bins_a_sample,
+                     std::vector<double> &read_bins_b_sample,
+                     std::vector<double> &scales_sample,
+                     std::vector<size_t> &reset_points_sample);
 void
-clear_training_sample(vector<double> &read_bins_sample,
-		      vector<double> &read_bins_a_sample,
-		      vector<double> &read_bins_b_sample,
-		      vector<double> &scales_sample,
-                      vector<size_t> &reset_points_sample);
-
-double
-get_max_count_cutoff(const vector<double> &values);
-
-void
-benjamini_hochberg_procedure(const vector<double> &scores,
-			     const vector<double> &scores_bg,
-			     vector< pair<double, size_t> > &p_values,
-			     double &cutoff,
-			     const double fdr);
-
-size_t
-get_bin_size(const vector<SimpleGenomicRegion> &regions,
-	     const vector<vector<SimpleGenomicRegion> > &reads,
-	     const vector<vector<SimpleGenomicRegion> > &deads, int VERBOSE);
+clear_training_sample(std::vector<double> &read_bins_sample,
+		      std::vector<double> &read_bins_a_sample,
+		      std::vector<double> &read_bins_b_sample,
+		      std::vector<double> &scales_sample,
+              std::vector<size_t> &reset_points_sample);
 
 void
 set_transitions(const size_t bin_size, const double fg_size,
-		const vector<double> &mixing,
+		const std::vector<double> &mixing,
 		const bool VERBOSE,
-		vector<double> &start_trans, 
-		vector<vector<double> > &trans,
-		vector<double> &end_trans);
+		std::vector<double> &start_trans, 
+		std::vector<std::vector<double> > &trans,
+		std::vector<double> &end_trans);
 void
 set_transitions(const size_t bin_size, const double fg_size,
 		const double mixing, const bool VERBOSE,
-		vector<double> &start_trans, 
-		vector<vector<double> > &trans,
-		vector<double> &end_trans);
+		std::vector<double> &start_trans, 
+		std::vector<std::vector<double> > &trans,
+		std::vector<double> &end_trans);
 
 void
-report_final_values(const vector<Distro> &distros,
-		    const vector<double> &start_trans,
-		    const vector<vector<double> > &trans,
-		    const vector<double> &end_trans);
+report_final_values(const std::vector<Distro> &distros,
+		    const std::vector<double> &start_trans,
+		    const std::vector<std::vector<double> > &trans,
+		    const std::vector<double> &end_trans);
 void
-report_final_values(const vector<SplitDistro> &distros,
-		    const vector<double> &start_trans,
-		    const vector<vector<double> > &trans,
-		    const vector<double> &end_trans);
+report_final_values(const std::vector<SplitDistro> &distros,
+		    const std::vector<double> &start_trans,
+		    const std::vector<std::vector<double> > &trans,
+		    const std::vector<double> &end_trans);
 
 void
-remove_duplicate_reads(vector<SimpleGenomicRegion>  &reads);
+chk_and_mk_dirs(const std::string & path);
 
 void
-remove_duplicate_reads(vector< vector<SimpleGenomicRegion> >  &reads);
-
-void
-chk_and_mk_dirs(const string & path);
-
-void
-write_read_counts_by_bin(const vector< vector<SimpleGenomicRegion> > &bin_boundaries,
-                         const vector<double> &read_bins,
-                         const vector<bool> &classes,
-                         const string &file_name,
-                         const bool VERBOSE = false);
-
-void
-write_read_counts_by_bin(const vector< vector<SimpleGenomicRegion> > &bin_boundaries,
-                         const vector<double> &read_bins,
-                         const vector<double> &scales,
-                         const vector<bool> &classes,
-                         const string &file_name,
+write_read_counts_by_bin(const std::vector< std::vector<SimpleGenomicRegion> > &bin_boundaries,
+                         const std::vector<double> &read_bins,
+                         const std::vector<double> &scales,
+                         const std::vector<bool> &classes,
+                         const std::string &file_name,
                          const bool VERBOSE = false);
 void
-write_read_counts_by_bin(const vector< vector<SimpleGenomicRegion> > &bin_boundaries,
-                         const vector<double> &read_bins,
-                         const vector<double> &read_bins_a,
-                         const vector<double> &read_bins_b,
-                         const vector<bool> &classes,
-                         const string &file_name,
+write_read_counts_by_bin(const std::vector< std::vector<SimpleGenomicRegion> > &bin_boundaries,
+                         const std::vector<double> &read_bins,
+                         const std::vector<double> &read_bins_a,
+                         const std::vector<double> &read_bins_b,
+                         const std::vector<bool> &classes,
+                         const std::string &file_name,
                          const bool VERBOSE = false);
 void
-write_read_counts_by_bin(const vector< vector<SimpleGenomicRegion> > &bin_boundaries,
-                         const vector<double> &read_bins,
-                         const vector<double> &read_bins_a,
-                         const vector<double> &read_bins_b,
-                         const vector<size_t> &classes,
-                         const string &file_name,
+write_read_counts_by_bin(const std::vector< std::vector<SimpleGenomicRegion> > &bin_boundaries,
+                         const std::vector<double> &read_bins,
+                         const std::vector<double> &read_bins_a,
+                         const std::vector<double> &read_bins_b,
+                         const std::vector<size_t> &classes,
+                         const std::string &file_name,
                          const bool VERBOSE = false);
 
-void
-elim_empty_regions(vector<SimpleGenomicRegion> &regions, 
-		   vector<vector<SimpleGenomicRegion> > &bounds, 
-		   vector<vector<double> > &read_bins);
+std::string
+strip_path_and_bed_suffix(const std::string &full_path);
 
 void
-elim_empty_regions(vector<SimpleGenomicRegion> &regions, 
-		   vector<vector<SimpleGenomicRegion> > &bounds, 
-		   vector<vector<double> > &read_bins,
-                   vector< vector<double> > &scales);
-
+write_wigfile(const std::vector<std::vector<double> > &scores,
+	      const std::vector<std::vector<SimpleGenomicRegion> > &bin_bounds,
+	      const std::string &wigfile_name);
 void
-elim_empty_regions(vector<SimpleGenomicRegion> &regions, 
-		   vector<vector<SimpleGenomicRegion> > &bounds, 
-		   vector<vector<double> > &read_bins_a, 
-		   vector<vector<double> > &read_bins_b,
-                   vector<vector<double> > &scales);
-
-string
-strip_path_and_bed_suffix(const string &full_path);
-
-void
-write_wigfile(const vector<vector<double> > &scores,
-	      const vector<vector<SimpleGenomicRegion> > &bin_bounds,
-	      const string &wigfile_name);
-void
-write_bed_file(const vector<vector<GenomicRegion> > &regions,
-	       const string &bed_file);
+write_bed_file(const std::vector<std::vector<GenomicRegion> > &regions,
+	       const std::string &bed_file);
 
 template <class T> void
-expand_bins(const vector<T> &tmp_bins, const vector<size_t> &resets,
-	    vector<vector<T> > &bins);
+expand_bins(const std::vector<T> &tmp_bins, const std::vector<size_t> &resets,
+	    std::vector<std::vector<T> > &bins) 
+{
+  bins.clear();
+  size_t j = 0;
+  for (size_t i = 0; i < tmp_bins.size(); ++i) 
+    {
+      if (i == resets[j]) 
+        {
+	  bins.push_back(std::vector<T>());
+	  ++j;
+        }
+      bins.back().push_back(tmp_bins[i]);
+    }
+}
 
 void
-collapse_read_bins(const vector<vector<double> > &tmp_read_bins, 
-		   vector<double> &read_bins,
-		   vector<size_t> &reset_points);
-void
-build_domains(const vector<vector<SimpleGenomicRegion> > &bins,
-              const vector<vector<bool> > &classes,
-              const vector<vector<double> > &scores, // posterior score of classes[i]
+build_domains(const std::vector<std::vector<SimpleGenomicRegion> > &bins,
+              const std::vector<std::vector<bool> > &classes,
+              const std::vector<std::vector<double> > &scores, // posterior score of classes[i]
               const double score_cutoff,
-              vector<vector<GenomicRegion> > &domains,
+              std::vector<std::vector<GenomicRegion> > &domains,
               const size_t undef_domain_cutoff);
 
 void
-build_domains(const vector<vector<SimpleGenomicRegion> > &bins,
-              const vector<vector<size_t> > &classes,
-              const vector<vector<double> > &scores, // posterior score of classes[i]
+build_domains(const std::vector<std::vector<SimpleGenomicRegion> > &bins,
+              const std::vector<std::vector<size_t> > &classes,
+              const std::vector<std::vector<double> > &scores, // posterior score of classes[i]
               const double score_cutoff,
-              vector<vector<GenomicRegion> > &domains,
+              std::vector<std::vector<GenomicRegion> > &domains,
               const size_t undef_domain_cutoff);
 
 void
-pick_domains(const vector<vector<SimpleGenomicRegion> > &bins,
-             const vector<vector<double> > &read_counts,
-             const vector<vector<double> > &scales,
-             const vector<Distro> &distros,
-             vector<vector<GenomicRegion> > &domains,
+pick_domains(const std::vector<std::vector<SimpleGenomicRegion> > &bins,
+             const std::vector<std::vector<double> > &read_counts,
+             const std::vector<std::vector<double> > &scales,
+             const std::vector<Distro> &distros,
+             std::vector<std::vector<GenomicRegion> > &domains,
              const double p_value);
 
 void
-pick_domains(const vector<vector<SimpleGenomicRegion> > &bins,
-             const vector<vector<double> > &read_counts,
-             const vector<vector<double> > &scales,
-             const vector<SplitDistro> &distros,
-             vector<vector<GenomicRegion> > &domains,
+pick_domains(const std::vector<std::vector<SimpleGenomicRegion> > &bins,
+             const std::vector<std::vector<double> > &read_counts,
+             const std::vector<std::vector<double> > &scales,
+             const std::vector<SplitDistro> &distros,
+             std::vector<std::vector<GenomicRegion> > &domains,
              const double cdf_cutoff);
 
 void
-pick_domains(const vector<vector<SimpleGenomicRegion> > &bins,
-             const vector<vector<double> > &read_counts,
-             const vector<vector<double> > &read_counts_a,
-             const vector<vector<double> > &read_counts_b,
-             const vector<vector<double> > &scales,
-             const vector<SplitDistro> &distros,
-             vector<vector<GenomicRegion> > &domains,
-             const double cdf_cutoff);
-
-void
-pick_domains_3s(const vector<vector<SimpleGenomicRegion> > &bins,
-                const vector<vector<double> > &read_counts,
-                const vector<vector<double> > &scales,
-                const vector<SplitDistro> &distros,
-                vector<vector<GenomicRegion> > &domains,
+pick_domains_3s(const std::vector<std::vector<SimpleGenomicRegion> > &bins,
+                const std::vector<std::vector<double> > &read_counts,
+                const std::vector<std::vector<double> > &scales,
+                const std::vector<SplitDistro> &distros,
+                std::vector<std::vector<GenomicRegion> > &domains,
                 const double cdf_cutoff);
-
-void
-pick_domains_3s(const vector<vector<SimpleGenomicRegion> > &bins,
-                const vector<vector<double> > &read_counts,
-                const vector<vector<double> > &read_counts_a,
-                const vector<vector<double> > &read_counts_b,
-                const vector<vector<double> > &scales,
-                const vector<SplitDistro> &distros,
-                vector<vector<GenomicRegion> > &domains,
-                const double cdf_cutoff);
-
-
+#endif

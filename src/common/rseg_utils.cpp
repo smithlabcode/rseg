@@ -49,7 +49,7 @@ using std::numeric_limits;
 using std::max;
 using std::min;
 
-double 
+static double 
 get_mean(const SplitDistro &distro) {
   const string name_arg = distro.tostring();
   const vector<double> p(distro.get_params());
@@ -99,34 +99,6 @@ pick_training_sample(const vector<double> &read_bins,
 	    std::back_inserter(read_bins_b_sample));
   std::copy(scales.begin(), scales.begin() + sample_sz,
 	    std::back_inserter(scales_sample));
-
-  //     // random sample
-  //     vector<size_t> region_ids;
-  //     for (size_t i = 0; i < reset_points.size() - 1; ++i)
-  //         region_ids.push_back(region_ids);
-    
-  //     std::random_shuffle(region_ids.begin(), region_ids.end());
-
-  //     size_t sample_sz = 0;
-  //     reset_points_sample.push_back(sample_sz);
-  //     for (size_t i = 0; i < region_ids.size(); ++i)
-  //     {
-  //         const size_t id = region_ids[i];
-  //         const size_t start = reset_points[id];
-  //         const size_t end = reset_points[id + 1];
-  //         sample_sz += end - start;
-  //         if (sample_sz > training_sample_size)
-  //             break;
-  //         std::copy(read_bins.begin() + start , read_bins.begin() + end,
-  //                   std::back_inserter(read_bins_sample));
-  //         std::copy(read_bins_a.begin() + start, read_bins_a.begin() + end,
-  //                   std::back_inserter(read_bins_a_sample));
-  //         std::copy(read_bins_b.begin() + start, read_bins_b.begin() + end,
-  //                   std::back_inserter(read_bins_b_sample));
-  //         std::copy(scales.begin() + start, scales.begin() + end,
-  //                   std::back_inserter(scales_sample));
-  //         reset_points_sample.push_back(sample_sz);
-  //     }
 }
 
 void
@@ -136,124 +108,12 @@ clear_training_sample(vector<double> &read_bins_sample,
 		      vector<double> &scales_sample,
 		      vector<size_t> &reset_points_sample)
 {
-  read_bins_sample.clear();
-  read_bins_a_sample.clear();
-  read_bins_b_sample.clear();
-  scales_sample.clear();
-  reset_points_sample.clear();
+    vector<bounds>()::swap(read_bins_sample);
+    vector<bounds>()::swap(read_bins_a_sample);
+    vector<bounds>()::swap(read_bins_b_sample);
+    vector<bounds>()::swap(scales_sample);
+    vector<bounds>()::swap(reset_points_sample);
 }
-
-
-//----
-double
-get_right_tail(const Distro &d, const double c)
-{
-  double s = 0;
-  for (size_t i = 0; i < c; ++i)
-    s = log_sum_log(s, d.log_likelihood(i));
-    
-  return 1 - exp(s);
-}
-
-double
-get_max_count_cutoff(const vector<double> &values)
-{
-  const size_t n(values.size());
-  vector<double> vals(values);
-  std::sort(vals.begin(), vals.end());
-
-  Distro d("nbd");
-
-  double c = vals.back();
-  double emp_right_tail =
-    (vals.end() - std::lower_bound(vals.begin(), vals.end(), c))
-    / static_cast<double>(n);
-    
-  d.estimate_params_ml(vals);
-  double right_tail = get_right_tail(d, c);
-
-  while (emp_right_tail > right_tail)
-    {
-      vals.erase(std::lower_bound(vals.begin(), vals.end(), c),
-		 vals.end());
-      --c;
-      emp_right_tail =
-	(vals.end() - std::lower_bound(vals.begin(), vals.end(), c))
-	/ static_cast<double>(n);
-      d.estimate_params_ml(vals);
-      right_tail = get_right_tail(d, c);
-    }
-
-  return c;
-}
-//----
-
-void
-benjamini_hochberg_procedure(const vector<double> &scores,
-			     const vector<double> &scores_bg,
-			     vector< pair<double, size_t> > &p_values,
-			     double &cutoff,
-			     const double fdr)
-{
-  vector<double> scores_control(scores_bg.begin(), scores_bg.end());
-  sort(scores_control.begin(), scores_control.end());
-
-  p_values.resize(scores.size());
-  const double control_size = static_cast<double>(scores_control.size());
-  for (size_t i = 0; i < scores.size(); ++i)
-    {
-      const vector<double>::const_iterator ll =
-	lower_bound(scores_control.begin(),
-		    scores_control.end(),
-		    scores[i]);
-      p_values[i].first = (scores_control.end() - ll) / control_size;
-      p_values[i].second = i;
-    }
-
-  sort(p_values.begin(), p_values.end());
-
-  const double fdr_over_m = fdr / p_values.size();
-  int i = p_values.size() - 1;
-  while (i >= 0)
-    {
-      if (p_values[i].first <= (i + 1) * fdr_over_m)
-	break;
-      --i;
-    }
-		
-  p_values.erase(p_values.begin() + i + 1, p_values.end());
-  if (p_values.size() > 0)
-    cutoff = scores_control[static_cast<size_t>(
-						(1 - p_values.back().first) * control_size) - 1];
-  else
-    cutoff = scores_control.back();
-
-  return;
-}
-
-
-size_t
-get_bin_size(const vector<SimpleGenomicRegion> &regions,
-	     const vector<vector<SimpleGenomicRegion> > &reads,
-	     const vector<vector<SimpleGenomicRegion> > &deads, int VERBOSE) 
-{
-  size_t total_genome_size = 0;
-  for (size_t i = 0; i < regions.size(); ++i)
-    total_genome_size += regions[i].get_width();
-  size_t total_dead_size = 0;
-  size_t n_reads = 0;
-  for (size_t i = 0; i < deads.size(); ++i) 
-    {
-      for (size_t j = 0; j < deads[i].size(); ++j)
-	total_dead_size += deads[i][j].get_width();
-      n_reads += reads[i].size();
-    }
-  const size_t bin_size = (total_genome_size - total_dead_size)/(n_reads/5);
-  if (VERBOSE)
-    cerr << "BIN SIZE=" << bin_size << endl;
-  return bin_size;
-}
-
 
 void
 set_transitions(const size_t bin_size, const double fg_size,
@@ -406,32 +266,6 @@ report_final_values(const vector<SplitDistro> &distros,
     }
 }
 
-
-void
-remove_duplicate_reads(vector<SimpleGenomicRegion>  &reads)
-{
-  if (reads.size())
-    {
-      size_t j = 1;
-      for (size_t i = 1; i < reads.size(); ++i)
-	if (reads[i].get_chrom() != reads[i - 1].get_chrom() ||
-	    reads[i].get_start() != reads[i - 1].get_start())
-	  {
-	    reads[j] = reads[i];
-	    ++j;
-	  }
-      reads.erase(reads.begin() + j, reads.end());
-    }
-}
-
-void
-remove_duplicate_reads(vector< vector<SimpleGenomicRegion> >  &reads)
-{
-
-  for (size_t i = 0; i < reads.size(); ++i)
-    remove_duplicate_reads(reads[i]);
-}
-
 // The slow version with system call
 void
 chk_and_mk_dirs(const string & path)
@@ -442,39 +276,6 @@ chk_and_mk_dirs(const string & path)
       cerr << "Cannot access or create the directory " + path << endl;
       exit(s);
     }
-}
-
-void
-write_read_counts_by_bin(const vector< vector<SimpleGenomicRegion> > &bin_boundaries,
-                         const vector<double> &read_bins,
-                         const vector<bool> &classes,
-                         const string &file_name,
-                         const bool VERBOSE)
-{
-  std::ofstream outf(file_name.c_str());
-  if (!outf.good())
-    {
-      cerr << "Error: cannot open file " + file_name << endl;
-      exit(-1);
-    }
-  size_t k = 0;
-  for (size_t i = 0; i < bin_boundaries.size(); ++i)
-    for (size_t j = 0; j < bin_boundaries[i].size(); ++j)
-      {
-	outf << bin_boundaries[i][j] << "\t"
-	     << read_bins[k] << "\t"
-	     << classes[k] << std::endl;
-	++k;
-      }
-  if (!outf.good())
-    {
-      cerr << "Error: writing file " + file_name << endl;
-      exit(-1);
-    }
-  outf.close();
-  if (VERBOSE)
-    cerr << "Read count file: "
-	 << file_name << std::endl;
 }
 
 
@@ -599,76 +400,6 @@ write_read_counts_by_bin(const vector< vector<SimpleGenomicRegion> > &bin_bounda
 	 << file_name << std::endl;
 }
 
-void
-elim_empty_regions(vector<SimpleGenomicRegion> &regions, 
-		   vector<vector<SimpleGenomicRegion> > &bounds, 
-		   vector<vector<double> > &read_bins)
-{
-  size_t j = 0;
-  for (size_t i = 0; i < read_bins.size(); ++i)
-    if (read_bins[i].size() > 0)
-      {
-	regions[j].swap(regions[i]);
-	bounds[j].swap(bounds[i]);
-	read_bins[j].swap(read_bins[i]);
-	++j;
-      }
-
-  regions.erase(regions.begin() + j, regions.end());
-  bounds.erase(bounds.begin() + j, bounds.end());
-  read_bins.erase(read_bins.begin() + j, read_bins.end());
-}
-
-void
-elim_empty_regions(vector<SimpleGenomicRegion> &regions, 
-		   vector<vector<SimpleGenomicRegion> > &bounds, 
-		   vector<vector<double> > &read_bins,
-                   vector< vector<double> > &scales) 
-{
-  size_t j = 0;
-  for (size_t i = 0; i < read_bins.size(); ++i)
-    if (read_bins[i].size() > 0)
-      {
-	regions[j].swap(regions[i]);
-	bounds[j].swap(bounds[i]);
-	read_bins[j].swap(read_bins[i]);
-	scales[j].swap(scales[i]);
-	++j;
-      }
-
-  regions.erase(regions.begin() + j, regions.end());
-  bounds.erase(bounds.begin() + j, bounds.end());
-  read_bins.erase(read_bins.begin() + j, read_bins.end());
-  scales.erase(scales.begin() + j, scales.end());
-}
-
-void
-elim_empty_regions(vector<SimpleGenomicRegion> &regions, 
-		   vector<vector<SimpleGenomicRegion> > &bounds, 
-		   vector<vector<double> > &read_bins_a, 
-		   vector<vector<double> > &read_bins_b,
-                   vector<vector<double> > &scales) 
-{
-  size_t j = 0;
-  for (size_t i = 0; i < regions.size(); ++i)
-    if (bounds[i].size() > 0)
-      {
-	regions[j].swap(regions[i]);
-	bounds[j].swap(bounds[i]);
-	read_bins_a[j].swap(read_bins_a[i]);
-	read_bins_b[j].swap(read_bins_b[i]);
-	scales[j].swap(scales[i]);
-	++j;
-      }
-
-  regions.erase(regions.begin() + j, regions.end());
-  bounds.erase(bounds.begin() + j, bounds.end());
-  read_bins_a.erase(read_bins_a.begin() + j, read_bins_a.end());
-  read_bins_b.erase(read_bins_b.begin() + j, read_bins_b.end());
-  scales.erase(scales.begin() + j, scales.end());
-}
-
-
 string
 strip_path_and_bed_suffix(const string &full_path) 
 {
@@ -681,7 +412,6 @@ strip_path_and_bed_suffix(const string &full_path)
     end = full_path.length();
   return full_path.substr(start, end - start);
 }
-
 
 void
 write_wigfile(const vector<vector<double> > &scores,
@@ -733,56 +463,7 @@ write_bed_file(const vector<vector<GenomicRegion> > &regions,
 }
 
 
-template <class T> void
-expand_bins(const vector<T> &tmp_bins, const vector<size_t> &resets,
-	    vector<vector<T> > &bins) 
-{
-  bins.clear();
-  size_t j = 0;
-  for (size_t i = 0; i < tmp_bins.size(); ++i) 
-    {
-      if (i == resets[j]) 
-        {
-	  bins.push_back(vector<T>());
-	  ++j;
-        }
-      bins.back().push_back(tmp_bins[i]);
-    }
-}
-
-template void
-expand_bins<double>(const vector<double> &tmp_bins,
-                    const vector<size_t> &resets,
-                    vector<vector<double> > &bins);
-template void
-expand_bins<bool>(const vector<bool> &tmp_bins, const vector<size_t> &resets,
-                  vector<vector<bool> > &bins);
-
-template void
-expand_bins<size_t>(const vector<size_t> &tmp_bins, const vector<size_t> &resets,
-                    vector<vector<size_t> > &bins);
-
-void
-collapse_read_bins(const vector<vector<double> > &tmp_read_bins, 
-		   vector<double> &read_bins,
-		   vector<size_t> &reset_points) 
-{
-  reset_points.clear();
-  read_bins.clear();
-  reset_points.push_back(0);
-  for (size_t i = 0; i < tmp_read_bins.size(); ++i) 
-    {
-      read_bins.insert(read_bins.end(), 
-		       tmp_read_bins[i].begin(), 
-		       tmp_read_bins[i].end());
-      reset_points.push_back(read_bins.size());
-    }
-}
-
-
 // for two-state segmentation
-
-
 void
 build_domains(const vector<vector<SimpleGenomicRegion> > &bins,
               const vector<vector<bool> > &classes,
@@ -1196,92 +877,6 @@ pick_domains(const vector<vector<SimpleGenomicRegion> > &bins,
       }
 }
 
-// void
-// pick_domains(const vector<vector<SimpleGenomicRegion> > &bins,
-//              const vector<vector<double> > &read_counts,
-//              const vector<vector<double> > &read_counts_a,
-//              const vector<vector<double> > &read_counts_b,
-//              const vector<vector<double> > &scales,
-//              const vector<SplitDistro> &distros,
-//              vector<vector<GenomicRegion> > &domains,
-//              const double cdf_cutoff = 0.2)
-// {
-//     const double pseudo_count = 1;
-
-//     vector<vector<double> > domain_means;
-//     vector<vector<double> > enrich_ratios;
-
-//     double max_count(0), min_count(std::numeric_limits<double>::max());
-
-//     domain_means.resize(domains.size());
-//     for (size_t i = 0; i < read_counts.size(); ++i) 
-//     {
-//         domain_means[i].resize(domains[i].size());
-
-//         size_t k = 0;
-//         double domain_read_count = 0;
-//         double domain_read_count_a = pseudo_count;
-//         double domain_read_count_b = pseudo_count;
-//         double domain_size = 0;
-//         for (size_t j = 0; j < read_counts[i].size(); ++j)
-//         {
-//             if (!domains[i][k].overlaps(bins[i][j]))
-//             {
-//                 domain_means[i][k] = domain_read_count / domain_size;
-//                 enrich_ratios[i][k] = domain_read_count_a / domain_read_count_b;
-//                 domain_read_count_a = pseudo_count;
-//                 domain_read_count_b = pseudo_count;
-//                 domain_read_count = 0;
-//                 domain_size = 0;
-//                 ++k;
-//             }
-//             domain_read_count += read_counts[i][j];
-//             domain_read_count_a += read_counts_a[i][j];
-//             domain_read_count_b += read_counts_b[i][j];
-//             domain_size += scales[i][j];
-            
-//             if (read_counts[i][j] > max_count)
-//                 max_count = read_counts[i][j];
-
-//             if (read_counts[i][j] < min_count)
-//                 min_count = read_counts[i][j];
-//         }
-//         domain_means[i][k] = domain_read_count / domain_size;
-//     }
-    
-//     const double offset = min_count;
-    
-//     vector<double> fg_cdfs(static_cast<size_t>(max_count - min_count + 1)),
-//         bg_cdfs(static_cast<size_t>(max_count - min_count + 1));
-//     fg_cdfs[0] = exp(distros.front().log_likelihood(0 + offset));
-//     bg_cdfs[0] = exp(distros.back().log_likelihood(0 + offset));
-//     for (size_t i = 1; i < fg_cdfs.size(); ++i)
-//     {
-//         fg_cdfs[i] = fg_cdfs[i - 1] + exp(distros.front().log_likelihood(i + offset));
-//         bg_cdfs[i] = bg_cdfs[i - 1] + exp(distros.back().log_likelihood(i + offset));
-//     }
-    
-//     for (size_t i = 0; i < domains.size(); ++i)
-//         for (size_t j = 0; j < domains[i].size(); ++j)
-//         {
-//             string name = domains[i][j].get_name();
-//             const size_t c = static_cast<size_t>(floor(domain_means[i][j]));
-
-//             if (name == "CLASS:1" &&
-//                 fg_cdfs[static_cast<size_t>(c - offset)] < cdf_cutoff)
-//                 name = "CLASS:2";
-
-//             if (name == "CLASS:0" &&
-//                 1 - bg_cdfs[static_cast<size_t>(c - offset)] < cdf_cutoff)
-//                 name = "CLASS:2";
-
-//             domains[i][j].set_name(name + "\t"
-//                                    + smithlab::toa(domain_means[i][j]) + "\t"
-//                                    + smithlab::toa(enrich_ratios[i][j]));
-//         }
-// }
-
-
 void
 pick_domains_3s(const vector<vector<SimpleGenomicRegion> > &bins,
                 const vector<vector<double> > &read_counts,
@@ -1372,120 +967,5 @@ pick_domains_3s(const vector<vector<SimpleGenomicRegion> > &bins,
 	domains[i][j].set_name(name + "\t"
 			       + smithlab::toa(domain_means[i][j]));
       }
-
-  //     vector<double> cdfs(static_cast<size_t>(max_count - min_count + 1));
-    
-  //     cdfs[0] = exp(distros[1].log_likelihood(0 + offset));
-  //     for (size_t i = 1; i < fg_cdfs.size(); ++i)
-  //         cdfs[i] = cdfs[i - 1] + exp(distros[1].log_likelihood(i + offset));
-    
-  //     for (size_t i = 0; i < domains.size(); ++i)
-  //         for (size_t j = 0; j < domains[i].size(); ++j)
-  //         {
-  //             string name = domains[i][j].get_name();
-  //             const size_t cf =
-  //                 static_cast<size_t>(floor(domain_means[i][j] - offset));
-  //             const size_t cc =
-  //                 static_cast<size_t>(ceil(domain_means[i][j] - offset));
-
-  //             if (name == "CLASS:0" &&
-  //                 1 - cdfs[cf] > cdf_cutoff)
-  //                 name = "CLASS:3";
-
-  //             if (name == "CLASS:2" &&
-  //                 cdfs[cc] > cdf_cutoff)
-  //                 name = "CLASS:3";
-            
-  //             domains[i][j].set_name(name + "\t"
-  //                                    + smithlab::toa(domain_means[i][j]));
-  //         }
 }
 
-
-// void
-// pick_domains_3s(const vector<vector<SimpleGenomicRegion> > &bins,
-//                 const vector<vector<double> > &read_counts,
-//                 const vector<vector<double> > &read_counts_a,
-//                 const vector<vector<double> > &read_counts_b,
-//                 const vector<vector<double> > &scales,
-//                 const vector<SplitDistro> &distros,
-//                 vector<vector<GenomicRegion> > &domains,
-//                 const double cdf_cutoff = 0.2)
-// {
-//     const double pseudo_count = 1;
-
-//     vector<vector<double> > domain_means;
-//     vector<vector<double> > enrich_ratios;
-    
-//     double max_count(0), min_count(std::numeric_limits<double>::max());
-
-//     domain_means.resize(domains.size());
-//     for (size_t i = 0; i < read_counts.size(); ++i) 
-//     {
-//         domain_means[i].resize(domains[i].size());
-
-//         size_t k = 0;
-//         double domain_read_count = 0;
-//         double domain_size = 0;
-//         double domain_read_count_a = pseudo_count;
-//         double domain_read_count_b = pseudo_count;
-//         for (size_t j = 0; j < read_counts[i].size(); ++j)
-//         {
-//             if (!domains[i][k].overlaps(bins[i][j]))
-//             {
-//                 domain_means[i][k] = domain_read_count / domain_size;
-//                 enrich_ratios[i][k] = domain_read_count_a / domain_read_count_b;
-//                 domain_read_count_a = pseudo_count;
-//                 domain_read_count_b = pseudo_count;
-//                 domain_read_count = 0;
-//                 domain_size = 0;
-//                 ++k;
-//             }
-//             domain_read_count += read_counts[i][j];
-//             domain_read_count_a += read_counts_a[i][j];
-//             domain_read_count_b += read_counts_b[i][j];
-//             domain_size += scales[i][j];
-            
-//             if (read_counts[i][j] > max_count)
-//                 max_count = read_counts[i][j];
-
-//             if (read_counts[i][j] < min_count)
-//                 min_count = read_counts[i][j];
-//         }
-//         domain_means[i][k] = domain_read_count / domain_size;
-//     }
-    
-//     const double offset = min_count;
-    
-//     vector<double> fg_cdfs(static_cast<size_t>(max_count - min_count + 1)),
-//         bg_cdfs(static_cast<size_t>(max_count - min_count + 1));
-//     fg_cdfs[0] = exp(distros.front().log_likelihood(0 + offset));
-//     bg_cdfs[0] = exp(distros.back().log_likelihood(0 + offset));
-//     for (size_t i = 1; i < fg_cdfs.size(); ++i)
-//     {
-//         fg_cdfs[i] = fg_cdfs[i - 1] + exp(distros.front().log_likelihood(i + offset));
-//         bg_cdfs[i] = bg_cdfs[i - 1] + exp(distros.back().log_likelihood(i + offset));
-//     }
-    
-//     for (size_t i = 0; i < domains.size(); ++i)
-//         for (size_t j = 0; j < domains[i].size(); ++j)
-//         {
-//             string name = domains[i][j].get_name();
-//             const double cf = floor(domain_means[i][j]);
-//             const double cc = ceil(domain_means[i][j]); 
-
-//             if (name == "CLASS:0" &&
-//                 fg_cdfs[static_cast<size_t>(cf - offset)] < cdf_cutoff)
-//                 name = "CLASS:3";
-
-//             if (name == "CLASS:2" &&
-//                 1 - bg_cdfs[static_cast<size_t>(cc - offset)] < cdf_cutoff)
-//                 name = "CLASS:3";
-            
-//             domains[i][j].set_name(name + "\t"
-//                                    + smithlab::toa(domain_means[i][j]) + "\t"
-//                                    + smithlab::toa(enrich_ratios[i][j]));
-//         }
-// }
-
-    
