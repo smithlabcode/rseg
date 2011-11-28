@@ -37,6 +37,21 @@ using std::string;
 using std::auto_ptr;
 using std::make_pair;
 
+static double 
+get_mean(const SplitDistro &distro) {
+  const string name_arg = distro.tostring();
+  const vector<double> p(distro.get_params());
+  
+  if (name_arg.find("nbdiff") != string::npos)
+    return p[0] - p[2];
+  else if (name_arg.find("skel") != string::npos)
+    return p[0] - p[1];
+  else if (name_arg.find("gauss") != string::npos)
+    return p[0];
+  else
+    return 0;
+}
+
 inline double
 TwoStateScaleSplitHMM::log_sum_log(const double p, const double q) const {
   if (p == 0) return q;
