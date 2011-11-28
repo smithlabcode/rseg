@@ -21,9 +21,11 @@
  */
 
 #include "ReadCounts.hpp"
-
 #include "RNG.hpp"
+
 #include <cmath>
+#include <cassert>
+#include <numeric>
 
 using std::vector;
 using std::string;
@@ -33,407 +35,269 @@ using std::max;
 using std::cerr;
 using std::endl;
 
-// static void
-// BinReads(const vector<SimpleGenomicRegion> &reads,
-// 	 const size_t region_start, 
-// 	 const size_t region_end,
-// 	 const size_t bin_size, 
-// 	 vector<double> &bins) 
-// {
-//   bins.clear();
-//   size_t read_idx = 0;
-//   for (size_t i = region_start; i <= region_end - bin_size; i += bin_size) {
-//     size_t counts = 0;
-//     while (read_idx < reads.size() && reads[read_idx].get_start() < i + bin_size) {
-//       if (reads[read_idx].get_start() >= i)
-// 	++counts;
-//       ++read_idx;
-//     }
-//     bins.push_back(counts);
-//   }
-// }
-
-
-// void
-// BinReads(const vector<vector<SimpleGenomicRegion> > &reads,
-// 	 const vector<SimpleGenomicRegion> &regions,
-// 	 const size_t bin_size,
-// 	 vector<vector<double> > &bins) {
-//   assert(reads.size() == regions.size());
-//   bins.resize(reads.size());
-//   for (size_t i = 0; i < regions.size(); ++i) {
-//     BinReads(reads[i], regions[i].get_start(), regions[i].get_end(),
-// 	     bin_size, bins[i]);
-//   }
-// }
-
-
-
-// static void
-// BinReadsExtendOverDeadZones(const vector<SimpleGenomicRegion> &reads, 
-// 			    const vector<SimpleGenomicRegion> &dead_zones,
-// 			    const string chrom_name,
-// 			    const size_t region_start,
-// 			    const size_t region_end,
-// 			    const size_t bin_size,
-// 			    vector<SimpleGenomicRegion> &boundaries,
-// 			    vector<double> &bins) {
-  
-//   bins.clear();
-//   boundaries.clear();
-  
-//   vector<SimpleGenomicRegion>::const_iterator ditr(dead_zones.begin());
-//   const vector<SimpleGenomicRegion>::const_iterator dlim(dead_zones.end());
-  
-//   size_t read_idx = 0;
-//   size_t i = region_start;
-//   while (i < region_end) {
-//     size_t end = i;
-//     size_t goods = 0;
-    
-//     if (ditr != dlim && end + bin_size > ditr->get_start()) {
-//       while (goods < bin_size) {
-// 	if (ditr < dlim) {
-	  
-// 	  const size_t curr_dead_end = ditr->get_end();
-// 	  const size_t curr_dead_start = ditr->get_start();
-	  
-// 	  if (end >= curr_dead_end)
-// 	    ++ditr;
-// 	  else {
-// 	    if (end < curr_dead_start) {
-// 	      const size_t new_goods = min(bin_size - goods, curr_dead_start - end);
-// 	      goods += new_goods;
-// 	      end += new_goods;
-// 	    }
-// 	    else end = curr_dead_end;
-// 	  }
-// 	}
-// 	else {
-// 	  end += bin_size - goods;
-// 	  goods = bin_size;
-// 	}
-//       }
-//     }
-//     else end += bin_size;
-    
-//     size_t counts = 0;
-//     while (read_idx < reads.size() && reads[read_idx].get_start() < end) {
-//       if (reads[read_idx].get_start() >= i)
-// 	counts++;
-//       read_idx++;
-//     }
-//     bins.push_back(counts);
-//     boundaries.push_back(SimpleGenomicRegion(chrom_name, i, end));
-//     i = end;
-//   }
-// }
-
-// void
-// BinReadsExtendOverDeadZones(const vector<vector<SimpleGenomicRegion> > &reads, 
-// 			    const vector<vector<SimpleGenomicRegion> > &dead_zones,
-// 			    const vector<SimpleGenomicRegion> &regions,
-// 			    const size_t bin_size,
-// 			    vector<vector<SimpleGenomicRegion> > &boundaries,
-// 			    vector<vector<double> > &bins) {
-//   assert(reads.size() == regions.size());
-//   assert(dead_zones.size() == regions.size());
-//   bins.resize(reads.size());
-//   boundaries.resize(reads.size());
-//   for (size_t i = 0; i < regions.size(); ++i) {
-//     BinReadsExtendOverDeadZones(reads[i], 
-// 				dead_zones[i], regions[i].get_chrom(), regions[i].get_start(), 
-// 				regions[i].get_end(),bin_size, boundaries[i], bins[i]);
-//   }
-// }
-
 void
-BinDeads(const vector<SimpleGenomicRegion> &deads,
-	 const size_t region_start, const size_t region_end,
-	 const size_t bin_size, vector<double> &bins) {
-  bins.clear();
-  size_t dead_idx = 0;
-  for (size_t i = region_start; i < region_end; i += bin_size) {
-    size_t counts = 0;
-    while (dead_idx < deads.size() && deads[dead_idx].get_end() < i + bin_size) {
-      /* Don't need the condition below because the start is always
-	 within the first bin, since that's how the regions were
-	 determined, and the bins start at the start of the first
-	 region. */
-      // if (deads[dead_idx].get_start() >= i)   ?????
-      counts += deads[dead_idx].get_end() - max(deads[dead_idx].get_start(), i);
-      ++dead_idx;
+AdjustBinSize(const vector<double> &old_read_bins,
+              const vector<double> &old_nondead_scales,
+              const vector<size_t> &old_reset_points,
+              const size_t old_bin_size,
+              vector<double>  &read_bins,
+              vector<double>  &nondead_scales,
+              vector<size_t> &reset_points,
+              const size_t bin_size)
+{
+    assert(bin_size % old_bin_size == 0);
+    read_bins.clear();
+    nondead_scales.clear();
+    reset_points.clear();
+    
+    const size_t n_steps = bin_size / old_bin_size;
+    reset_points.push_back(0);
+    for (size_t i = 0; i < old_reset_points.size() - 1; ++i)
+    {
+        const size_t start = old_reset_points[i];
+        const size_t end = old_reset_points[i + 1];
+        size_t j = start;
+        while (j < end - n_steps)
+        {	
+            read_bins.push_back(
+                std::accumulate(old_read_bins.begin() + j,
+                                old_read_bins.begin() + j + n_steps - 1, 0.0)); 
+
+            nondead_scales.push_back(
+                std::accumulate(old_nondead_scales.begin() + j,
+                                old_nondead_scales.begin() + j + n_steps - 1,
+                                0.0) / n_steps);
+            j += n_steps;
+        }
+        reset_points.push_back(read_bins.size());
     }
-    if (dead_idx < deads.size() && deads[dead_idx].get_start() < i + bin_size)
-      counts += ((i + bin_size) - max(deads[dead_idx].get_start(), i));
-    assert(counts <= bin_size);
-    bins.push_back(counts);
-  }
-}
-
-// static void
-// BinReadsCorrectDeadZones(const vector<SimpleGenomicRegion> &reads, 
-// 			 const vector<SimpleGenomicRegion> &dead_zones,
-// 			 const string chrom_name,
-// 			 const size_t region_start,
-// 			 const size_t region_end,
-// 			 const size_t bin_size,
-// 			 const double max_dead_proportion,
-// 			 vector<SimpleGenomicRegion> &boundaries,
-// 			 vector<double> &bins) 
-// {
-//   vector<double> read_bins;
-//   BinReads(reads, region_start, region_end, bin_size, read_bins);
-  
-//   vector<double> dead_bins;
-//   BinDeads(dead_zones, region_start, region_end, bin_size, dead_bins);
-  
-
-
-//   //     vector<double> corr;
-//   //     for (size_t i = 0; i < dead_bins.size(); ++i)
-//   //         corr.push_back(bin_size/(bin_size - dead_bins[i]));
-
-//   // (SQ) !!! it is possible that  bin_size == dead_bins 
-//   vector<double> corr;
-//   for (size_t i = 0; i < dead_bins.size(); ++i)
-//     if (bin_size != dead_bins[i])
-//       corr.push_back(bin_size/(bin_size - dead_bins[i]));
-//     else
-//       corr.push_back(1.0); 
-    
-
-//   Runif rng(time(0) + getpid());
-//   boundaries.clear();
-//   bins.clear();
-//   for (size_t i = 0; i < corr.size(); ++i) {
-//     if (dead_bins[i] < max_dead_proportion*bin_size)
-//       {
-// 	boundaries.push_back(SimpleGenomicRegion(chrom_name,
-// 						 region_start + i*bin_size,
-// 						 region_start + (i + 1)*bin_size));
-// 	const double corrected = read_bins[i]*corr[i];
-// 	const double floor_count = std::floor(corrected);
-// 	const double frac_part = corrected - floor_count;
-// 	bins.push_back((rng.runif(0.0, 1.1) < frac_part) ? 
-// 		       std::ceil(corrected) : floor_count);
-//       }
-//   }
-// }
-
-// void
-// BinReadsCorrectDeadZones(const vector<vector<SimpleGenomicRegion> > &reads, 
-// 			 const vector<vector<SimpleGenomicRegion> > &dead_zones,
-// 			 const vector<SimpleGenomicRegion> &regions,
-// 			 const size_t bin_size,
-// 			 const double max_dead_proportion,
-// 			 vector<vector<SimpleGenomicRegion> > &boundaries,
-// 			 vector<vector<double> > &bins) 
-// {
-//   assert(reads.size() == regions.size() && dead_zones.size() == reads.size());
-//   bins.resize(reads.size());
-//   boundaries.resize(reads.size());
-//   for (size_t i = 0; i < regions.size(); ++i)
-//     BinReadsCorrectDeadZones(reads[i], dead_zones[i], regions[i].get_chrom(), 
-// 			     regions[i].get_start(), regions[i].get_end(),
-// 			     bin_size, max_dead_proportion, boundaries[i], bins[i]);
-// }
-
-static void
-BinReadsCorrectDeadZones(const vector<SimpleGenomicRegion> &dead_zones,
-			 const size_t start, const size_t end,
-			 const size_t bin_size, vector<double> &dead_scales) {
-  vector<double> dead_bins;
-  BinDeads(dead_zones, start, end, bin_size, dead_bins);
-  dead_scales.clear();
-  for (size_t i = 0; i < dead_bins.size(); ++i)
-    dead_scales.push_back(1 - dead_bins[i]/bin_size);
+    assert(*std::max_element(nondead_scales.begin(), nondead_scales.end()<=1.0));
+    assert(*std::min_element(nondead_scales.begin(), nondead_scales.end()>=0.0));
 }
 
 void
-BinReadsCorrectDeadZones(const vector<vector<SimpleGenomicRegion> > &dead_zones,
-			 const vector<SimpleGenomicRegion> &regions,
-			 const size_t bin_size,
-			 vector< vector<double> > &dead_scales) {
-  dead_scales.resize(regions.size());
-  for (size_t i = 0; i < regions.size(); ++i)
-    BinReadsCorrectDeadZones(dead_zones[i], regions[i].get_start(), regions[i].get_end(),
-			     bin_size, dead_scales[i]);
+GetCorrectedReadCounts(const vector<double> &read_bins,
+                       const vector<double> &nondead_scales,
+                       vector<double> &corrected_read_bins,
+                       const double max_dead_proportion)
+{
+    assert(read_bins.size() == nondead_scales.size());
+    corrected_read_bins.clear();
+
+    Runif rng(time(0) + getpid());
+    for (size_t i = 0; i < read_bins.size(); ++i)
+        if (nondead_scales[i] > 1 - max_dead_proportion)
+        {
+            const double corrected = read_bins[i] / nondead_scales[i];
+            const double floor_count = std::floor(corrected);
+            const double frac_part = corrected - floor_count;
+            corrected_read_bins.push_back(
+                (rng.runif(0.0, 1.1) < frac_part) ? 
+                std::ceil(corrected) : floor_count);
+        }
 }
 
-// ///// 
-// static void
-// BinReadsCorrectDeadZones(const vector<SimpleGenomicRegion> &reads, 
-// 			 const vector<SimpleGenomicRegion> &dead_zones,
-// 			 const string chrom_name,
-// 			 const size_t region_start,
-// 			 const size_t region_end,
-// 			 const size_t bin_size,
-// 			 const double max_dead_proportion,
-//                          const double desert_size,
-// 			 vector<vector<SimpleGenomicRegion> > &boundaries,
-// 			 vector<vector<double> > &bins) { 
-//   vector<double> read_bins;
-//   BinReads(reads, region_start, region_end, bin_size, read_bins);
+void
+AdjustBinSize(vector<SimpleGenomicRegion> &old_bin_boundaries,
+              vector<double> &old_read_bins,
+              vector<double> &old_nondead_scales,
+              vector<size_t> &old_reset_points,
+              const size_t old_bin_size,
+              const size_t bin_size)
+{
+    assert(bin_size % old_bin_size == 0);
+    vector<SimpleGenomicRegion> bin_boundaries;
+    vector<double> read_bins;
+    vector<double> nondead_scales;
+    vector<size_t> reset_points;
     
-//   vector<double> dead_bins;
-//   BinDeads(dead_zones, region_start, region_end, bin_size, dead_bins);
-  
-//   Runif rng(time(0) + getpid());
+    const size_t n_steps = bin_size / old_bin_size;
+    reset_points.push_back(0);
+    for (size_t i = 0; i < old_reset_points.size() - 1; ++i)
+    {
+        const size_t start = old_reset_points[i];
+        const size_t end = old_reset_points[i + 1];
+        size_t j = start;
+        while (j < end - n_steps)
+        {	
+            bin_boundaries.push_back(old_bin_boundaries[j]);
+            bin_boundaries.back().set_end(
+                old_bin_boundaries[j + n_steps - 1].get_end());
+            
+            read_bins.push_back(
+                std::accumulate(old_read_bins.begin() + j,
+                                old_read_bins.begin() + j + n_steps - 1, 0.0)); 
 
-//   boundaries.resize(1);
-//   bins.resize(1);
-//   size_t gap_bin_num = 0;
+            nondead_scales.push_back(
+                std::accumulate(old_nondead_scales.begin() + j,
+                                old_nondead_scales.begin() + j + n_steps - 1,
+                                0.0) / n_steps); 
+            j += n_steps;
+        }
+        reset_points.push_back(bin_boundaries.size());
+    }
+
+    std::swap(old_bin_boundaries, bin_boundaries);
+    std::swap(old_read_bins, read_bins);
+    std::swap(old_nondead_scales, nondead_scales);
+    std::swap(old_reset_points, reset_points);
+
+    assert(*std::max_element(nondead_scales.begin(), nondead_scales.end()<=1.0));
+    assert(*std::min_element(nondead_scales.begin(), nondead_scales.end()>=0.0));
+}
+
+void
+RemoveDeserts(vector<SimpleGenomicRegion> &old_bin_boundaries,
+              vector<double> &old_read_bins,
+              vector<double> &old_nondead_scales,
+              vector<size_t> &old_reset_points,
+              const size_t bin_size,
+              const size_t desert_size,
+              const double max_dead_proportion)
+{
+    vector<SimpleGenomicRegion> bin_boundaries;
+    vector<double> read_bins;
+    vector<double> nondead_scales;
+    vector<size_t> reset_points;
     
-//   for (size_t i = 0; i < dead_bins.size(); ++i)
-//     if (dead_bins[i] < max_dead_proportion*bin_size) {
-//       if (gap_bin_num * bin_size > desert_size) {
-// 	boundaries.push_back(vector<SimpleGenomicRegion>());
-// 	bins.push_back(vector<double>());
-//       }
-      
-//       gap_bin_num = 0;
-      
-//       const double corr = bin_size / (bin_size - dead_bins[i]);
-//       const double corrected = read_bins[i] * corr;
-//       const double floor_count = std::floor(corrected);
-//       const double frac_part = corrected - floor_count;
-//       bins.back().push_back((rng.runif(0.0, 1.1) < frac_part) ? 
-// 			    std::ceil(corrected) : floor_count);
-      
-//       boundaries.back().push_back(
-// 				  SimpleGenomicRegion(chrom_name,
-// 						      region_start + i*bin_size,
-// 						      region_start + (i + 1)*bin_size));
-//     }
-//     else
-//       ++gap_bin_num;
-// }
+    reset_points.push_back(0);
+    for (size_t i = 0; i < reset_points.size() - 1; ++i)
+    {
+        const size_t start = old_reset_points[i];
+        const size_t end = old_reset_points[i + 1];
+        size_t n_gaps = 0;
+        for (size_t j = start; j < end; ++j)
+            if (nondead_scales[j] > 1 - max_dead_proportion)
+            {
+                if (n_gaps * bin_size > desert_size
+                    && reset_points.back() < bin_boundaries.size())
+                    reset_points.push_back(bin_boundaries.size());
 
-// void
-// BinReadsCorrectDeadZones(const vector<vector<SimpleGenomicRegion> > &reads, 
-// 			 const vector<vector<SimpleGenomicRegion> > &dead_zones,
-// 			 const size_t bin_size,
-// 			 const double max_dead_proportion,
-// 			 const double desert_size,
-// 			 vector<SimpleGenomicRegion> &regions,
-// 			 vector<vector<SimpleGenomicRegion> > &boundaries,
-// 			 vector<vector<double> > &read_counts) {
-//   assert(reads.size() == dead_zones.size());
+                bin_boundaries.push_back(old_bin_boundaries[j]);
+                read_bins.push_back(old_read_bins[j]);
+                nondead_scales.push_back(old_nondead_scales[j]);
 
-//   regions.clear();
-//   boundaries.clear();
-//   read_counts.clear();
+                n_gaps = 0;
+            }
+            else
+            {
+                ++n_gaps;
+            }
+        if (reset_points.back() < bin_boundaries.size())
+            reset_points.push_back(bin_boundaries.size());
+    }
+
+    std::swap(old_bin_boundaries, bin_boundaries);
+    std::swap(old_read_bins, read_bins);
+    std::swap(old_nondead_scales, nondead_scales);
+    std::swap(old_reset_points, reset_points);
+}
+
+void
+AdjustBinSize(vector<SimpleGenomicRegion> &old_bin_boundaries,
+              vector<double> &old_read_bins_a,
+              vector<double> &old_read_bins_b,
+              vector<double> &old_nondead_scales,
+              vector<size_t> &old_reset_points,
+              const size_t old_bin_size,
+              const size_t bin_size)
+{
+    assert(bin_size % old_bin_size == 0);
+    vector<SimpleGenomicRegion> bin_boundaries;
+    vector<double> read_bins_a;
+    vector<double> read_bins_b;
+    vector<double> nondead_scales;
+    vector<size_t> reset_points;
     
-//   for (size_t i = 0; i < reads.size(); ++i) {
-//     vector<vector<SimpleGenomicRegion> >  tmp_bins;
-//     vector<vector<double> > tmp_read_counts;
-//     vector<vector<double> > tmp_dead_scales;
-        
-//     const string chrom = reads[i].front().get_chrom();
-//     const size_t start = std::min(reads[i].front().get_start(),
-// 				  dead_zones[i].front().get_start());
-//     const size_t end = std::max(reads[i].back().get_end(),
-// 				dead_zones[i].back().get_end());
-        
-//     BinReadsCorrectDeadZones(reads[i], dead_zones[i], chrom, start, end,
-// 			     bin_size, max_dead_proportion, desert_size,
-// 			     tmp_bins, tmp_read_counts);
-    
-//     for (size_t j = 0; j < tmp_bins.size(); ++j)
-//       if (tmp_bins[j].size()) {
-// 	regions.push_back(SimpleGenomicRegion(chrom, tmp_bins[j][0].get_start(),
-// 					      tmp_bins[j][0].get_end()));
-// 	boundaries.push_back(tmp_bins[j]);
-// 	read_counts.push_back(tmp_read_counts[j]);
-//       }
-//   }
-// }
+    const size_t n_steps = bin_size / old_bin_size;
+    reset_points.push_back(0);
+    for (size_t i = 0; i < old_reset_points.size() - 1; ++i)
+    {
+        const size_t start = old_reset_points[i];
+        const size_t end = old_reset_points[i + 1];
+        size_t j = start;
+        while (j < end - n_steps)
+        {	
+            bin_boundaries.push_back(old_bin_boundaries[j]);
+            bin_boundaries.back().set_end(
+                old_bin_boundaries[j + n_steps - 1].get_end());
+            
+            read_bins_a.push_back(
+                std::accumulate(old_read_bins_a.begin() + j,
+                                old_read_bins_a.begin() + j + n_steps - 1,
+                                0.0)); 
 
+            read_bins_b.push_back(
+                std::accumulate(old_read_bins_b.begin() + j,
+                                old_read_bins_b.begin() + j + n_steps - 1,
+                                0.0)); 
 
-// static void
-// BinReadsCorrectDeadZones(const vector<SimpleGenomicRegion> &reads, 
-// 			 const vector<SimpleGenomicRegion> &dead_zones,
-// 			 const string chrom_name,
-// 			 const size_t region_start,
-// 			 const size_t region_end,
-// 			 const size_t bin_size,
-// 			 const double max_dead_proportion,
-//                          const double desert_size,
-// 			 vector<vector<SimpleGenomicRegion> > &boundaries,
-// 			 vector<vector<double> > &bins,
-//                          vector<vector<double> > &dead_scales) { 
-  
-//   vector<double> read_bins;
-//   BinReads(reads, region_start, region_end, bin_size, read_bins);
-  
-//   vector<double> dead_bins;
-//   BinDeads(dead_zones, region_start, region_end, bin_size, dead_bins);
-  
-//   boundaries.resize(1);
-//   bins.resize(1);
-//   dead_scales.resize(1);
-//   size_t gap_bin_num = 0;
-  
-//   for (size_t i = 0; i < dead_bins.size(); ++i) {
-//     if (dead_bins[i] < max_dead_proportion*bin_size) {
-//       if (gap_bin_num * bin_size > desert_size) {
-// 	boundaries.push_back(vector<SimpleGenomicRegion>());
-// 	bins.push_back(vector<double>());
-// 	dead_scales.push_back(vector<double>());
-//       }
-      
-//       gap_bin_num = 0;
-//       boundaries.back().push_back(SimpleGenomicRegion(chrom_name,
-// 						      region_start + i*bin_size,
-// 						      region_start + (i + 1)*bin_size));
-//       bins.back().push_back(read_bins[i]);
-//       dead_scales.back().push_back(1 - dead_bins[i]/bin_size);
-//     }
-//     else ++gap_bin_num;
-//   }
-// }
+            nondead_scales.push_back(
+                std::accumulate(old_nondead_scales.begin() + j,
+                                old_nondead_scales.begin() + j + n_steps - 1,
+                                0.0) / n_steps); 
+            j += n_steps;
+        }
+        reset_points.push_back(bin_boundaries.size());
+    }
 
-// void
-// BinReadsCorrectDeadZones(const vector<SimpleGenomicRegion> &chrom_regions,
-// 			 const vector<vector<SimpleGenomicRegion> > &reads, 
-// 			 const vector<vector<SimpleGenomicRegion> > &dead_zones,
-// 			 const size_t bin_size,
-// 			 const double max_dead_proportion,
-// 			 const double desert_size,
-// 			 vector<SimpleGenomicRegion> &regions,
-// 			 vector<vector<SimpleGenomicRegion> > &boundaries,
-// 			 vector<vector<double> > &read_counts,
-// 			 vector<vector<double> > &dead_scales) {
-  
-//   assert(reads.size() == dead_zones.size());
-  
-//   regions.clear();
-//   boundaries.clear();
-//   read_counts.clear();
-//   dead_scales.clear();
-  
-//   for (size_t i = 0; i < chrom_regions.size(); ++i) {
-//     vector<vector<SimpleGenomicRegion> >  tmp_bins;
-//     vector<vector<double> > tmp_read_counts;
-//     vector<vector<double> > tmp_dead_scales;
+    std::swap(old_bin_boundaries, bin_boundaries);
+    std::swap(old_read_bins_a, read_bins_a);
+    std::swap(old_read_bins_b, read_bins_b);
+    std::swap(old_nondead_scales, nondead_scales);
+    std::swap(old_reset_points, reset_points);
+
+    assert(*std::max_element(nondead_scales.begin(), nondead_scales.end()<=1.0));
+    assert(*std::min_element(nondead_scales.begin(), nondead_scales.end()>=0.0));
+}
+
+void
+RemoveDeserts(vector<SimpleGenomicRegion> &old_bin_boundaries,
+              vector<double> &old_read_bins_a,
+              vector<double> &old_read_bins_b,
+              vector<double> &old_nondead_scales,
+              vector<size_t> &old_reset_points,
+              const size_t bin_size,
+              const size_t desert_size,
+              const double max_dead_proportion)
+{
+    vector<SimpleGenomicRegion> bin_boundaries;
+    vector<double> read_bins_a;
+    vector<double> read_bins_b;
+    vector<double> nondead_scales;
+    vector<size_t> reset_points;
     
-//     const string chrom(chrom_regions[i].get_chrom());
-//     const size_t start = chrom_regions[i].get_start();
-//     const size_t end = chrom_regions[i].get_end();
-        
-//     BinReadsCorrectDeadZones(reads[i], dead_zones[i], chrom, start, end,
-// 			     bin_size, max_dead_proportion, desert_size,
-// 			     tmp_bins, tmp_read_counts, tmp_dead_scales);
-    
-//     for (size_t j = 0; j < tmp_bins.size(); ++j)
-//       if (tmp_bins[j].size()) {
-// 	regions.push_back(SimpleGenomicRegion(chrom,
-// 					      tmp_bins[j].front().get_start(),
-// 					      tmp_bins[j].back().get_end()));
-// 	boundaries.push_back(tmp_bins[j]);
-// 	read_counts.push_back(tmp_read_counts[j]);
-// 	dead_scales.push_back(tmp_dead_scales[j]);
-//       }
-//   }
-// }
+    reset_points.push_back(0);
+    for (size_t i = 0; i < reset_points.size() - 1; ++i)
+    {
+        const size_t start = old_reset_points[i];
+        const size_t end = old_reset_points[i + 1];
+        size_t n_gaps = 0;
+        for (size_t j = start; j < end; ++j)
+            if (nondead_scales[j] > 1 - max_dead_proportion)
+            {
+                if (n_gaps * bin_size > desert_size
+                    && reset_points.back() < bin_boundaries.size())
+                    reset_points.push_back(bin_boundaries.size());
+
+                bin_boundaries.push_back(old_bin_boundaries[j]);
+                read_bins_a.push_back(old_read_bins_a[j]);
+                read_bins_b.push_back(old_read_bins_b[j]);
+                nondead_scales.push_back(old_nondead_scales[j]);
+
+                n_gaps = 0;
+            }
+            else
+            {
+                ++n_gaps;
+            }
+        if (reset_points.back() < bin_boundaries.size())
+            reset_points.push_back(bin_boundaries.size());
+    }
+
+    std::swap(old_bin_boundaries, bin_boundaries);
+    std::swap(old_read_bins_a, read_bins_a);
+    std::swap(old_read_bins_b, read_bins_b);
+    std::swap(old_nondead_scales, nondead_scales);
+    std::swap(old_reset_points, reset_points);
+}
