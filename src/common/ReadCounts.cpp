@@ -71,8 +71,8 @@ AdjustBinSize(const vector<double> &old_read_bins,
         }
         reset_points.push_back(read_bins.size());
     }
-    assert(*std::max_element(nondead_scales.begin(), nondead_scales.end()<=1.0));
-    assert(*std::min_element(nondead_scales.begin(), nondead_scales.end()>=0.0));
+    assert(*std::max_element(nondead_scales.begin(), nondead_scales.end())<=1.0);
+    assert(*std::min_element(nondead_scales.begin(), nondead_scales.end())>=0.0);
 }
 
 void
@@ -142,8 +142,8 @@ AdjustBinSize(vector<SimpleGenomicRegion> &old_bin_boundaries,
     std::swap(old_nondead_scales, nondead_scales);
     std::swap(old_reset_points, reset_points);
 
-    assert(*std::max_element(nondead_scales.begin(), nondead_scales.end()<=1.0));
-    assert(*std::min_element(nondead_scales.begin(), nondead_scales.end()>=0.0));
+    assert(*std::max_element(nondead_scales.begin(), nondead_scales.end())<=1.0);
+    assert(*std::min_element(nondead_scales.begin(), nondead_scales.end())>=0.0);
 }
 
 void
@@ -247,8 +247,8 @@ AdjustBinSize(vector<SimpleGenomicRegion> &old_bin_boundaries,
     std::swap(old_nondead_scales, nondead_scales);
     std::swap(old_reset_points, reset_points);
 
-    assert(*std::max_element(nondead_scales.begin(), nondead_scales.end()<=1.0));
-    assert(*std::min_element(nondead_scales.begin(), nondead_scales.end()>=0.0));
+    assert(*std::max_element(nondead_scales.begin(), nondead_scales.end())<=1.0);
+    assert(*std::min_element(nondead_scales.begin(), nondead_scales.end())>=0.0);
 }
 
 void
