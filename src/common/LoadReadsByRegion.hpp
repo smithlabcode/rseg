@@ -22,6 +22,9 @@
 #ifndef LOAD_READS_BY_REGION_HPP
 #define LOAD_READS_BY_REGION_HPP
 
+#include <string>
+#include <vector>
+
 #include "GenomicRegion.hpp"
 
 void
@@ -30,10 +33,10 @@ LoadReadsByRegion(const bool VERBOSE,
 		  const std::string &reads_file, 
 		  const std::string &deads_file,
 		  const size_t bin_size, 
-		  std::vector<SimpleGenomicRegion> &regions, 
-		  std::vector<std::vector<SimpleGenomicRegion> > &deads,
-		  std::vector<std::vector<double> > &the_bins,
-		  std::vector<std::vector<SimpleGenomicRegion> > &boundaries);
+          std::vector<SimpleGenomicRegion> &boundaries,
+          std::vector<double> &read_bins,
+		  std::vector<double> &nondead_scales,
+          std::vector<size_t> reset_points);
 
 void
 LoadReadsByRegion(const bool VERBOSE,
@@ -42,10 +45,9 @@ LoadReadsByRegion(const bool VERBOSE,
 		  const std::string &reads_file_b, 
 		  const std::string &deads_file,
 		  const size_t bin_size, 
-		  std::vector<SimpleGenomicRegion> &regions, 
-		  std::vector<std::vector<SimpleGenomicRegion> > &deads,
-		  std::vector<std::vector<double> > &bins_a,
-		  std::vector<std::vector<double> > &bins_b,
-		  std::vector<std::vector<SimpleGenomicRegion> > &boundaries);
-
+          std::vector<SimpleGenomicRegion> &boundaries,
+          std::vector<double> &read_bins_a,
+          std::vector<double> &read_bins_b,
+		  std::vector<double> &nondead_scales,
+          std::vector<size_t> reset_points);
 #endif
