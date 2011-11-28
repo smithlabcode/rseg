@@ -19,9 +19,12 @@
  * 02110-1301 USA
  */
 
+#include <cmath>
+#include <cstdlib>
+
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_cdf.h>
-#include <cmath>
+
 #include <numeric>
 
 #include "SelectBinSize.hpp"
@@ -32,100 +35,44 @@ using std::cerr;
 using std::endl;
 using std::vector;
 
-size_t
-select_bin_size(const size_t n_reads, const size_t genome_size,
-		const double alpha, const double theta) {
-  
-  const size_t r = n_reads;
-  const size_t G = genome_size;
-  
-  size_t b_max = 20000;
-
-  size_t b_high = b_max;
-  size_t b_low = 0;
-  size_t b = b_high/2;
-
-  const double half_alpha = alpha/2;
-
-  while (b_high - b_low > 1) {
-    size_t n = G/b;
-    double chi_low = gsl_cdf_chisq_Pinv(half_alpha, 2.0/n*r)/(2*r);
-    double chi_high = gsl_cdf_chisq_Qinv(half_alpha, 2.0/n*r + 2.0)/(2*r);
-    double score = std::max(chi_high/n, chi_low/n);
-    if (score > 1.0/theta) {
-      b_low = b;
-      b = (b + b_high)/2;
-    }
-    else {
-      b_high = b;
-      b = (b_low + b)/2;
-    }
-  }
-  return b;
-}
-
-size_t
-select_bin_size_naive(const vector<SimpleGenomicRegion> &regions,
-                      const vector<vector<SimpleGenomicRegion> > &reads,
-                      const vector<vector<SimpleGenomicRegion> > &deads)
+static size_t
+discretize_bin_size(const double bin_size, const double bin_size_step)
 {
+    const double n_steps = bin_size / bin_size_step;
+    return static_cast<size_t>(
+        bin_size_step * (floor(n_steps) + (n_steps - floor(n_steps) > 0.5)));
     
-  size_t total_genome_size = 0;
-  for (size_t i = 0; i < regions.size(); ++i)
-    total_genome_size += regions[i].get_width();
-  size_t total_dead_size = 0;
-  size_t n_reads = 0;
-  for (size_t i = 0; i < deads.size(); ++i) 
-    {
-      for (size_t j = 0; j < deads[i].size(); ++j)
-	total_dead_size += deads[i][j].get_width();
-      n_reads += reads[i].size();
-    }
-    
-  const size_t genome_size = total_genome_size - total_dead_size;
-
-  const size_t b = static_cast<size_t>(5.0 * genome_size / n_reads);
-    
-  return std::max(b, static_cast<size_t>(1));
 }
 
-
 size_t
-select_bin_size_waterman(const vector<SimpleGenomicRegion> &regions,
-                         const vector<vector<SimpleGenomicRegion> > &reads,
-                         const vector<vector<SimpleGenomicRegion> > &deads,
+select_bin_size_waterman(const vector<double> &read_bins,
+                         const vector<double> &nondead_scales,
+                         const size_t bin_size_step,
                          const bool smooth)
 {
     
-  const double ref_genome_size = 2287968180;
-  const double ref_read_num = 10000000;
-  const double ref_bin_size = smooth ? 1000 : 400;
-  const double exponent = smooth ? 1.0/6.0 : 1.0/4.0;
+  static const double ref_genome_size = 2287968180;
+  static const double ref_read_num = 10000000;
+  static const double ref_bin_size = smooth ? 1000 : 400;
+  static const double exponent = smooth ? 1.0/6.0 : 1.0/4.0;
 
-  size_t total_genome_size = 0;
-  for (size_t i = 0; i < regions.size(); ++i)
-    total_genome_size += regions[i].get_width();
-  size_t total_dead_size = 0;
-  size_t n_reads = 0;
-  for (size_t i = 0; i < deads.size(); ++i) 
-    {
-      for (size_t j = 0; j < deads[i].size(); ++j)
-	total_dead_size += deads[i][j].get_width();
-      n_reads += reads[i].size();
-    }
-  const size_t genome_size = total_genome_size - total_dead_size;
+  const double genome_size = nondead_scales.size() * bin_size_step
+      * std::accumulate(nondead_scales.begin(), nondead_scales.end(), 0.0); 
+  
+  const double n_reads = std::accumulate(read_bins.begin(), read_bins.end(),
+                                         0.0); 
+  
+  const double b =
+      ref_bin_size / pow(n_reads/ref_read_num*ref_genome_size/genome_size,
+                         exponent);
 
-  const size_t b =
-    static_cast<size_t>(ref_bin_size /
-			pow(n_reads/ref_read_num*ref_genome_size/genome_size,
-			    exponent));
-  return std::max(b, static_cast<size_t>(1));
+  return discretize_bin_size(b, bin_size_step);
 }
 
 size_t 
-select_bin_size_hideaki(const vector<SimpleGenomicRegion> &regions,
-                        const vector<vector<SimpleGenomicRegion> > &reads,
-                        const vector<vector<SimpleGenomicRegion> > &deads,
+select_bin_size_hideaki(const vector<double> &read_bins,
+                        const vector<double> &nondead_scales,
+                        const size_t bin_size_step,
                         const bool smooth)
 {
 
@@ -134,27 +81,21 @@ select_bin_size_hideaki(const vector<SimpleGenomicRegion> &regions,
   const double ref_bin_size = smooth ? 1000 : 400;
   const double exponent = smooth ? 1.0/3.0 : 1.0/2.0;
 
-  size_t total_genome_size = 0;
-  for (size_t i = 0; i < regions.size(); ++i)
-    total_genome_size += regions[i].get_width();
-  size_t total_dead_size = 0;
-  size_t n_reads = 0;
-  for (size_t i = 0; i < deads.size(); ++i) 
-    {
-      for (size_t j = 0; j < deads[i].size(); ++j)
-	total_dead_size += deads[i][j].get_width();
-      n_reads += reads[i].size();
-    }
-  const size_t genome_size = total_genome_size - total_dead_size;
+  const double genome_size = nondead_scales.size() * bin_size_step
+      * std::accumulate(nondead_scales.begin(), nondead_scales.end(),
+                        0.0); 
+  
+  const double n_reads = std::accumulate(read_bins.begin(), read_bins.end(),
+                                         0.0); 
 
-  const size_t b =
-    static_cast<size_t>(ref_bin_size /
-			pow(n_reads/ref_read_num*ref_genome_size/genome_size,
-			    exponent));
-  return std::max(b, static_cast<size_t>(1));
+  const double b =
+      ref_bin_size / pow(n_reads/ref_read_num*ref_genome_size/genome_size,
+                         exponent);
+
+  return discretize_bin_size(b, bin_size_step);
 }
 
-void
+static void
 get_mean_var(const vector<double>  &vals, double &mean, double &var)
 {
   mean = std::accumulate(vals.begin(), vals.end(), 0.0) / vals.size();
@@ -165,61 +106,62 @@ get_mean_var(const vector<double>  &vals, double &mean, double &var)
   var /= vals.size();
 }
 
-
 size_t 
-select_bin_size_hideaki_emp(const vector<SimpleGenomicRegion> &regions,
-                            const vector<vector<SimpleGenomicRegion> > &reads,
-                            const vector<vector<SimpleGenomicRegion> > &deads,
+select_bin_size_hideaki_emp(const vector<double> &read_bins,
+                            const vector<double> &nondead_scale,
+                            const vector<size_t> &reset_points,
+                            const size_t bin_size_step,
                             const double max_dead_proportion)
 {
 
-  size_t bin_size_low = 10;
+  size_t bin_size_low = 50;
   size_t bin_size_high = 20000;
     
-  while (bin_size_low < bin_size_high - 3)
-    {
-      vector<vector<double> > tmp_read_bins;
-      vector<vector<SimpleGenomicRegion> > bin_boundaries;
-      vector<double> read_bins;
-      vector<size_t> reset_points;
-        
+  while (bin_size_high > bin_size_low + bin_size_step )
+  {
+      vector<double> tmp_read_bins;
+      vector<double> tmp_nondead_scales;
+      vector<size_t> tmp_reset_points;
+      vector<double> corrected_read_bins;
+      
       size_t b_one_third(bin_size_low + (bin_size_high - bin_size_low) / 3);
-      BinReadsCorrectDeadZones(reads, deads, regions, b_one_third,
-			       max_dead_proportion,
-			       bin_boundaries, tmp_read_bins);
-      collapse_read_bins(tmp_read_bins, read_bins, reset_points);
+      b_one_third = discretize_bin_size(b_one_third, bin_size_step);
+      AdjustBinSize(read_bins, nondead_scale, reset_points, bin_size_step,
+                    tmp_read_bins, tmp_nondead_scales, tmp_reset_points,
+                    b_one_third);
+      GetCorrectedReadCounts(tmp_read_bins, tmp_nondead_scales,
+                             corrected_read_bins, max_dead_proportion);
 
       double mean_one_third, var_one_third, cost_one_third;
-      get_mean_var(read_bins, mean_one_third, var_one_third);
+      get_mean_var(corrected_read_bins, mean_one_third, var_one_third);
       cost_one_third = (2*mean_one_third - var_one_third)
-	/ pow(static_cast<double>(b_one_third), 2.0);
+          / pow(static_cast<double>(b_one_third), 2.0);
 
       size_t b_two_third(bin_size_high - (bin_size_high - bin_size_low) / 3);
-      BinReadsCorrectDeadZones(reads, deads, regions, b_two_third,
-			       max_dead_proportion,
-			       bin_boundaries, tmp_read_bins);
-      collapse_read_bins(tmp_read_bins, read_bins, reset_points);
-        
+      b_two_third = discretize_bin_size(b_two_third, bin_size_step);
+      AdjustBinSize(read_bins, nondead_scale, reset_points, bin_size_step,
+                    tmp_read_bins, tmp_nondead_scales, tmp_reset_points,
+                    b_two_third);
+      GetCorrectedReadCounts(tmp_read_bins, tmp_nondead_scales,
+                             corrected_read_bins, max_dead_proportion);
+
       double mean_two_third, var_two_third, cost_two_third;
-      get_mean_var(read_bins, mean_two_third, var_two_third);
+      get_mean_var(corrected_read_bins, mean_two_third, var_two_third);
       cost_two_third = (2*mean_two_third - var_two_third)
-	/ pow(static_cast<double>(b_two_third), 2.0);
-
-      //         cerr << b_one_third << "\t" << cost_one_third << endl
-      //              << b_two_third << "\t" << cost_two_third << endl;
-
+          / pow(static_cast<double>(b_two_third), 2.0);
+ 
       if (cost_one_third > cost_two_third)
-	bin_size_low = b_one_third;
+          bin_size_low = b_one_third;
       else if (cost_one_third < cost_two_third)
-	bin_size_high = b_two_third;
+          bin_size_high = b_two_third;
       else if (fabs(cost_one_third - cost_two_third) < 1e-20)
-        {
-	  bin_size_low = b_one_third;
-	  bin_size_high = b_two_third;
-        }
+      {
+          bin_size_low = b_one_third;
+          bin_size_high = b_two_third;
+      }
     }
-    
-  return (bin_size_low + bin_size_high) / 2;
+  
+  return discretize_bin_size((bin_size_low+bin_size_high)/2, bin_size_step);
 }
 
 

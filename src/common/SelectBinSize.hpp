@@ -23,33 +23,23 @@
 #define SELECT_BIN_SIZE
 
 #include <vector>
-
-#include "smithlab_utils.hpp"
-#include "GenomicRegion.hpp"
+#include <cstdlib>
 
 size_t
-select_bin_size(const size_t n_reads, const size_t genome_size,
-		const double alpha, const double theta);
-
-size_t
-select_bin_size_naive(const std::vector<SimpleGenomicRegion> &regions,
-                      const std::vector<std::vector<SimpleGenomicRegion> > &reads,
-                      const std::vector<std::vector<SimpleGenomicRegion> > &deads);
-
-size_t
-select_bin_size_waterman(const std::vector<SimpleGenomicRegion> &regions,
-                         const std::vector<std::vector<SimpleGenomicRegion> > &reads,
-                         const std::vector<std::vector<SimpleGenomicRegion> > &deads,
+select_bin_size_waterman(const std::vector<double> &read_bins,
+                         const std::vector<double> &nondead_scales,
+                         const size_t bin_size_step,
                          const bool smooth = true);
 
 size_t
-select_bin_size_hideaki(const std::vector<SimpleGenomicRegion> &regions,
-                        const std::vector<std::vector<SimpleGenomicRegion> > &reads,
-                        const std::vector<std::vector<SimpleGenomicRegion> > &deads,
+select_bin_size_hideaki(const std::vector<double> &read_bins,
+                        const std::vector<double> &nondead_scales,
+                        const size_t bin_size_step,
                         const bool smooth = true);
 size_t 
-select_bin_size_hideaki_emp(const std::vector<SimpleGenomicRegion> &regions,
-                            const std::vector<std::vector<SimpleGenomicRegion> > &reads,
-                            const std::vector<std::vector<SimpleGenomicRegion> > &deads,
-                            const double max_dead_proportion);
+select_bin_size_hideaki_emp(const std::vector<double> &read_bins,
+                            const std::vector<double> &nondead_scale,
+                            const std::vector<size_t> &reset_points,
+                            const size_t bin_size_step,
+                            const double max_dead_proportion = 0.5);
 #endif
