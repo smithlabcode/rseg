@@ -49,21 +49,6 @@ using std::numeric_limits;
 using std::max;
 using std::min;
 
-static double 
-get_mean(const SplitDistro &distro) {
-  const string name_arg = distro.tostring();
-  const vector<double> p(distro.get_params());
-  
-  if (name_arg.find("nbdiff") != string::npos)
-    return p[0] - p[2];
-  else if (name_arg.find("skel") != string::npos)
-    return p[0] - p[1];
-  else if (name_arg.find("gauss") != string::npos)
-    return p[0];
-  else
-    return 0;
-}
-
 void
 pick_training_sample(const vector<double> &read_bins,
                      const vector<double> &read_bins_a,
@@ -108,11 +93,11 @@ clear_training_sample(vector<double> &read_bins_sample,
 		      vector<double> &scales_sample,
 		      vector<size_t> &reset_points_sample)
 {
-    vector<bounds>()::swap(read_bins_sample);
-    vector<bounds>()::swap(read_bins_a_sample);
-    vector<bounds>()::swap(read_bins_b_sample);
-    vector<bounds>()::swap(scales_sample);
-    vector<bounds>()::swap(reset_points_sample);
+    vector<double>().swap(read_bins_sample);
+    vector<double>().swap(read_bins_a_sample);
+    vector<double>().swap(read_bins_b_sample);
+    vector<double>().swap(scales_sample);
+    vector<size_t>().swap(reset_points_sample);
 }
 
 void
