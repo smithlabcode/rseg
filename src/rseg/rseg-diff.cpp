@@ -58,8 +58,7 @@ using std::make_pair;
 // functions for two-state modes
 
 void
-output_boundaries(const vector<SimpleGenomicRegion> &regions,
-                  const vector<double> &tmp_read_bins,
+output_boundaries(const vector<double> &tmp_read_bins,
                   const vector<double> &scales,
                   const vector<size_t> &reset_points,
                   const vector<vector<SimpleGenomicRegion> > &bin_bounds,
@@ -196,7 +195,7 @@ output_boundaries(const vector<SimpleGenomicRegion> &regions,
 }
 
 void
-output_domains(const vector<SimpleGenomicRegion> &regions,
+output_domains(
 	       const vector<double> &tmp_read_bins,
 	       const vector<double> &tmp_scales,
 	       const vector<size_t> &reset_points,
@@ -235,9 +234,7 @@ output_domains(const vector<SimpleGenomicRegion> &regions,
   vector<vector<GenomicRegion> > domains;
   build_domains(bin_bounds, classes, scores, posterior_cutoff,
 		domains, undef_region_cutoff);
-  pick_domains(bin_bounds, read_bins, 
-	       scales, distros,
-	       domains, cdf_cutoff);
+  pick_domains(bin_bounds, read_bins, scales, distros, domains, cdf_cutoff);
     
   // output domains
   const string domain_file_name =
@@ -261,8 +258,7 @@ output_domains(const vector<SimpleGenomicRegion> &regions,
 
 // for three-state mode
 void
-output_boundaries(const vector<SimpleGenomicRegion> &regions,
-                  const vector<double> &tmp_read_bins,
+output_boundaries(const vector<double> &tmp_read_bins,
                   const vector<double> &scales,
                   const vector<size_t> &reset_points,
                   const vector<vector<SimpleGenomicRegion> > &bin_bounds,
@@ -398,7 +394,7 @@ output_boundaries(const vector<SimpleGenomicRegion> &regions,
 }
 
 void
-output_domains(const vector<SimpleGenomicRegion> &regions,
+output_domains(
 	       const vector<double> &tmp_read_bins,
 	       const vector<double> &tmp_scales,
 	       const vector<size_t> &reset_points,
@@ -485,6 +481,7 @@ main(int argc, const char **argv)  {
     string fg_name("nbdiff"), bg_name("nbdiff");
         
     size_t desert_size = 20000;
+    size_t bin_size_step = 50;
     size_t bin_size = 0;
     bool waterman = false;
     bool hideaki = false;
@@ -607,80 +604,55 @@ main(int argc, const char **argv)  {
     
     const string dataset_name_a = strip_path_and_bed_suffix(reads_file_a);
     const string dataset_name_b = strip_path_and_bed_suffix(reads_file_b);
-    const string dataset_name = dataset_name_a + ":" + dataset_name_b;
+    const string dataset_name = dataset_name_a + "-" + dataset_name_b;
 
     /***********************************
      * STEP 1: READ IN THE DATA
      */
-    
-    vector<SimpleGenomicRegion> regions;
-    vector<vector<double> > bins_a;
-    vector<vector<double> > bins_b;
-    vector<vector<SimpleGenomicRegion> > deads;
-    vector<vector<SimpleGenomicRegion> > bin_boundaries;
+    vector<SimpleGenomicRegion> bin_boundaries;
+    vector<double> read_bins_a;
+    vector<double> read_bins_b;
+    vector<double> scales;
+    vector<size_t> reset_points;
     LoadReadsByRegion(VERBOSE, chroms_file, reads_file_a, reads_file_b,
-		      deads_file, bin_size, regions, deads, bins_a, bins_b, bin_boundaries);
-    
-    //     if (REMOVE_JACKPOT) {
-    //       if (VERBOSE)
-    // 	cerr << "[Remove duplicate reads]" << std::endl;
-    //       remove_duplicate_reads(reads_a);
-    //       remove_duplicate_reads(reads_b);
-    //     }
-      
-    //     if (VERBOSE)
-    //       cerr << "[Selecting bin size] ";
-    //     if (bin_size == 0 && hideaki)
-    //       bin_size = select_bin_size_hideaki(regions, reads_a, deads, smooth);
-    //     if (bin_size == 0 && waterman)
-    //       bin_size = select_bin_size_waterman(regions, reads_a, deads, smooth);
-    //     if (bin_size == 0)
-    //       bin_size = select_bin_size_hideaki_emp(regions, reads_a, deads,
-    // 					     max_dead_proportion);
-    //     if (VERBOSE)
-    //       cerr << "Bin size =  " << bin_size << endl;
+                      deads_file, bin_size_step, bin_boundaries, read_bins_a,
+                      read_bins_b, scales, reset_points);
+
+    if (VERBOSE)
+        cerr << "[Selecting bin size] ";
+    if (bin_size == 0) {
+        if (hideaki)
+            bin_size = select_bin_size_hideaki(
+                read_bins_a, scales, bin_size_step, smooth);
+        else if (waterman)
+            bin_size = select_bin_size_waterman(
+                read_bins_a, scales, bin_size_step, smooth);
+        else 
+            bin_size = select_bin_size_hideaki_emp(
+                read_bins_a, scales, reset_points, bin_size_step,
+                max_dead_proportion);
+    }
+    if (VERBOSE) cerr << "Bin size =  " << bin_size << endl;
+
     
     /***********************************
      * STEP 2: BIN THE READS
      */ 
-    
-    // Obtain the binned reads
-    if (VERBOSE)
-      cerr << "[preparing data] binning reads " << dataset_name_a << endl;
-    
-    vector<vector<double> > tmp_scales;
-    BinReadsCorrectDeadZones(deads, regions, bin_size, tmp_scales);
-    
-    if (VERBOSE)
-      cerr << "[preparing data] binning reads " << dataset_name_b << endl;
-    
-    elim_empty_regions(regions, bin_boundaries, bins_a, bins_b, tmp_scales);
-    
-    // collapse regions
-    vector<size_t> reset_points;
-    vector<double> read_bins_a;
-    collapse_read_bins(bins_a, read_bins_a, reset_points);
-    
-    vector<double> read_bins_b;
-    collapse_read_bins(bins_b, read_bins_b, reset_points);
+    AdjustBinSize(bin_boundaries, read_bins_a, read_bins_b, scales,
+                  reset_points, bin_size_step, bin_size);
+    RemoveDeserts(bin_boundaries, read_bins_a, read_bins_b, scales,
+                  reset_points, bin_size, desert_size, max_dead_proportion);
 
-    vector<double> scales;
-    collapse_read_bins(tmp_scales, scales, reset_points);
-        
     vector<double> read_bins(read_bins_a.size());
-    
     const double max_count = bin_size;
-
     for (size_t i = 0; i < read_bins.size(); ++i) {
       read_bins_a[i] = min(read_bins_a[i], max_count);
       read_bins_b[i] = min(read_bins_b[i], max_count);
       read_bins[i] = read_bins_a[i] - read_bins_b[i];
     }
-    
-    // release memories
-    //     tmp_read_bins_a.clear();
-    //     tmp_read_bins_b.clear();
-    // bin_boundaries_b.clear();
+
+    vector<vector<SimpleGenomicRegion> > bin_boundaries_folded;
+    expand_bins(bin_boundaries, reset_points, bin_boundaries_folded);
 
     // mode specific code        
     if (mode == TEST_CONTROL_MODE) {
@@ -756,19 +728,17 @@ main(int argc, const char **argv)  {
       // make sure the output dir is valid
       chk_and_mk_dirs(outdir);
 
-      output_domains(regions, read_bins, 
-		     scales, reset_points, bin_boundaries,
+      output_domains(read_bins, scales, reset_points, bin_boundaries_folded,
 		     hmm, distros, start_trans, trans, end_trans, classes,
 		     posterior_cutoff, undef_region_cutoff, cdf_cutoff,
 		     dataset_name, outdir, VERBOSE, WRITE_TRACKS);
-      output_boundaries(regions, read_bins, scales, reset_points,
-			bin_boundaries,
+      output_boundaries(read_bins, scales, reset_points, bin_boundaries_folded,
 			hmm, distros, start_trans, trans, end_trans, classes,
 			dataset_name, outdir, VERBOSE, WRITE_TRACKS);
             
       if (PRINT_READCOUNTS) {
 	const string file_name( path_join(outdir, dataset_name + "-counts.bed") );
-	write_read_counts_by_bin(bin_boundaries,
+	write_read_counts_by_bin(bin_boundaries_folded,
 				 read_bins_a, read_bins_b, scales,
 				 classes, file_name, VERBOSE);
       }
@@ -853,21 +823,18 @@ main(int argc, const char **argv)  {
       // make sure the output dir is valid
       chk_and_mk_dirs(outdir);
 
-      output_domains(regions, read_bins, scales,
-		     reset_points, bin_boundaries,
+      output_domains(read_bins, scales, reset_points, bin_boundaries_folded,
 		     hmm, distros, start_trans, trans, end_trans, 
 		     classes, posterior_cutoff, undef_region_cutoff, cdf_cutoff,
 		     dataset_name, outdir, VERBOSE, WRITE_TRACKS);
-      output_boundaries(regions, read_bins, scales,
-			reset_points, bin_boundaries,
+      output_boundaries(read_bins, scales, reset_points, bin_boundaries_folded,
 			hmm, distros, start_trans, trans, end_trans, 
 			classes, dataset_name, outdir, VERBOSE, WRITE_TRACKS);
 
       if (PRINT_READCOUNTS) {
 	const string file_name( path_join(outdir, dataset_name + "-counts.bed") );
-	write_read_counts_by_bin(bin_boundaries,
-				 read_bins_a, read_bins_b, scales,
-				 classes, file_name, VERBOSE);
+	write_read_counts_by_bin(bin_boundaries_folded, read_bins_a, read_bins_b,
+                             scales, classes, file_name, VERBOSE);
       }
     } 
     else {

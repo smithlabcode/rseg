@@ -35,7 +35,7 @@
 #include "TwoStateScaleHMM.hpp"
 #include "EvaluateBoundaries.hpp"
 #include "LoadReadsByRegion.hpp"
-// #include "SelectBinSize.hpp"
+#include "SelectBinSize.hpp"
 #include "OptionParser.hpp"
 #include "rseg_utils.hpp"
 
@@ -259,6 +259,7 @@ main(int argc, const char **argv) {
     string bg_name = "nbd";
   
     size_t desert_size = 20000;
+    size_t bin_size_step = 50;
     size_t bin_size = 0;
     bool waterman = false;
     bool hideaki = false;
@@ -364,66 +365,44 @@ main(int argc, const char **argv) {
     /***********************************
      * STEP 1: READ IN THE DATA
      */
-    vector<SimpleGenomicRegion> regions;
-    vector<vector<SimpleGenomicRegion> > reads;
-    vector<vector<SimpleGenomicRegion> > deads;
-    
-    vector<vector<double> > tmp_read_bins;
-    vector<vector<SimpleGenomicRegion> > boundaries;
+
+    vector<SimpleGenomicRegion> bin_boundaries;
+    vector<double> read_bins;
+    vector<double> scales;
+    vector<size_t> reset_points;
     LoadReadsByRegion(VERBOSE, chroms_file, reads_file, deads_file, 
-		      bin_size, regions, deads, tmp_read_bins,
-		      boundaries);
+                      bin_size_step, bin_boundaries, read_bins,
+                      scales, reset_points);
     
-    //     if (VERBOSE)
-    //       cerr << "[Selecting bin size] ";
-    //     if (bin_size == 0) {
-    //       if (hideaki)
-    // 	bin_size = select_bin_size_hideaki(regions, reads, deads, smooth);
-    //       else if (waterman)
-    // 	bin_size = select_bin_size_waterman(regions, reads, deads, smooth);
-    //       else 
-    // 	bin_size = select_bin_size_hideaki_emp(regions, reads, deads,
-    // 					       max_dead_proportion);
-    //     }
-    //     if (VERBOSE)
-    //       cerr << "Bin size =  " << bin_size << endl;
+    if (VERBOSE)
+        cerr << "[Selecting bin size] ";
+    if (bin_size == 0) {
+        if (hideaki)
+            bin_size = select_bin_size_hideaki(
+                read_bins, scales, bin_size_step, smooth);
+        else if (waterman)
+            bin_size = select_bin_size_waterman(
+                read_bins, scales, bin_size_step, smooth);
+        else 
+            bin_size = select_bin_size_hideaki_emp(
+                read_bins, scales, reset_points, bin_size_step,
+                max_dead_proportion);
+    }
+    if (VERBOSE) cerr << "Bin size =  " << bin_size << endl;
     
     /***********************************
      * STEP 2: BIN THE READS
      */ 
-    // Obtain the binned reads
-    if (VERBOSE)
-      cerr << "[formatting data] binning reads" << endl;
-    
-    vector<vector<double> > tmp_scales;
-    vector<vector<SimpleGenomicRegion> > bin_boundaries(boundaries);
-
-    BinReadsCorrectDeadZones(deads, regions, bin_size, tmp_scales);
-    elim_empty_regions(regions, bin_boundaries, tmp_read_bins, tmp_scales);
-
-    /*
-      !!!!!!!!!!!!!!
-      !!!!!!!!!!!!!!
-      THIS IS WHERE WE NEED TO DEAL WITH THE DEADZONES AND THE DESERTS
-      !!!!!!!!!!!!!!
-      !!!!!!!!!!!!!!
-    */
-    
-    vector<double> read_bins;
-    vector<double> scales;
-    vector<size_t> reset_points;
-    collapse_read_bins(tmp_read_bins, read_bins, reset_points);
-    collapse_read_bins(tmp_scales, scales, reset_points);
-    
+    AdjustBinSize(bin_boundaries, read_bins, scales, reset_points,
+                  bin_size_step, bin_size);
+    RemoveDeserts(bin_boundaries, read_bins, scales, reset_points,
+                  bin_size, desert_size, max_dead_proportion);
     const double max_count = bin_size;
     for (size_t i = 0; i < read_bins.size(); ++i)
       read_bins[i] = min(read_bins[i], max_count);
     
-    // release unused memory
-    vector<vector<SimpleGenomicRegion> >().swap(deads);
-    vector<vector<double> >().swap(tmp_read_bins);
-    vector<vector<double> >().swap(tmp_scales);
-    // end release unused memory
+    vector<vector<SimpleGenomicRegion> > bin_boundaries_folded;
+    expand_bins(bin_boundaries, reset_points, bin_boundaries_folded);
     
     /***********************************
      * STEP 3: ESTIMATE EMISSION PARAMS
@@ -478,12 +457,12 @@ main(int argc, const char **argv) {
     // make sure the output dir is valid
     chk_and_mk_dirs(outdir);
     
-    output_domains(bin_boundaries,
+    output_domains(bin_boundaries_folded,
 		   read_bins, scales, classes, scores, reset_points,
 		   hmm, distros, start_trans, trans, end_trans, 
 		   posterior_cutoff, undef_region_cutoff, cdf_cutoff,
 		   dataset_name, outdir.c_str(), VERBOSE, WRITE_TRACKS);
-    output_boundaries(bin_boundaries,
+    output_boundaries(bin_boundaries_folded,
 		      read_bins, scales, classes, reset_points,
 		      hmm, distros, start_trans, trans, end_trans, 
 		      dataset_name, outdir,
@@ -492,8 +471,8 @@ main(int argc, const char **argv) {
     if (PRINT_READCOUNTS) {
       const string read_counts_file_name = 
 	path_join(outdir, dataset_name + "-counts.bed");
-      write_read_counts_by_bin(bin_boundaries, read_bins, scales, classes,
-			       read_counts_file_name, VERBOSE);
+      write_read_counts_by_bin(bin_boundaries_folded, read_bins, scales,
+                               classes, read_counts_file_name, VERBOSE);
     }
   }
   catch (SMITHLABException &e) {
