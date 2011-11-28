@@ -26,7 +26,7 @@ endif
 SOURCES = $(wildcard *.cpp)
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 
-INCLUDEDIRS = $(SMITHLAB_CPP)
+INCLUDEDIRS = $(SMITHLAB_CPP)  ../gsl
 INCLUDEARGS = $(addprefix -I,$(INCLUDEDIRS))
 
 CXX = g++

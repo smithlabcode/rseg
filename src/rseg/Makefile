@@ -19,10 +19,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-ifndef RSEG_ROOT
-$(error Must define RSEG_ROOT variable)
-endif
-
 ifndef SMITHLAB_CPP
 $(error Must define SMITHLAB_CPP variable)
 endif
@@ -39,6 +35,8 @@ INCLUDEARGS = $(addprefix -I,$(INCLUDEDIRS))
 LIBS += -lgsl -lgslcblas 
 
 CXX = g++
+CC = gcc
+CCFLAGS = -Wall -fPIC
 CXXFLAGS = -Wall -fPIC -fmessage-length=50
 OPTFLAGS = -O2
 DEBUGFLAGS = -g -lefence -L$(HOME)/lib
@@ -55,9 +53,9 @@ all: $(PROGS)
 
 rseg: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
 	smithlab_utils.o OptionParser.o RNG.o) \
-	$(addprefix $(COMMON_LIB)/, 	numerical_utils.o rseg_utils.o \
+	$(addprefix $(COMMON_LIB)/, numerical_utils.o rseg_utils.o \
 	Distro.o SplitDistro.o Smoothing.o \
-	SortGenomicRegion.o LoadReadsByRegion.o ReadCounts.o  SelectBinSize.o \
+	SortGenomicRegion.o LoadReadsByRegion.o SelectBinSize.o ReadCounts.o \
 	TwoStateScaleHMM.o TwoStateResolveMixture.o \
 	EvaluateBoundaries.o)		
 
@@ -65,7 +63,7 @@ rseg-diff: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
 	smithlab_utils.o OptionParser.o RNG.o) \
 	$(addprefix $(COMMON_LIB)/, numerical_utils.o rseg_utils.o \
 	Distro.o SplitDistro.o Smoothing.o \
-	SortGenomicRegion.o LoadReadsByRegion.o ReadCounts.o SelectBinSize.o \
+	SortGenomicRegion.o LoadReadsByRegion.o SelectBinSize.o ReadCounts.o \
 	TwoStateScaleSplitHMM.o TwoStateScaleSplitResolveMixture.o \
 	ThreeStateScaleSplitHMM.o ThreeStateScaleSplitResolveMixture.o \
 	EvaluateBoundaries.o)		
@@ -78,6 +76,7 @@ deadzones: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
 
 %: %.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(INCLUDEARGS) $(LIBS)
+
 
 install: $(PROGS)
 	@mkdir -p $(RSEG_ROOT)/bin
