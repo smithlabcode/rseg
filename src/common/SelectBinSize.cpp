@@ -56,7 +56,7 @@ select_bin_size_waterman(const vector<double> &read_bins,
   static const double ref_bin_size = smooth ? 1000 : 400;
   static const double exponent = smooth ? 1.0/6.0 : 1.0/4.0;
 
-  const double genome_size = nondead_scales.size() * bin_size_step
+  const double genome_size = bin_size_step
       * std::accumulate(nondead_scales.begin(), nondead_scales.end(), 0.0); 
   
   const double n_reads = std::accumulate(read_bins.begin(), read_bins.end(),
@@ -81,7 +81,7 @@ select_bin_size_hideaki(const vector<double> &read_bins,
   const double ref_bin_size = smooth ? 1000 : 400;
   const double exponent = smooth ? 1.0/3.0 : 1.0/2.0;
 
-  const double genome_size = nondead_scales.size() * bin_size_step
+  const double genome_size = bin_size_step
       * std::accumulate(nondead_scales.begin(), nondead_scales.end(),
                         0.0); 
   
@@ -91,7 +91,6 @@ select_bin_size_hideaki(const vector<double> &read_bins,
   const double b =
       ref_bin_size / pow(n_reads/ref_read_num*ref_genome_size/genome_size,
                          exponent);
-
   return discretize_bin_size(b, bin_size_step);
 }
 
