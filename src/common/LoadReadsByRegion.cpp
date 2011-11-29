@@ -165,6 +165,8 @@ LoadReadsByRegion(const bool VERBOSE,
   }
 
   // Load the reads, tabulating counts in bins
+  if (VERBOSE)
+      cerr << "[LOADING_DATA] reads"  << endl;
   std::ifstream in(reads_file.c_str());
   string line;
   size_t i = 0, j = 0;
@@ -178,10 +180,13 @@ LoadReadsByRegion(const bool VERBOSE,
     prev_gr = gr;
     if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
     else gr.set_start(gr.get_end() - 1);
-    while (boundaries[j].front().get_chrom() < gr.get_chrom()) {
+    while (j < boundaries.size()
+           && boundaries[j].front().get_chrom() < gr.get_chrom()) {
       ++j;
       i = 0;
     }
+    if (j >= boundaries.size() || !gr.same_chrom(boundaries[j].front()))
+      continue;
     assert(gr.same_chrom(boundaries[j].front()));
     while (boundaries[j][i] < gr) ++i;
     ++bins[j][i];
@@ -198,7 +203,7 @@ LoadReadsByRegion(const bool VERBOSE,
           std::vector<SimpleGenomicRegion> &boundaries,
           std::vector<double> &read_bins,
 		  std::vector<double> &nondead_scales,
-          std::vector<size_t> reset_points)
+          std::vector<size_t> &reset_points)
 {
     vector<SimpleGenomicRegion> chroms;
     vector<vector<SimpleGenomicRegion> > deads_folded;
@@ -214,6 +219,10 @@ LoadReadsByRegion(const bool VERBOSE,
     collapse_read_bins(boundaries_folded, boundaries, reset_points);
     collapse_read_bins(bins_folded, read_bins, reset_points);
     collapse_read_bins(nondead_scales_folded, nondead_scales, reset_points);
+
+    assert(boundaries.size() == reset_points.back());
+    assert(read_bins.size() == reset_points.back());
+    assert(nondead_scales.size() == reset_points.back());
 }
 
 
@@ -278,10 +287,13 @@ LoadReadsByRegion(const bool VERBOSE, const string &chroms_file,
     prev_gr = gr;
     if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
     else gr.set_start(gr.get_end() - 1);
-    while (boundaries[j].front().get_chrom() < gr.get_chrom()) {
+    while (j < boundaries.size()
+           &&boundaries[j].front().get_chrom() < gr.get_chrom()) {
       ++j;
       i = 0;
     }
+    if (j >= boundaries.size() || !gr.same_chrom(boundaries[j].front()))
+      continue;
     assert(gr.same_chrom(boundaries[j].front()));
     while (boundaries[j][i] < gr) ++i;
     ++bins_a[j][i];
@@ -301,10 +313,13 @@ LoadReadsByRegion(const bool VERBOSE, const string &chroms_file,
     prev_gr = gr;
     if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
     else gr.set_start(gr.get_end() - 1);
-    while (boundaries[j].front().get_chrom() < gr.get_chrom()) {
+    while (j < boundaries.size()
+           && boundaries[j].front().get_chrom() < gr.get_chrom()) {
       ++j;
       i = 0;
     }
+    if (j >= boundaries.size() || !gr.same_chrom(boundaries[j].front()))
+      continue;
     assert(gr.same_chrom(boundaries[j].front()));
     while (boundaries[j][i] < gr) ++i;
     ++bins_b[j][i];
@@ -322,7 +337,7 @@ LoadReadsByRegion(const bool VERBOSE,
           std::vector<double> &read_bins_a,
           std::vector<double> &read_bins_b,
 		  std::vector<double> &nondead_scales,
-          std::vector<size_t> reset_points)
+          std::vector<size_t> &reset_points)
 {
     vector<SimpleGenomicRegion> chroms;
     vector<vector<SimpleGenomicRegion> > deads_folded;
@@ -340,4 +355,9 @@ LoadReadsByRegion(const bool VERBOSE,
     collapse_read_bins(bins_a_folded, read_bins_a, reset_points);
     collapse_read_bins(bins_b_folded, read_bins_b, reset_points);
     collapse_read_bins(nondead_scales_folded, nondead_scales, reset_points);
+
+    assert(boundaries.size() == reset_points.back());
+    assert(read_bins_a.size() == reset_points.back());
+    assert(read_bins_b.size() == reset_points.back());
+    assert(nondead_scales.size() == reset_points.back());
 }
