@@ -249,9 +249,9 @@ main(int argc, const char **argv) {
     // flags
     bool use_posterior = true;
     bool VERBOSE = false;
+    bool WRITE_BOUNDARY = false;
     bool WRITE_TRACKS = false;
     bool PRINT_READCOUNTS = false;
-    //     bool Remove_Jackpot = true;
     bool Both_Domain_Ends = true;
     
     // names of statistical distributions to use
@@ -280,12 +280,22 @@ main(int argc, const char **argv) {
     double max_dead_proportion = 0.5;
     
     ////////////////////// PARSING COMMAND LINE OPTIONS /////////////////////////
-    OptionParser opt_parse("episeg", "This program segments genome according "
-			   "to mapped read density", "BED_file");
-    opt_parse.add_opt("fg", 'F', "foreground emission distribution name", false, fg_name);
-    opt_parse.add_opt("bg", 'B', "background emission distribution name", false, bg_name);
+    OptionParser opt_parse(basename(argv[0]),
+                           "This program segments genome according "
+                           "to mapped read density", "BED_file");
+    opt_parse.add_opt("output-dir", 'o', "Output directory name (default CWD)", 
+		      false, outdir);
+    opt_parse.add_opt("boundary", '\0', "Write boundary file", 
+		      false, WRITE_BOUNDARY);
+    opt_parse.add_opt("tracks", '\0', "Whether write additional browser tracks", 
+		      false, WRITE_TRACKS);
+    opt_parse.add_opt("read-counts", '\0', "Write reads counts "
+		      "file in each bin", false, PRINT_READCOUNTS);
+    opt_parse.add_opt("name", '\0', "Name of dataset (default: filename)", 
+		      false, tmp_dataset_name);
     opt_parse.add_opt("chrom", 'c', "Name of the file with sizes of chromosomes", 
 		      true, chroms_file);
+    opt_parse.add_opt("deadzone-file", 'd', "Filename of deadzones", false, deads_file);
     opt_parse.add_opt("domain-size", 's', "Expected size of domain (Default 20000)", 
 		      false, fg_size);
     opt_parse.add_opt("bin-size", 'b', "Size of bins (default depends on # of reads)", 
@@ -298,19 +308,14 @@ main(int argc, const char **argv) {
 		      "bin size (default)", false, hideaki_emp);
     opt_parse.add_opt("smooth", '\0', "Indicate whether the rate curve is assumed smooth", 
 		      false, smooth);
-    opt_parse.add_opt("deadzone-file", 'd', "Filename of deadzones", false, deads_file);
     opt_parse.add_opt("max-deadzone-prop", '\0',
 		      "Maximum deadzone proportion allowed for retened bins",
 		      false, max_dead_proportion);
     opt_parse.add_opt("desert-size", 'S', "Desert size", false, desert_size);
-    opt_parse.add_opt("output-dir", 'o', "Output directory name (default CWD)", 
-		      false, outdir);
     opt_parse.add_opt("iteration", 'i', "Maximum number of iterations for "
 		      "HMM training", false, max_iterations);
-    opt_parse.add_opt("tolerance", 't', "Tolerance for convergence", 
-		      false, tolerance);
-    opt_parse.add_opt("min_prob", 'p', "Minimum probability value", 
-		      false, min_prob);
+    opt_parse.add_opt("fg", 'F', "foreground emission distribution name", false, fg_name);
+    opt_parse.add_opt("bg", 'B', "background emission distribution name", false, bg_name);
     opt_parse.add_opt("posterior", 'P', "Options for posterior decoding "
 		      "(default Viterbi)", false, use_posterior);
     opt_parse.add_opt("posterior-cutoff", '\0', "Posterior threshold for "
@@ -319,14 +324,12 @@ main(int argc, const char **argv) {
 		      "undefined region", false, undef_region_cutoff);
     opt_parse.add_opt("cdf-cutoff", '\0', "Cutoff of cumulative probability "
 		      "for a true fg domain", false, cdf_cutoff); 
-    opt_parse.add_opt("name", 'N', "Name of dataset (default: filename)", 
-		      false, tmp_dataset_name);
-    opt_parse.add_opt("tracks", 'T', "Whether write additional browser tracks", 
-		      false, WRITE_TRACKS);
+    opt_parse.add_opt("tolerance", '\0', "Tolerance for convergence", 
+		      false, tolerance);
+    opt_parse.add_opt("min_prob", '\0', "Minimum probability value", 
+		      false, min_prob);
     opt_parse.add_opt("verbose", 'v', "Print more running information", 
 		      false, VERBOSE);
-    opt_parse.add_opt("read-counts-requested", 'C', "Write reads counts "
-		      "file in each bin", false, PRINT_READCOUNTS);
 
     vector<string> leftover_args;
     opt_parse.parse(argc, argv, leftover_args);
@@ -373,9 +376,9 @@ main(int argc, const char **argv) {
     LoadReadsByRegion(VERBOSE, chroms_file, reads_file, deads_file, 
                       bin_size_step, bin_boundaries, read_bins,
                       scales, reset_points);
-    
+
     if (VERBOSE)
-        cerr << "[Selecting bin size] ";
+        cerr << "[SELECTING BIN SIZE] ";
     if (bin_size == 0) {
         if (hideaki)
             bin_size = select_bin_size_hideaki(
@@ -388,7 +391,7 @@ main(int argc, const char **argv) {
                 read_bins, scales, reset_points, bin_size_step,
                 max_dead_proportion);
     }
-    if (VERBOSE) cerr << "Bin size =  " << bin_size << endl;
+    if (VERBOSE) cerr << "bin size =  " << bin_size << endl;
     
     /***********************************
      * STEP 2: BIN THE READS
@@ -397,18 +400,19 @@ main(int argc, const char **argv) {
                   bin_size_step, bin_size);
     RemoveDeserts(bin_boundaries, read_bins, scales, reset_points,
                   bin_size, desert_size, max_dead_proportion);
+
     const double max_count = bin_size;
     for (size_t i = 0; i < read_bins.size(); ++i)
       read_bins[i] = min(read_bins[i], max_count);
     
     vector<vector<SimpleGenomicRegion> > bin_boundaries_folded;
     expand_bins(bin_boundaries, reset_points, bin_boundaries_folded);
-    
+
     /***********************************
      * STEP 3: ESTIMATE EMISSION PARAMS
      */ 
     if (VERBOSE)
-      cerr << "[formatting data] estimating parameters" << endl;
+      cerr << "[ESTIMATIN PARAMETERS]" << endl;
     
     vector<Distro> distros;
     distros.push_back(Distro(fg_name));
@@ -462,8 +466,9 @@ main(int argc, const char **argv) {
 		   hmm, distros, start_trans, trans, end_trans, 
 		   posterior_cutoff, undef_region_cutoff, cdf_cutoff,
 		   dataset_name, outdir.c_str(), VERBOSE, WRITE_TRACKS);
-    output_boundaries(bin_boundaries_folded,
-		      read_bins, scales, classes, reset_points,
+    if (WRITE_BOUNDARY)
+        output_boundaries(bin_boundaries_folded,
+              read_bins, scales, classes, reset_points,
 		      hmm, distros, start_trans, trans, end_trans, 
 		      dataset_name, outdir,
 		      VERBOSE, WRITE_TRACKS, Both_Domain_Ends);
