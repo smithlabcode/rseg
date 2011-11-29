@@ -19,10 +19,7 @@
  * 02110-1301 USA
  */
 
-#ifndef NUMERICAL_UTILS_HPP
-#define NUMERICAL_UTILS_HPP
-
-#include "numerical_utils.cpp"
+#include "numerical_utils.hpp"
 
 #include <cmath>
 #include <vector>
@@ -31,49 +28,36 @@
 using std::vector;
 
 double
-log_sum_log(const double p, const double q) {
-  if (p == 0) {
-    return q;
-  }
-  else if (q == 0) {
-    return p;
-  }
-  const double larger = (p > q) ? p : q;
-  const double smaller = (p > q) ? q : p;
-  return larger + log(1.0 + exp(smaller - larger));
-}
-
-
-double
-log_sum_log(const double p, const double q, const double r) {
-  if (p == 0) {
-    return log_sum_log(q, r);
-  }
-  else if (q == 0) {
-    return log_sum_log(p, r);
-  }
-  else if (r == 0) {
-    return log_sum_log(p, r);
-  }
-  else {
-    return log_sum_log(p, log_sum_log(q, r));
-  }
-}
-
-double
-log_sum_log_vec(const vector<double> &vals, const size_t limit) {
-  const vector<double>::const_iterator x = 
-    std::max_element(vals.begin(), vals.begin() + limit);
-  const double max_val = *x;
-  const size_t max_idx = x - vals.begin();
-  double sum = 1.0;
-  for (size_t i = 0; i < limit; ++i) {
-    if (i != max_idx) {
-      sum += exp(vals[i] - max_val);
+log_sum_log_vec(const std::vector<double> &vals, const size_t limit) 
+{
+    const std::vector<double>::const_iterator x = 
+        std::max_element(vals.begin(), vals.begin() + limit);
+    const double max_val = *x;
+    const size_t max_idx = x - vals.begin();
+    double sum = 1.0;
+    for (size_t i = 0; i < limit; ++i) 
+    {
+        if (i != max_idx) 
+        {
+            sum += exp(vals[i] - max_val);
+        }
     }
-  }
-  return max_val + log(sum);
+    return max_val + log(sum);
 }
 
-#endif
+double
+log_sum_log(const std::vector<double>::const_iterator &begin,
+            const std::vector<double>::const_iterator &end)
+{
+    const std::vector<double>::const_iterator max_itr = 
+        std::max_element(begin, end);
+    const double max_val = *max_itr;
+
+    double sum = 1.0;
+    for (std::vector<double>::const_iterator itr = begin; itr < end; ++itr) 
+        if (itr != max_itr) sum += exp(*itr - max_val);
+    
+    return max_val + log(sum);
+}
+
 

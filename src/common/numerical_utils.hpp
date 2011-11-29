@@ -26,16 +26,28 @@
 #include <vector>
 #include <algorithm>
 
-using std::vector;
+inline double
+log_sum_log(const double p, const double q)
+{
+    if (p == 0) {return q;}
+    else if (q == 0) {return p;}
+    const double larger = (p > q) ? p : q;
+    const double smaller = (p > q) ? q : p;
+    return larger + log(1.0 + exp(smaller - larger));
+}
+
+inline double
+log_sum_log(const double p, const double q, const double r) 
+{
+    return log_sum_log(log_sum_log(p, q), r);
+}
 
 double
-log_sum_log(const double p, const double q);
+log_sum_log_vec(const std::vector<double> &vals, const size_t limit);
 
 double
-log_sum_log(const double p, const double q, const double r);
-
-double
-log_sum_log_vec(const vector<double> &vals, const size_t limit);
+log_sum_log(const std::vector<double>::const_iterator &begin,
+            const std::vector<double>::const_iterator &end);
 
 #endif
 
