@@ -168,8 +168,14 @@ LoadReadsByRegion(const bool VERBOSE,
   std::ifstream in(reads_file.c_str());
   string line;
   size_t i = 0, j = 0;
+  GenomicRegion prev_gr;
   while (getline(in, line)) {
     GenomicRegion gr(line);
+    if (prev_gr.get_start() == gr.get_start()
+        && prev_gr.get_strand() == gr.get_strand()
+        && prev_gr.get_chrom() == gr.get_chrom())
+        continue;
+    prev_gr = gr;
     if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
     else gr.set_start(gr.get_end() - 1);
     while (boundaries[j].front().get_chrom() < gr.get_chrom()) {
@@ -262,8 +268,14 @@ LoadReadsByRegion(const bool VERBOSE, const string &chroms_file,
   std::ifstream in(reads_file_a.c_str());
   string line;
   size_t i = 0, j = 0;
+  GenomicRegion prev_gr;
   while (getline(in, line)) {
     GenomicRegion gr(line);
+    if (prev_gr.get_start() == gr.get_start()
+        && prev_gr.get_strand() == gr.get_strand()
+        && prev_gr.get_chrom() == gr.get_chrom())
+        continue;
+    prev_gr = gr;
     if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
     else gr.set_start(gr.get_end() - 1);
     while (boundaries[j].front().get_chrom() < gr.get_chrom()) {
@@ -279,8 +291,14 @@ LoadReadsByRegion(const bool VERBOSE, const string &chroms_file,
   in.close();
   in.open(reads_file_b.c_str());
   i = 0, j = 0;
+  prev_gr = GenomicRegion();
   while (getline(in, line)) {
     GenomicRegion gr(line);
+    if (prev_gr.get_start() == gr.get_start()
+        && prev_gr.get_strand() == gr.get_strand()
+        && prev_gr.get_chrom() == gr.get_chrom())
+        continue;
+    prev_gr = gr;
     if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
     else gr.set_start(gr.get_end() - 1);
     while (boundaries[j].front().get_chrom() < gr.get_chrom()) {
