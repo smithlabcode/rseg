@@ -106,6 +106,7 @@ AdjustBinSize(vector<SimpleGenomicRegion> &old_bin_boundaries,
               const size_t bin_size)
 {
     assert(bin_size % old_bin_size == 0);
+
     vector<SimpleGenomicRegion> bin_boundaries;
     vector<double> read_bins;
     vector<double> nondead_scales;
@@ -118,8 +119,9 @@ AdjustBinSize(vector<SimpleGenomicRegion> &old_bin_boundaries,
         const size_t start = old_reset_points[i];
         const size_t end = old_reset_points[i + 1];
         size_t j = start;
-        while (j < end - n_steps)
+        while (j + n_steps < end )
         {	
+            assert(j + n_steps -1 < old_bin_boundaries.size());
             bin_boundaries.push_back(old_bin_boundaries[j]);
             bin_boundaries.back().set_end(
                 old_bin_boundaries[j + n_steps - 1].get_end());
@@ -137,13 +139,17 @@ AdjustBinSize(vector<SimpleGenomicRegion> &old_bin_boundaries,
         reset_points.push_back(bin_boundaries.size());
     }
 
+    assert(bin_boundaries.size() == reset_points.back());
+    assert(read_bins.size() == reset_points.back());
+    assert(nondead_scales.size() == reset_points.back());
+
+    assert(*std::max_element(nondead_scales.begin(), nondead_scales.end())<=1.0);
+    assert(*std::min_element(nondead_scales.begin(), nondead_scales.end())>=0.0);
+
     std::swap(old_bin_boundaries, bin_boundaries);
     std::swap(old_read_bins, read_bins);
     std::swap(old_nondead_scales, nondead_scales);
     std::swap(old_reset_points, reset_points);
-
-    assert(*std::max_element(nondead_scales.begin(), nondead_scales.end())<=1.0);
-    assert(*std::min_element(nondead_scales.begin(), nondead_scales.end())>=0.0);
 }
 
 void
@@ -161,13 +167,13 @@ RemoveDeserts(vector<SimpleGenomicRegion> &old_bin_boundaries,
     vector<size_t> reset_points;
     
     reset_points.push_back(0);
-    for (size_t i = 0; i < reset_points.size() - 1; ++i)
+    for (size_t i = 0; i < old_reset_points.size() - 1; ++i)
     {
         const size_t start = old_reset_points[i];
         const size_t end = old_reset_points[i + 1];
         size_t n_gaps = 0;
         for (size_t j = start; j < end; ++j)
-            if (nondead_scales[j] > 1 - max_dead_proportion)
+            if (old_nondead_scales[j] > 1 - max_dead_proportion)
             {
                 if (n_gaps * bin_size > desert_size
                     && reset_points.back() < bin_boundaries.size())
@@ -241,14 +247,19 @@ AdjustBinSize(vector<SimpleGenomicRegion> &old_bin_boundaries,
         reset_points.push_back(bin_boundaries.size());
     }
 
+    assert(bin_boundaries.size() == reset_points.back());
+    assert(read_bins_a.size() == reset_points.back());
+    assert(read_bins_b.size() == reset_points.back());
+    assert(nondead_scales.size() == reset_points.back());
+
+    assert(*std::max_element(nondead_scales.begin(), nondead_scales.end())<=1.0);
+    assert(*std::min_element(nondead_scales.begin(), nondead_scales.end())>=0.0);
+
     std::swap(old_bin_boundaries, bin_boundaries);
     std::swap(old_read_bins_a, read_bins_a);
     std::swap(old_read_bins_b, read_bins_b);
     std::swap(old_nondead_scales, nondead_scales);
     std::swap(old_reset_points, reset_points);
-
-    assert(*std::max_element(nondead_scales.begin(), nondead_scales.end())<=1.0);
-    assert(*std::min_element(nondead_scales.begin(), nondead_scales.end())>=0.0);
 }
 
 void
@@ -268,13 +279,13 @@ RemoveDeserts(vector<SimpleGenomicRegion> &old_bin_boundaries,
     vector<size_t> reset_points;
     
     reset_points.push_back(0);
-    for (size_t i = 0; i < reset_points.size() - 1; ++i)
+    for (size_t i = 0; i < old_reset_points.size() - 1; ++i)
     {
         const size_t start = old_reset_points[i];
         const size_t end = old_reset_points[i + 1];
         size_t n_gaps = 0;
         for (size_t j = start; j < end; ++j)
-            if (nondead_scales[j] > 1 - max_dead_proportion)
+            if (old_nondead_scales[j] > 1 - max_dead_proportion)
             {
                 if (n_gaps * bin_size > desert_size
                     && reset_points.back() < bin_boundaries.size())
@@ -294,6 +305,11 @@ RemoveDeserts(vector<SimpleGenomicRegion> &old_bin_boundaries,
         if (reset_points.back() < bin_boundaries.size())
             reset_points.push_back(bin_boundaries.size());
     }
+
+    assert(bin_boundaries.size() == reset_points.back());
+    assert(read_bins_a.size() == reset_points.back());
+    assert(read_bins_b.size() == reset_points.back());
+    assert(nondead_scales.size() == reset_points.back());
 
     std::swap(old_bin_boundaries, bin_boundaries);
     std::swap(old_read_bins_a, read_bins_a);
