@@ -708,6 +708,12 @@ build_domains(const vector<vector<SimpleGenomicRegion> > &bins,
     }
 }
 
+struct IsEnrichedDomain : public std::unary_function<GenomicRegion, bool>
+{
+  bool operator()(const GenomicRegion &dom) const
+  {return dom.get_name().find("ENRICHED") != string::npos;}
+};
+
 void
 pick_domains(const vector<vector<SimpleGenomicRegion> > &bins,
              const vector<vector<double> > &read_counts,
@@ -779,6 +785,11 @@ pick_domains(const vector<vector<SimpleGenomicRegion> > &bins,
 	domains[i][j].set_name(name + "\t"
 			       + smithlab::toa(domain_means[i][j]));
       }
+  for (size_t i = 0; i < domains.size(); ++i)
+    domains[i].erase(std::stable_partition(domains[i].begin(),
+                                           domains[i].end(),
+                                           IsEnrichedDomain()),
+                     domains[i].end());
 }
 
 void
@@ -860,6 +871,11 @@ pick_domains(const vector<vector<SimpleGenomicRegion> > &bins,
 	domains[i][j].set_name(name + "\t"
 			       + smithlab::toa(domain_means[i][j]));
       }
+  for (size_t i = 0; i < domains.size(); ++i)
+    domains[i].erase(std::stable_partition(domains[i].begin(),
+                                           domains[i].end(),
+                                           IsEnrichedDomain()),
+                     domains[i].end());
 }
 
 void
@@ -952,5 +968,10 @@ pick_domains_3s(const vector<vector<SimpleGenomicRegion> > &bins,
 	domains[i][j].set_name(name + "\t"
 			       + smithlab::toa(domain_means[i][j]));
       }
+  for (size_t i = 0; i < domains.size(); ++i)
+    domains[i].erase(std::stable_partition(domains[i].begin(),
+                                           domains[i].end(),
+                                           IsEnrichedDomain()),
+                     domains[i].end());
 }
 
