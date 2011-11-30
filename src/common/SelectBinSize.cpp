@@ -21,10 +21,6 @@
 
 #include <cmath>
 #include <cstdlib>
-
-#include <gsl/gsl_randist.h>
-#include <gsl/gsl_cdf.h>
-
 #include <numeric>
 
 #include "SelectBinSize.hpp"
