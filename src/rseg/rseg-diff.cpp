@@ -754,7 +754,7 @@ main(int argc, const char **argv)  {
        */ 
       
       if (VERBOSE)
-	cerr << "[preparing data] estimating parameters" << endl;
+	cerr << "[ESTIMATING PARAMETERS]" << endl;
 
       fg_size =
 	(fg_size > 0) ? fg_size : 6000;
