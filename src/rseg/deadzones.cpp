@@ -146,11 +146,109 @@ write_dead(std::ofstream &out, const string &chrom_name,
 		       *(curr - 1) + 1, "X", 0, strand) << endl;
 }
 
+static void
+write_dead(std::ofstream &out, const string &chrom_name, 
+	   const char strand, vector<size_t>::const_iterator curr,
+       const vector<size_t>::const_iterator lim,
+       const vector<SimpleGenomicRegion> &gaps) {
+  assert(curr <= lim);
+  assert(gaps.size() == 0 || gaps.front().get_chrom() == chrom_name);
+
+  vector<GenomicRegion> deadzones;
+  size_t prev_ambig = *curr;
+  ++curr;
+  for (; curr < lim; ++curr)
+    if (*curr - 1 != *(curr - 1)) {
+      deadzones.push_back(GenomicRegion(chrom_name, prev_ambig,
+                                        *(curr - 1) + 1, "X", 0, strand));
+      prev_ambig = *curr;
+    }
+  deadzones.push_back(GenomicRegion(chrom_name, prev_ambig, 
+                                    *(curr - 1) + 1, "X", 0, strand));
+  
+  size_t i = 0, j = 0;
+  while (i < deadzones.size() && j < gaps.size()) {
+    const size_t s = std::max(deadzones[i].get_start(), gaps[j].get_start());
+    const size_t e = std::min(deadzones[i].get_end(), gaps[j].get_end());
+
+    if (s > e) { //  no overlapping
+      if (deadzones[i].get_end() < gaps[j].get_start()) {
+        out << deadzones[i] << endl;
+        ++i;
+      } else {
+        out << gaps[j] << "T" << "\t" << 0 << "\t" << strand << endl;
+        ++j;
+      }
+    } else {
+      deadzones[i].set_start(std::min(deadzones[i].get_start(),
+                                      gaps[j].get_start()));
+      deadzones[i].set_end(std::max(deadzones[i].get_end(),
+                                    gaps[j].get_end()));
+      ++j;
+      while (i + 1 < deadzones.size()
+             && deadzones[i].get_end() >= deadzones[i+1].get_start()) {
+        ++i;
+        deadzones[i].set_start(deadzones[i-1].get_start());
+        deadzones[i].set_end(std::max(deadzones[i].get_end(),
+                                      deadzones[i-1].get_end()));
+      }
+    }
+  }
+  while (i < deadzones.size()) {
+    out << deadzones[i] << endl;
+    ++i;
+  }
+  while (j < gaps.size()) {
+    out << gaps[j] << "T" << "\t" << 0 << "\t" << strand << endl;
+    ++j;
+  }
+}
+
+// static void
+// get_dead(const bool VERBOSE, const string &outfile, const size_t kmer, 
+// 	 const vector<size_t> &seqoffsets, const vector<string> &chrom_names, 
+// 	 vector<size_t> &ambigs) {
+  
+//   const size_t max_offset = seqoffsets.back();
+//   for (size_t i = 0; i < ambigs.size(); ++i) {
+//     if (ambigs[i] >= max_offset)
+//       ambigs[i] = 2*max_offset - ambigs[i] - kmer;
+//     assert(ambigs[i] < max_offset);
+//   }
+//   sort(ambigs.begin(), ambigs.end());
+//   ambigs.erase(std::unique(ambigs.begin(), ambigs.end()), ambigs.end());
+  
+//   vector<size_t> offset_idx;
+//   size_t n_ambigs = ambigs.size();
+//   for (size_t i = 0, j = 0; i < seqoffsets.size() && j < n_ambigs; ++i) {
+//     while (j < n_ambigs && ambigs[j] < seqoffsets[i]) ++j;
+//     offset_idx.push_back(j);
+//   }
+  
+//   size_t total_length = 0;
+//   n_ambigs = ambigs.size();
+//   for (size_t i = 0, prev_idx = 0; i < offset_idx.size(); ++i) {
+//     for (size_t j = prev_idx; j < offset_idx[i]; ++j) {
+//       assert(j < n_ambigs);
+//       ambigs[j] -= total_length;
+//     }
+//     prev_idx = offset_idx[i];
+//     total_length = seqoffsets[i];
+//   }
+  
+//   std::ofstream out(outfile.c_str());
+//   for (size_t i = 0, prev_idx = 0; i < offset_idx.size(); ++i) {
+//     write_dead(out, chrom_names[i], '+', ambigs.begin() + 
+// 	       prev_idx, ambigs.begin() + offset_idx[i]);
+//     prev_idx = offset_idx[i];
+//   }
+//   out.close();
+// }
 
 static void
 get_dead(const bool VERBOSE, const string &outfile, const size_t kmer, 
 	 const vector<size_t> &seqoffsets, const vector<string> &chrom_names, 
-	 vector<size_t> &ambigs) {
+     vector<size_t> &ambigs, vector<vector<SimpleGenomicRegion> > &gaps) {
   
   const size_t max_offset = seqoffsets.back();
   for (size_t i = 0; i < ambigs.size(); ++i) {
@@ -182,7 +280,7 @@ get_dead(const bool VERBOSE, const string &outfile, const size_t kmer,
   std::ofstream out(outfile.c_str());
   for (size_t i = 0, prev_idx = 0; i < offset_idx.size(); ++i) {
     write_dead(out, chrom_names[i], '+', ambigs.begin() + 
-	       prev_idx, ambigs.begin() + offset_idx[i]);
+               prev_idx, ambigs.begin() + offset_idx[i], gaps[i]);
     prev_idx = offset_idx[i];
   }
   out.close();
@@ -312,10 +410,10 @@ main(int argc, const char **argv) {
 		      true, outfile);
     opt_parse.add_opt("kmer", 'k', "Width of k-mers", true, kmer);
     opt_parse.add_opt("prefix", 'p', "prefix length", false, prefix_len);
-    opt_parse.add_opt("bisulfite", 'B', "get bisulfite deadzones", 
-		      false, BISULFITE);
-    opt_parse.add_opt("ag-wild", 'A', "A/G wildcard for bisulfite", 
-		      false, AG_WILDCARD);
+    // opt_parse.add_opt("bisulfite", 'B', "get bisulfite deadzones", 
+	// 	      false, BISULFITE);
+    // opt_parse.add_opt("ag-wild", 'A', "A/G wildcard for bisulfite", 
+	// 	      false, AG_WILDCARD);
     opt_parse.add_opt("suffix", 's', "suffix of FASTA files "
 		      "(assumes -c indicates dir)", false , fasta_suffix);
     opt_parse.add_opt("verbose", 'v', "print more run information", 
@@ -350,6 +448,7 @@ main(int argc, const char **argv) {
     
     if (VERBOSE)
       cerr << "[READING SEQUENCE FILES]" << endl;
+    vector<vector<SimpleGenomicRegion> > gaps;
     for (size_t i = 0; i < seqfiles.size(); ++i) {
       if (isdir(seqfiles[i].c_str()))
 	throw SMITHLABException("\"" + seqfiles[i] + 
@@ -357,15 +456,26 @@ main(int argc, const char **argv) {
       vector<string> names, sequences;
       read_fasta_file(seqfiles[i].c_str(), names, sequences);
       for (size_t j = 0; j < sequences.size(); ++j) {
-	long_seq += sequences[j];
-	seqoffsets.push_back(long_seq.length());
-	chrom_names.push_back(names[j]);
+        gaps.push_back(vector<SimpleGenomicRegion>());
+        transform(sequences[j].begin(), sequences[j].end(),
+                  sequences[j].begin(), std::ptr_fun(&::toupper));
+        size_t start = sequences[j].find_first_of('N');
+        while (start != string::npos)
+        {
+          const static size_t min_gap_size = 50;
+          size_t end = sequences[j].find_first_not_of('N', start);
+          end = end == string::npos ? sequences[j].size() : end;
+          if (start + min_gap_size <= end)
+            gaps.back().push_back(SimpleGenomicRegion(names[j], start, end));
+          start = sequences[j].find_first_of('N', end);
+        }
+        long_seq += sequences[j];
+        seqoffsets.push_back(long_seq.length());
+        chrom_names.push_back(names[j]);
       }
       if (VERBOSE)
 	cerr << seqfiles[i] << "\t(SEQS: " << names.size() << ")" << endl;
     }
-    transform(long_seq.begin(), long_seq.end(), long_seq.begin(),
-	      std::ptr_fun(&::toupper));
     
     if (VERBOSE)
       cerr << "[PREPARING CONCATENATED SEQUENCE]" << endl;
@@ -407,7 +517,7 @@ main(int argc, const char **argv) {
       else {
 	if (VERBOSE)
 	  cerr << "[PREPARING DEADZONES]" << endl;
-	get_dead(VERBOSE, outfile, kmer, seqoffsets, chrom_names, ambigs);
+	get_dead(VERBOSE, outfile, kmer, seqoffsets, chrom_names, ambigs, gaps);
       }
     }
   }
