@@ -248,6 +248,7 @@ main(int argc, const char **argv) {
         
     // flags
     bool use_posterior = true;
+    bool REMOVE_JACKPOT = true;
     bool VERBOSE = false;
     bool WRITE_BOUNDARY = false;
     bool WRITE_TRACKS = false;
@@ -300,6 +301,8 @@ main(int argc, const char **argv) {
 		      false, fg_size);
     opt_parse.add_opt("bin-size", 'b', "Size of bins (default depends on # of reads)", 
 		      false, bin_size);
+    opt_parse.add_opt("not-remove-jackpot", '\0', "Do not remove duplicate reads", 
+		      false, REMOVE_JACKPOT);
     opt_parse.add_opt("Waterman", '\0', "using Waterman's method for bin size", 
 		      false, waterman);
     opt_parse.add_opt("Hideaki", '\0', "Using Hideaki's method for bin size", 
@@ -324,10 +327,10 @@ main(int argc, const char **argv) {
 		      "undefined region", false, undef_region_cutoff);
     opt_parse.add_opt("cdf-cutoff", '\0', "Cutoff of cumulative probability "
 		      "for a true fg domain", false, cdf_cutoff); 
-    opt_parse.add_opt("tolerance", '\0', "Tolerance for convergence", 
-		      false, tolerance);
-    opt_parse.add_opt("min_prob", '\0', "Minimum probability value", 
-		      false, min_prob);
+    // opt_parse.add_opt("tolerance", '\0', "Tolerance for convergence", 
+	// 	      false, tolerance);
+    // opt_parse.add_opt("min_prob", '\0', "Minimum probability value", 
+	// 	      false, min_prob);
     opt_parse.add_opt("verbose", 'v', "Print more running information", 
 		      false, VERBOSE);
 
@@ -375,7 +378,7 @@ main(int argc, const char **argv) {
     vector<size_t> reset_points;
     LoadReadsByRegion(VERBOSE, chroms_file, reads_file, deads_file, 
                       bin_size_step, bin_boundaries, read_bins,
-                      scales, reset_points);
+                      scales, reset_points, REMOVE_JACKPOT);
 
     if (VERBOSE)
         cerr << "[SELECTING BIN SIZE] ";
