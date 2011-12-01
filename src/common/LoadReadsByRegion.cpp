@@ -47,7 +47,8 @@ LoadReadsByRegion(const bool VERBOSE,
           std::vector<SimpleGenomicRegion> &bin_boundaries,
           std::vector<double> &read_bins,
           std::vector<double> &nondead_scales,
-          std::vector<size_t> &reset_points) 
+          std::vector<size_t> &reset_points,
+          const bool REMOVE_JACKPOT) 
 {
   // get the chroms
   if (VERBOSE)
@@ -77,10 +78,15 @@ LoadReadsByRegion(const bool VERBOSE,
   GenomicRegion prev_gr;
   while (getline(in, line)) {
     GenomicRegion gr(line);
-    if (prev_gr.get_start() == gr.get_start()
+    if (REMOVE_JACKPOT
+        && prev_gr.get_start() == gr.get_start()
         && prev_gr.get_strand() == gr.get_strand()
         && prev_gr.get_chrom() == gr.get_chrom())
         continue;
+    if (gr < prev_gr) {
+      cerr << "ERROR: reads not sorted in " << reads_file << endl;
+      exit(-1);
+    }
     prev_gr = gr;
     if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
     else gr.set_start(gr.get_end() - 1);
@@ -126,7 +132,8 @@ LoadReadsByRegion(const bool VERBOSE,
           std::vector<double> &read_bins_a,
           std::vector<double> &read_bins_b,
 		  std::vector<double> &nondead_scales,
-          std::vector<size_t> &reset_points)
+          std::vector<size_t> &reset_points,
+          const bool REMOVE_JACKPOT)
 {
   // get the chroms
   if (VERBOSE)
@@ -156,10 +163,15 @@ LoadReadsByRegion(const bool VERBOSE,
   GenomicRegion prev_gr;
   while (getline(in, line)) {
     GenomicRegion gr(line);
-    if (prev_gr.get_start() == gr.get_start()
+    if (REMOVE_JACKPOT
+        && prev_gr.get_start() == gr.get_start()
         && prev_gr.get_strand() == gr.get_strand()
         && prev_gr.get_chrom() == gr.get_chrom())
         continue;
+    if (gr < prev_gr) {
+      cerr << "ERROR: reads not sorted in " << reads_file_a << endl;
+      exit(-1);
+    }
     prev_gr = gr;
     if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
     else gr.set_start(gr.get_end() - 1);
@@ -178,10 +190,15 @@ LoadReadsByRegion(const bool VERBOSE,
   prev_gr = GenomicRegion();
   while (getline(in, line)) {
     GenomicRegion gr(line);
-    if (prev_gr.get_start() == gr.get_start()
+    if (REMOVE_JACKPOT
+        && prev_gr.get_start() == gr.get_start()
         && prev_gr.get_strand() == gr.get_strand()
         && prev_gr.get_chrom() == gr.get_chrom())
         continue;
+    if (gr < prev_gr) {
+      cerr << "ERROR: reads not sorted in " << reads_file_b << endl;
+      exit(-1);
+    }
     prev_gr = gr;
     if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
     else gr.set_start(gr.get_end() - 1);

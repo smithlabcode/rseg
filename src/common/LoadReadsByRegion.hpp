@@ -36,7 +36,8 @@ LoadReadsByRegion(const bool VERBOSE,
           std::vector<SimpleGenomicRegion> &boundaries,
           std::vector<double> &read_bins,
 		  std::vector<double> &nondead_scales,
-          std::vector<size_t> &reset_points);
+          std::vector<size_t> &reset_points,
+          const bool REMOVE_JACKPOT = true);
 
 void
 LoadReadsByRegion(const bool VERBOSE,
@@ -49,5 +50,6 @@ LoadReadsByRegion(const bool VERBOSE,
           std::vector<double> &read_bins_a,
           std::vector<double> &read_bins_b,
 		  std::vector<double> &nondead_scales,
-          std::vector<size_t> &reset_points);
+          std::vector<size_t> &reset_points,
+          const bool REMOVE_JACKPOT = true);
 #endif
