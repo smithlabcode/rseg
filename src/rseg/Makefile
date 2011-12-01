@@ -27,7 +27,7 @@ COMMON_LIB = ../common
 
 SOURCES = $(wildcard *.cpp)
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
-PROGS =  rseg rseg-diff deadzones join
+PROGS =  rseg rseg-diff deadzones
 
 INCLUDEDIRS = $(SMITHLAB_CPP) $(COMMON_LIB)
 INCLUDEARGS = $(addprefix -I,$(INCLUDEDIRS))
