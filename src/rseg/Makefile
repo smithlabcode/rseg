@@ -57,7 +57,7 @@ rseg: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
 	$(addprefix $(COMMON_LIB)/, numerical_utils.o rseg_utils.o \
 	Distro.o SplitDistro.o Smoothing.o \
 	SortGenomicRegion.o LoadReadsByRegion.o SelectBinSize.o ReadCounts.o \
-	TwoStateScaleHMM.o TwoStateResolveMixture.o \
+	TwoStateScaleHMM.o TwoStateScaleResolveMixture.o \
 	EvaluateBoundaries.o) \
 	$(addprefix $(GSL_LIB)/, airy.o bessel_amp_phase.o bessel.o bessel_I0.o \
 	bessel_I1.o bessel_In.o bessel_temme.o coerce.o elementary.o error.o exp.o \

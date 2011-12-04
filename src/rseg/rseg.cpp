@@ -31,7 +31,7 @@
 #include "GenomicRegion.hpp"
 #include "Distro.hpp"
 #include "ReadCounts.hpp"
-#include "TwoStateResolveMixture.hpp"
+#include "TwoStateScaleResolveMixture.hpp"
 #include "TwoStateScaleHMM.hpp"
 #include "EvaluateBoundaries.hpp"
 #include "LoadReadsByRegion.hpp"
@@ -428,8 +428,7 @@ main(int argc, const char **argv) {
 
     double mixing = 0;
     TwoStateResolveMixture(read_bins, scales, MAX_INITIALIZATION_ITR, 
-			   tolerance, VERBOSE,
-			   distros.front(), distros.back(), mixing);
+			   tolerance, VERBOSE, distros.front(), distros.back(), mixing);
     
     /***********************************
      * STEP 4: TRAIN THE HMM
