@@ -24,15 +24,16 @@ $(error Must define SMITHLAB_CPP variable)
 endif
 
 COMMON_LIB = ../common
+GSL_LIB = ../gsl
 
 SOURCES = $(wildcard *.cpp)
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 PROGS =  rseg rseg-diff deadzones
 
-INCLUDEDIRS = $(SMITHLAB_CPP) $(COMMON_LIB)
+INCLUDEDIRS = $(SMITHLAB_CPP) $(COMMON_LIB) $(GSL_LIB)
 INCLUDEARGS = $(addprefix -I,$(INCLUDEDIRS))
 
-LIBS += -lgsl -lgslcblas 
+# LIBS += -lgsl -lgslcblas 
 
 CXX = g++
 CC = gcc
@@ -57,7 +58,12 @@ rseg: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
 	Distro.o SplitDistro.o Smoothing.o \
 	SortGenomicRegion.o LoadReadsByRegion.o SelectBinSize.o ReadCounts.o \
 	TwoStateScaleHMM.o TwoStateResolveMixture.o \
-	EvaluateBoundaries.o)		
+	EvaluateBoundaries.o) \
+	$(addprefix $(GSL_LIB)/, airy.o bessel_amp_phase.o bessel.o bessel_I0.o \
+	bessel_I1.o bessel_In.o bessel_temme.o coerce.o elementary.o error.o exp.o \
+	fdiv.o gamma.o gauss.o infnan.o log.o math.o mean.o message.o\
+	mt.o poch.o pow_int.o psi.o rng.o stream.o trig.o variance.o \
+	wmean.o wvariance.o zeta.o)
 
 rseg-diff: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
 	smithlab_utils.o OptionParser.o RNG.o) \
@@ -66,13 +72,21 @@ rseg-diff: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
 	SortGenomicRegion.o LoadReadsByRegion.o SelectBinSize.o ReadCounts.o \
 	TwoStateScaleSplitHMM.o TwoStateScaleSplitResolveMixture.o \
 	ThreeStateScaleSplitHMM.o ThreeStateScaleSplitResolveMixture.o \
-	EvaluateBoundaries.o)		
+	EvaluateBoundaries.o) \
+	$(addprefix $(GSL_LIB)/, airy.o bessel_amp_phase.o bessel.o bessel_I0.o \
+	bessel_I1.o bessel_In.o bessel_temme.o coerce.o elementary.o error.o exp.o \
+	fdiv.o gamma.o gauss.o infnan.o log.o math.o mean.o message.o\
+	mt.o poch.o pow_int.o psi.o rng.o stream.o trig.o variance.o \
+	wmean.o wvariance.o zeta.o)
 
 deadzones: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
 	smithlab_utils.o OptionParser.o)
 
 %.o: %.cpp %.hpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(INCLUDEARGS)
+
+%.o: %.c
+	$(CC) $(CCFLAGS) -c -o $@ $^ $(INCLUDEARGS) 
 
 %: %.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(INCLUDEARGS) $(LIBS)

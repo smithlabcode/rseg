@@ -32,10 +32,12 @@
 #include <iostream>
 #include <limits>
 
-#include <gsl/gsl_randist.h>
-#include <gsl/gsl_sf_gamma.h>
-#include <gsl/gsl_statistics_double.h>
-#include <gsl/gsl_sf_bessel.h>
+extern "C" {
+#include "gsl_randist.h"
+#include "gsl_sf_gamma.h"
+#include "gsl_statistics_double.h"
+#include "gsl_sf_bessel.h"
+}
 
 using std::vector;
 using std::string;

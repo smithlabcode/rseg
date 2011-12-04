@@ -22,6 +22,10 @@
 #include "Distro.hpp"
 #include "smithlab_utils.hpp"
 
+extern "C" {
+#include "gsl_sf_gamma.h"
+}
+
 #include <cmath>
 #include <algorithm>
 #include <sstream>
@@ -31,10 +35,6 @@
 #include <numeric>
 #include <iostream>
 #include <limits>
-
-#include <gsl/gsl_randist.h>
-#include <gsl/gsl_sf_gamma.h>
-#include <gsl/gsl_statistics_double.h>
 
 using std::vector;
 using std::string;
