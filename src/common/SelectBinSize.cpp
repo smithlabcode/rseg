@@ -31,6 +31,9 @@ using std::cerr;
 using std::endl;
 using std::vector;
 
+static const size_t MIN_BIN_SIZE = 100;
+static const size_t MAX_BIN_SIZE = 3000;
+
 static size_t
 discretize_bin_size(const double bin_size, const double bin_size_step)
 {
@@ -62,7 +65,9 @@ select_bin_size_waterman(const vector<double> &read_bins,
       ref_bin_size / pow(n_reads/ref_read_num*ref_genome_size/genome_size,
                          exponent);
 
-  return discretize_bin_size(b, bin_size_step);
+  return std::max(MIN_BIN_SIZE,
+                  std::min(discretize_bin_size(b, bin_size_step),
+                           MAX_BIN_SIZE));
 }
 
 size_t 
@@ -87,7 +92,9 @@ select_bin_size_hideaki(const vector<double> &read_bins,
   const double b =
       ref_bin_size / pow(n_reads/ref_read_num*ref_genome_size/genome_size,
                          exponent);
-  return discretize_bin_size(b, bin_size_step);
+  return std::max(MIN_BIN_SIZE,
+                  std::min(discretize_bin_size(b, bin_size_step),
+                           MAX_BIN_SIZE));
 }
 
 static void
@@ -109,8 +116,8 @@ select_bin_size_hideaki_emp(const vector<double> &read_bins,
                             const double max_dead_proportion)
 {
 
-  size_t bin_size_low = 50;
-  size_t bin_size_high = 20000;
+  size_t bin_size_low = MIN_BIN_SIZE;
+  size_t bin_size_high = MAX_BIN_SIZE;
     
   while (bin_size_high > bin_size_low + bin_size_step )
   {
