@@ -36,15 +36,19 @@ using std::pair;
 using std::make_pair;
 
 static void
-partition_values(const vector<double> &values, 
-                 const vector<double> &values_a, 
-                 const vector<double> &values_b, 
-                 const vector<double> &scales,
-                 vector<double> &fg_part_a, 
-                 vector<double> &fg_part_b,
-                 vector<double> &bg_part_a, 
-                 vector<double> &bg_part_b,
-                 vector<double> &new_scales) {
+initialize_values(const vector<double> &values, 
+                  const vector<double> &values_a, 
+                  const vector<double> &values_b, 
+                  const vector<double> &scales,
+                  SplitDistro &fg_distro,
+                  SplitDistro &bg_distro) {
+
+    vector<double> fg_part_a;
+    vector<double> fg_part_b;
+    vector<double> bg_part_a;
+    vector<double> bg_part_b;
+    vector<double> fg_scales;
+    vector<double> bg_scales;
   
     double val_weight = 0;
     for (size_t i = 0; i < values.size(); ++i)
@@ -63,14 +67,18 @@ partition_values(const vector<double> &values,
     for (; i < helper.size() && sum < val_per_part; ++i) {
         fg_part_a.push_back(values_a[helper[i].second]);
         fg_part_b.push_back(values_b[helper[i].second]);
-        new_scales.push_back(scales[helper[i].second]);
+        fg_scales.push_back(scales[helper[i].second]);
         sum += fabs(helper[i].first);
     }
     for (; i < helper.size(); ++i) {
         bg_part_a.push_back(values_a[helper[i].second]);
         bg_part_b.push_back(values_b[helper[i].second]);
-        new_scales.push_back(scales[helper[i].second]);
+        bg_scales.push_back(scales[helper[i].second]);
     }
+
+    // Obtain initial estimates of distribution values
+    fg_distro.estimate_params_ml(fg_part_a, fg_part_b, fg_scales);
+    bg_distro.estimate_params_ml(bg_part_a, bg_part_b, bg_scales);
 }
 
 
@@ -156,18 +164,7 @@ TwoStateSplitResolveMixture(const vector<double> &values,
                             double &mixing) 
 {
     // partition the observations to get the initial guess
-    vector<double> fg_part_a;
-    vector<double> fg_part_b;
-    vector<double> bg_part_a;
-    vector<double> bg_part_b;
-    vector<double> tmp_scales;
-    
-    partition_values(values, vals_a, vals_b, scales, 
-                     fg_part_a, fg_part_b, bg_part_a, bg_part_b, tmp_scales);
-  
-    // Obtain initial estimates of distribution values
-    fg_distro.estimate_params_ml(fg_part_a, fg_part_b, tmp_scales);
-    bg_distro.estimate_params_ml(bg_part_a, bg_part_b, tmp_scales);
+    initialize_values(values, vals_a, vals_b, scales, fg_distro, bg_distro);
     
     vector<double> fg_probs(values.size(), 0);
     vector<double> bg_probs(values.size(), 0);

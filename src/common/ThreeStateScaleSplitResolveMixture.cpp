@@ -37,21 +37,25 @@ using std::pair;
 using std::make_pair;
 
 static void
-partition_values(const vector<double> &values, 
-                 const vector<double> &values_a, 
-                 const vector<double> &values_b, 
-                 const vector<double> &scales,
+initialize_values(const vector<double> &values, 
+                  const vector<double> &values_a, 
+                  const vector<double> &values_b, 
+                  const vector<double> &scales,
+                  SplitDistro &fg_distro,
+                  SplitDistro &mid_distro,
+                  SplitDistro &bg_distro) {
 		 
-                 vector<double> &fg_part_a,
-                 vector<double> &fg_part_b,
-
-                 vector<double> &mid_part_a,
-                 vector<double> &mid_part_b,
-		 
-                 vector<double> &bg_part_a,
-                 vector<double> &bg_part_b,
-
-                 vector<double> &tmp_scales) {
+    vector<double> fg_part_a;
+    vector<double> fg_part_b;
+    vector<double> fg_scales;
+    
+    vector<double> mid_part_a;
+    vector<double> mid_part_b;
+    vector<double> mid_scales;
+	
+    vector<double> bg_part_a;
+    vector<double> bg_part_b;
+    vector<double> bg_scales;
 
     double val_weight = 0;
     for (size_t i = 0; i < values.size(); ++i)
@@ -73,7 +77,7 @@ partition_values(const vector<double> &values,
         // for (; i < lim1; ++i) {
         fg_part_a.push_back(values_a[helper[i].second]);
         fg_part_b.push_back(values_b[helper[i].second]);
-        tmp_scales.push_back(scales[helper[i].second]);
+        fg_scales.push_back(scales[helper[i].second]);
         sum += fabs(helper[i].first);
     }
     //   const size_t lim2 = 2*helper.size()/3;
@@ -82,16 +86,20 @@ partition_values(const vector<double> &values,
         // for (; i < lim2; ++i) {
         mid_part_a.push_back(values_a[helper[i].second]);
         mid_part_b.push_back(values_b[helper[i].second]);
-        tmp_scales.push_back(scales[helper[i].second]);
+        mid_scales.push_back(scales[helper[i].second]);
         sum += fabs(helper[i].first);
     }
     for (; i < helper.size(); ++i) {
         bg_part_a.push_back(values_a[helper[i].second]);
         bg_part_b.push_back(values_b[helper[i].second]);
-        tmp_scales.push_back(scales[helper[i].second]);
+        bg_scales.push_back(scales[helper[i].second]);
     }
-}
 
+    // Obtain initial estimates of distribution values
+    fg_distro.estimate_params_ml(fg_part_a, fg_part_b, fg_scales);
+    mid_distro.estimate_params_ml(mid_part_a, mid_part_b, mid_scales); 
+    bg_distro.estimate_params_ml(bg_part_a, bg_part_b, bg_scales);
+}
 
 static double
 expectation_step(const vector<double> &values, 
@@ -202,27 +210,9 @@ ThreeStateScaleSplitResolveMixture(const vector<double> &values,
     static const size_t THREE = 3;
   
     // partition the observations to get the initial guess
-    vector<double> fg_part_a;
-    vector<double> fg_part_b;
-
-    vector<double> mid_part_a;
-    vector<double> mid_part_b;
-  
-    vector<double> bg_part_a;
-    vector<double> bg_part_b;
-
-    vector<double> tmp_scales;
-
-    partition_values(values, vals_a, vals_b, scales,
-                     fg_part_a, fg_part_b, 
-                     mid_part_a, mid_part_b, 
-                     bg_part_a, bg_part_b,
-                     tmp_scales);
+    initialize_values(values, vals_a, vals_b, scales,
+                     fg_distro, mid_distro, bg_distro);
     
-    // Obtain initial estimates of distribution values
-    fg_distro.estimate_params_ml(fg_part_a, fg_part_b, tmp_scales);
-    mid_distro.estimate_params_ml(mid_part_a, mid_part_b, tmp_scales); 
-    bg_distro.estimate_params_ml(bg_part_a, bg_part_b, tmp_scales);
     
     vector<double> fg_probs(values.size(), 0);
     vector<double> mid_probs(values.size(), 0);
