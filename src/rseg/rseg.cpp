@@ -260,7 +260,7 @@ main(int argc, const char **argv) {
     string bg_name = "nbd";
   
     size_t desert_size = 20000;
-    size_t bin_size_step = 50;
+    size_t bin_size_step = 100;
     size_t bin_size = 0;
     bool waterman = false;
     bool hideaki = false;
@@ -301,6 +301,9 @@ main(int argc, const char **argv) {
 		      false, fg_size);
     opt_parse.add_opt("bin-size", 'b', "Size of bins (default depends on # of reads)", 
 		      false, bin_size);
+    opt_parse.add_opt("bin-size-step", '\0',
+              "Intial bin size when reading in raw reads (default 100)", 
+		      false, bin_size_step);
     opt_parse.add_opt("not-remove-jackpot", '\0', "Do not remove duplicate reads", 
 		      false, REMOVE_JACKPOT);
     opt_parse.add_opt("Waterman", '\0', "using Waterman's method for bin size", 

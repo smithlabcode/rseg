@@ -531,6 +531,9 @@ main(int argc, const char **argv)  {
     opt_parse.add_opt("bin-size", 'b', 
 		      "Size of bins (default depends on # of reads)", 
 		      false, bin_size);
+    opt_parse.add_opt("bin-size-step", '\0',
+              "Intial bin size when reading in raw reads (default 100)", 
+		      false, bin_size_step);
     opt_parse.add_opt("not-remove-jackpot", '\0', "Do not remove duplicate reads", 
 		      false, REMOVE_JACKPOT);
     opt_parse.add_opt("Waterman", '\0', 
