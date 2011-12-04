@@ -22,15 +22,7 @@
 #ifndef TWO_STATE_RESOLVE_MIXTURE_HPP
 #define TWO_STATE_RESOLVE_MIXTURE_HPP
 
-#include "smithlab_utils.hpp"
 #include "Distro.hpp"
-
-void
-TwoStateResolveMixture(const std::vector<double> &values,
-		       const size_t max_iterations, 
-		       const double tolerance, int VERBOSE,
-		       Distro &fg_distro, Distro &bg_distro, double &mixing);
-
 void
 TwoStateResolveMixture(
     const std::vector<double> &values,
