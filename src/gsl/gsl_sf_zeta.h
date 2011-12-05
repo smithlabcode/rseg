@@ -22,7 +22,7 @@
 #ifndef __GSL_SF_ZETA_H__
 #define __GSL_SF_ZETA_H__
 
-#include "gsl/gsl_sf_result.h"
+#include "gsl_sf_result.h"
 
 #undef __BEGIN_DECLS
 #undef __END_DECLS
