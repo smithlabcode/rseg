@@ -32,6 +32,7 @@ using std::vector;
 using std::pair;
 using std::setw;
 using std::max;
+using std::cout;
 using std::cerr;
 using std::endl;
 using std::string;

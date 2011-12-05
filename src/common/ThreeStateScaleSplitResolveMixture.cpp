@@ -31,6 +31,7 @@
 
 using std::vector;
 using std::auto_ptr;
+using std::cout;
 using std::cerr;
 using std::endl;
 using std::pair;
