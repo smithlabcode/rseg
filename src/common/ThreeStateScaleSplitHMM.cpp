@@ -808,7 +808,7 @@ ThreeStateScaleSplitHMM::BaumWelchTraining(const vector<double> &values,
   vector<vector<double> > backward(values.size(), vector<double>(3, 0));
   
   if (VERBOSE)
-    cerr << setw(4) << "ITR"
+    cout << setw(4) << "ITR"
     	 << setw(8) << "F BINS"
     	 << setw(8) << "M BINS"
     	 << setw(8) << "B BINS"
@@ -836,18 +836,18 @@ ThreeStateScaleSplitHMM::BaumWelchTraining(const vector<double> &values,
     
     if (std::fabs((prev_total - total)/prev_total) < tolerance) {
       if (VERBOSE)
-	cerr << "CONVERGED" << endl << endl;
+	cout << "CONVERGED" << endl << endl;
       break;
     }
 
     if (total < prev_total) {
         if (VERBOSE)
-            cerr << "Oscillaion point." << endl;
+            cout << "Oscillaion point." << endl;
         break;
     }
     
     if (VERBOSE) {
-      cerr << setw(4) << i + 1
+      cout << setw(4) << i + 1
 	   << setw(8) << 1.0/(p_fb + p_fm)
 	   << setw(8) << 1.0/(p_mf + p_mb)
 	   << setw(8) << 1.0/(p_bf + p_bm)

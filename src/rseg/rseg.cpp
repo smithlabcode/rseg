@@ -157,14 +157,14 @@ output_boundaries(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
   const string boundary_filename(path_join(outdir, dataset_name + 
 					   BOUNDARY_TAG + BED_SUFF));
   if (VERBOSE)
-    cerr << "Boundary file: " + boundary_filename << endl;
+    cout << "Boundary file: " + boundary_filename << endl;
   WriteBEDFile(boundary_filename, boundaries);
   
   if (WRITE_TRACKS) {
     const string bound_scores_filename(path_join(outdir, dataset_name + 
 						 "-boundary-scores" + WIG_SUFF));
     if (VERBOSE)
-      cerr << "Boundary score file: " + bound_scores_filename << endl;
+      cout << "Boundary score file: " + bound_scores_filename << endl;
     write_wigfile(boundary_scores, bin_bounds, bound_scores_filename);
   }
 }
@@ -219,7 +219,7 @@ output_domains(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
     path_join(outdir ,dataset_name + DOMAINS_TAG + BED_SUFF);
   write_bed_file(domains, domain_file_name);
   if (VERBOSE)
-    cerr << "Domains file: " + domain_file_name << endl;
+    cout << "Domains file: " + domain_file_name << endl;
     
   if (WRITE_TRACKS)
     {
@@ -227,7 +227,7 @@ output_domains(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
 					      SCORES_TAG + WIG_SUFF));
       write_wigfile(scores, bin_bounds, scores_file_name);
       if (VERBOSE)
-	cerr << "Bin score file: " + scores_file_name << endl;
+	cout << "Bin score file: " + scores_file_name << endl;
     }
 }
 
@@ -369,7 +369,7 @@ main(int argc, const char **argv) {
       tmp_dataset_name : strip_path_and_bed_suffix(reads_file.c_str());
     
     if (VERBOSE)
-      cerr << "[PROCESSING] " <<  dataset_name << endl;
+      cout << "[PROCESSING] " <<  dataset_name << endl;
     
     /***********************************
      * STEP 1: READ IN THE DATA
@@ -384,7 +384,7 @@ main(int argc, const char **argv) {
                       scales, reset_points, REMOVE_JACKPOT);
 
     if (VERBOSE)
-        cerr << "[SELECTING BIN SIZE] ";
+        cout << "[SELECTING BIN SIZE] ";
     if (bin_size == 0) {
         if (hideaki)
             bin_size = select_bin_size_hideaki(
@@ -397,7 +397,7 @@ main(int argc, const char **argv) {
                 read_bins, scales, reset_points, bin_size_step,
                 max_dead_proportion);
     }
-    if (VERBOSE) cerr << "bin size =  " << bin_size << endl;
+    if (VERBOSE) cout << "bin size =  " << bin_size << endl;
     
     /***********************************
      * STEP 2: BIN THE READS
@@ -418,7 +418,7 @@ main(int argc, const char **argv) {
      * STEP 3: ESTIMATE EMISSION PARAMS
      */ 
     if (VERBOSE)
-      cerr << "[ESTIMATIN PARAMETERS]" << endl;
+      cout << "[ESTIMATIN PARAMETERS]" << endl;
     
     vector<Distro> distros;
     distros.push_back(Distro(fg_name));

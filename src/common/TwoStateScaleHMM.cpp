@@ -348,7 +348,7 @@ TwoStateScaleHMM::BaumWelchTraining(const vector<double> &values,
   vector<pair<double, double> > backward(values.size(), pair<double, double>(0, 0));
   
   if (VERBOSE)
-    cerr << setw(5)  << "ITR"
+    cout << setw(5)  << "ITR"
     	 << setw(10) << "F size"
     	 << setw(10) << "B size"
     	 << setw(18) << "F PARAMS"
@@ -379,12 +379,12 @@ TwoStateScaleHMM::BaumWelchTraining(const vector<double> &values,
     
     if ((prev_total - total)/prev_total < tolerance) {
       if (VERBOSE)
-	cerr << "CONVERGED" << endl << endl;
+	cout << "CONVERGED" << endl << endl;
       break;
     }
     
     if (VERBOSE) {
-      cerr << setw(5) << i + 1
+      cout << setw(5) << i + 1
 	   << setw(10) << 1/p_fb_est
 	   << setw(10) << 1/p_bf_est
 	   << setw(18) << fg_distro.tostring()

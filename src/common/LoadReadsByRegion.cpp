@@ -52,7 +52,7 @@ LoadReadsByRegion(const bool VERBOSE,
 {
   // get the chroms
   if (VERBOSE)
-    cerr << "[LOADING_DATA] chromosomes" << endl;
+    cout << "[LOADING_DATA] chromosomes" << endl;
   vector<SimpleGenomicRegion> chroms;
   ReadBEDFile(chroms_file, chroms);
   if (!check_sorted(chroms, true))
@@ -70,7 +70,7 @@ LoadReadsByRegion(const bool VERBOSE,
 
   // Load the reads, tabulating counts in bins
   if (VERBOSE)
-      cerr << "[LOADING_DATA] reads"  << endl;
+      cout << "[LOADING_DATA] reads"  << endl;
   read_bins.resize(bin_boundaries.size(), 0);
   std::ifstream in(reads_file.c_str());
   string line;
@@ -137,7 +137,7 @@ LoadReadsByRegion(const bool VERBOSE,
 {
   // get the chroms
   if (VERBOSE)
-    cerr << "[LOADING_DATA] chromosomes" << endl;
+    cout << "[LOADING_DATA] chromosomes" << endl;
   vector<SimpleGenomicRegion> chroms;
   ReadBEDFile(chroms_file, chroms);
   if (!check_sorted(chroms, true))
@@ -155,7 +155,7 @@ LoadReadsByRegion(const bool VERBOSE,
 
   // Load the reads, tabulating counts in bins
   if (VERBOSE)
-      cerr << "[LOADING_DATA] reads"  << endl;
+      cout << "[LOADING_DATA] reads"  << endl;
   read_bins_a.resize(bin_boundaries.size(), 0);
   std::ifstream in(reads_file_a.c_str());
   string line;
@@ -211,7 +211,7 @@ LoadReadsByRegion(const bool VERBOSE,
 
   // load the dead zones
   if (VERBOSE)
-      cerr << "[LOADING_DATA] deadzones"  << endl;
+      cout << "[LOADING_DATA] deadzones"  << endl;
   nondead_scales.resize(bin_boundaries.size(), 1.0);
   in.close();
   in.open(deads_file.c_str());

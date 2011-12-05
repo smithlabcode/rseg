@@ -151,7 +151,7 @@ TwoStateResolveMixture(
     mixing = 0.5;
   
     if (VERBOSE)
-        cerr << endl << std::setw(10) << "DELTA"
+        cout << endl << std::setw(10) << "DELTA"
              << std::setw(14) << "(PARAMS,MIX)" << endl;
   
     // Do the expectation maximization
@@ -165,7 +165,7 @@ TwoStateResolveMixture(
                           fg_distro, bg_distro);
         if (VERBOSE) 
         {
-            cerr << std::setw(10) << std::setprecision(4) 
+            cout << std::setw(10) << std::setprecision(4) 
                  << (prev_score - score)/prev_score << "\t"
                  << std::setw(14) << fg_distro.tostring() << " " 
                  << std::setw(10) << mixing << " "

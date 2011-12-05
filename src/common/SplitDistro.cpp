@@ -903,7 +903,6 @@ NegBinomDiffDistro::hq_estimate_params_ml(const std::vector<double> &vals_a,
   double mu1_grad(0), alpha1_grad(0), mu2_grad(0), alpha2_grad(0);
   double prev_llh = local_log_likelihood(vals, probs, mu1, alpha1, mu2, alpha2);
   double llh_diff = std::numeric_limits<double>::max();
-  double delta_norm = std::numeric_limits<double>::max();
   double curr_llh = 0;
     
   size_t iter(0);
@@ -976,8 +975,6 @@ NegBinomDiffDistro::hq_estimate_params_ml(const std::vector<double> &vals_a,
 	  llh_diff = curr_llh - prev_llh;
         }
       prev_llh = curr_llh;
-      delta_norm = pow(mu1_grad, 2.0) + pow(alpha1_grad, 2.0) +
-	pow(mu2_grad, 2.0) + pow(alpha2_grad, 2.0);
     }
 
   params[0] = mu1;

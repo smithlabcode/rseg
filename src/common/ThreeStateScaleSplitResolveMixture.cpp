@@ -130,8 +130,8 @@ expectation_step(const vector<double> &values,
         const double mid_part =
             mid_log_mixing + mid_distro.log_likelihood(values[i], scales[i]);
         if (!finite(mid_part)) {
-            cerr << values[i] << "\t" << mid_distro.log_likelihood(values[i]) << endl;
-            cerr << mid_distro << endl;
+            cout << values[i] << "\t" << mid_distro.log_likelihood(values[i]) << endl;
+            cout << mid_distro << endl;
         }
         assert(finite(mid_part));
         const double bg_part =
@@ -218,7 +218,7 @@ ThreeStateScaleSplitResolveMixture(const vector<double> &values,
     mixing = vector<double>(THREE, 1.0/THREE);
     
     if (VERBOSE)
-        cerr << endl << std::setw(10) << "DELTA"
+        cout << endl << std::setw(10) << "DELTA"
              << std::setw(14) << "(PARAMS,MIX)" << endl;
     
     // Do the expectation maximization
@@ -233,7 +233,7 @@ ThreeStateScaleSplitResolveMixture(const vector<double> &values,
                           mixing, fg_distro, mid_distro, bg_distro);
     
         if (VERBOSE) {
-            cerr << std::setw(10) << std::setprecision(4) 
+            cout << std::setw(10) << std::setprecision(4) 
                  << (prev_score - score)/prev_score << endl
                  << std::setw(14) << fg_distro << " " 
                  << std::setw(10) << mixing[0] << endl

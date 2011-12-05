@@ -182,7 +182,7 @@ output_boundaries(const vector<double> &tmp_read_bins,
 					    BOUNDARY_TAG + BED_SUFF));
   WriteBEDFile(boundary_file_name, boundaries);
   if (VERBOSE)
-    cerr << "Boundary file: " + boundary_file_name << std::endl;
+    cout << "Boundary file: " + boundary_file_name << std::endl;
   
   if (WRITE_TRACKS)
     {
@@ -190,7 +190,7 @@ output_boundaries(const vector<double> &tmp_read_bins,
 					  path_join(outdir, dataset_name + "-boundary-scores.wig"));
       write_wigfile(boundary_scores, bin_bounds, bound_scores_file_name);
       if (VERBOSE)
-	cerr << "Boundary score file: " + bound_scores_file_name << std::endl;
+	cout << "Boundary score file: " + bound_scores_file_name << std::endl;
     }
 }
 
@@ -241,7 +241,7 @@ output_domains(
     path_join(outdir ,dataset_name + DOMAINS_TAG + BED_SUFF);
   write_bed_file(domains, domain_file_name);
   if (VERBOSE)
-    cerr << "Domains file: " + domain_file_name << std::endl;
+    cout << "Domains file: " + domain_file_name << std::endl;
 
   if (WRITE_TRACKS)
     {
@@ -249,7 +249,7 @@ output_domains(
 				    path_join(outdir, dataset_name + SCORES_TAG + WIG_SUFF));
       write_wigfile(scores, bin_bounds, scores_file_name);
       if (VERBOSE)
-	cerr << "Bin score file: " + scores_file_name << std::endl;
+	cout << "Bin score file: " + scores_file_name << std::endl;
     }
 }
 
@@ -381,7 +381,7 @@ output_boundaries(const vector<double> &tmp_read_bins,
 				  path_join(outdir, dataset_name + BOUNDARY_TAG + BED_SUFF));
   WriteBEDFile(boundary_file_name, boundaries);
   if (VERBOSE)
-    cerr << "Boundary file: " + boundary_file_name << std::endl;
+    cout << "Boundary file: " + boundary_file_name << std::endl;
 
   if (WRITE_TRACKS)
     {
@@ -389,7 +389,7 @@ output_boundaries(const vector<double> &tmp_read_bins,
 					  path_join(outdir, dataset_name + "-boundary-scores.wig"));
       write_wigfile(boundary_scores, bin_bounds, bound_scores_file_name);
       if (VERBOSE)
-	cerr << "Boundary score file: " + bound_scores_file_name << std::endl;
+	cout << "Boundary score file: " + bound_scores_file_name << std::endl;
     }
 }
 
@@ -443,7 +443,7 @@ output_domains(
     path_join(outdir ,dataset_name + DOMAINS_TAG + BED_SUFF);
   write_bed_file(domains, domain_file_name);
   if (VERBOSE)
-    cerr << "Domains file: " + domain_file_name << std::endl;
+    cout << "Domains file: " + domain_file_name << std::endl;
     
   if (WRITE_TRACKS)
     {
@@ -451,7 +451,7 @@ output_domains(
 				    path_join(outdir, dataset_name + SCORES_TAG + WIG_SUFF));
       write_wigfile(scores, bin_bounds, scores_file_name);
       if (VERBOSE)
-	cerr << "Bin score file: " + scores_file_name << std::endl;
+	cout << "Bin score file: " + scores_file_name << std::endl;
     }
 }
 
@@ -626,7 +626,7 @@ main(int argc, const char **argv)  {
                       read_bins_b, scales, reset_points, REMOVE_JACKPOT);
 
     if (VERBOSE)
-        cerr << "[SELECTING BIN SIZE] ";
+        cout << "[SELECTING BIN SIZE] ";
     if (bin_size == 0) {
         if (hideaki)
             bin_size = select_bin_size_hideaki(
@@ -639,7 +639,7 @@ main(int argc, const char **argv)  {
                 read_bins_a, scales, reset_points, bin_size_step,
                 max_dead_proportion);
     }
-    if (VERBOSE) cerr << "bin size =  " << bin_size << endl;
+    if (VERBOSE) cout << "bin size =  " << bin_size << endl;
 
     
     /***********************************
@@ -668,7 +668,7 @@ main(int argc, const char **argv)  {
        */ 
       
       if (VERBOSE)
-	cerr << "[ESTIMATING PARAMETERS]" << endl;
+	cout << "[ESTIMATING PARAMETERS]" << endl;
 
       fg_size =
 	(fg_size > 0) ? fg_size : 20000;
@@ -758,7 +758,7 @@ main(int argc, const char **argv)  {
        */ 
       
       if (VERBOSE)
-	cerr << "[ESTIMATING PARAMETERS]" << endl;
+	cout << "[ESTIMATING PARAMETERS]" << endl;
 
       fg_size =
 	(fg_size > 0) ? fg_size : 6000;

@@ -205,23 +205,23 @@ report_final_values(const vector<Distro> &distros,
 		    const vector<vector<double> > &trans,
 		    const vector<double> &end_trans) 
 {
-  cerr << "FINAL ESTIMATES" << endl
+  cout << "FINAL ESTIMATES" << endl
        << "---------------" << endl;
 
-  cerr << "Emission distributions" << endl;
+  cout << "Emission distributions" << endl;
   for (size_t i = 0; i < distros.size(); ++i)
-    cerr << "State " << i << ":\t" << distros[i] << endl;
+    cout << "State " << i << ":\t" << distros[i] << endl;
     
-  cerr << "Expected sizes" << endl;
+  cout << "Expected sizes" << endl;
   for (size_t i = 0; i < trans.size(); ++i)
-    cerr << "State " << i << ":\t" << 1 / (1 - trans[i][i]) << endl;
+    cout << "State " << i << ":\t" << 1 / (1 - trans[i][i]) << endl;
     
-  cerr << "Transition probabilities" << endl;
+  cout << "Transition probabilities" << endl;
   for (size_t i = 0; i < trans.size(); ++i)
     {
       for (size_t j = 0; j < trans[i].size(); ++j)
-	cerr << trans[i][j] << "\t";
-      cerr << endl;
+	cout << trans[i][j] << "\t";
+      cout << endl;
     }
 }
 
@@ -231,23 +231,23 @@ report_final_values(const vector<SplitDistro> &distros,
 		    const vector<vector<double> > &trans,
 		    const vector<double> &end_trans) 
 {
-  cerr << "FINAL ESTIMATES" << endl
+  cout << "FINAL ESTIMATES" << endl
        << "---------------" << endl;
 
-  cerr << "Emission distributions" << endl;
+  cout << "Emission distributions" << endl;
   for (size_t i = 0; i < distros.size(); ++i)
-    cerr << "State " << i << ":\t" << distros[i] << endl;
+    cout << "State " << i << ":\t" << distros[i] << endl;
     
-  cerr << "Expected sizes" << endl;
+  cout << "Expected sizes" << endl;
   for (size_t i = 0; i < trans.size(); ++i)
-    cerr << "State " << i << ":\t" << 1 / (1 - trans[i][i]) << endl;
+    cout << "State " << i << ":\t" << 1 / (1 - trans[i][i]) << endl;
     
-  cerr << "Transition probabilities" << endl;
+  cout << "Transition probabilities" << endl;
   for (size_t i = 0; i < trans.size(); ++i)
     {
       for (size_t j = 0; j < trans[i].size(); ++j)
-	cerr << trans[i][j] << "\t";
-      cerr << endl;
+	cout << trans[i][j] << "\t";
+      cout << endl;
     }
 }
 
@@ -299,7 +299,7 @@ write_read_counts_by_bin(const vector< vector<SimpleGenomicRegion> > &bin_bounda
 
   outf.close();
   if (VERBOSE)
-    cerr << "Read count file: "
+    cout << "Read count file: "
 	 << file_name << std::endl;
 }
 
@@ -340,7 +340,7 @@ write_read_counts_by_bin(const vector< vector<SimpleGenomicRegion> > &bin_bounda
 
   outf.close();
   if (VERBOSE)
-    cerr << "Read count file: "
+    cout << "Read count file: "
 	 << file_name << std::endl;
 }
 
@@ -381,7 +381,7 @@ write_read_counts_by_bin(const vector< vector<SimpleGenomicRegion> > &bin_bounda
 
   outf.close();
   if (VERBOSE)
-    cerr << "Read count file: "
+    cout << "Read count file: "
 	 << file_name << std::endl;
 }
 
