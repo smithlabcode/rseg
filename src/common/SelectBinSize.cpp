@@ -52,7 +52,7 @@ select_bin_size_waterman(const vector<double> &read_bins,
     
   static const double ref_genome_size = 2287968180;
   static const double ref_read_num = 10000000;
-  static const double ref_bin_size = smooth ? 1000 : 400;
+  static const double ref_bin_size = smooth ? 600 : 400;
   static const double exponent = smooth ? 1.0/6.0 : 1.0/4.0;
 
   const double genome_size = bin_size_step
@@ -79,7 +79,7 @@ select_bin_size_hideaki(const vector<double> &read_bins,
 
   const double ref_genome_size = 2287968180;
   const double ref_read_num = 10000000;
-  const double ref_bin_size = smooth ? 1000 : 400;
+  const double ref_bin_size = smooth ? 600 : 400;
   const double exponent = smooth ? 1.0/3.0 : 1.0/2.0;
 
   const double genome_size = bin_size_step
@@ -118,8 +118,10 @@ select_bin_size_hideaki_emp(const vector<double> &read_bins,
 
   size_t bin_size_low = MIN_BIN_SIZE;
   size_t bin_size_high = MAX_BIN_SIZE;
-    
-  while (bin_size_high > bin_size_low + bin_size_step )
+  size_t range  = bin_size_high > bin_size_low
+      ?  bin_size_high - bin_size_low : 0;
+  
+  while (range > bin_size_step )
   {
       vector<double> tmp_read_bins;
       vector<double> tmp_nondead_scales;
@@ -161,6 +163,15 @@ select_bin_size_hideaki_emp(const vector<double> &read_bins,
           bin_size_low = b_one_third;
           bin_size_high = b_two_third;
       }
+      size_t tmp_range = bin_size_high > bin_size_low
+          ?  bin_size_high - bin_size_low : 0;
+      if (tmp_range == range) 
+      {
+          bin_size_low += bin_size_step;
+          tmp_range = bin_size_high > bin_size_low
+          ?  bin_size_high - bin_size_low : 0;
+      }
+      range = tmp_range;
     }
   
   return discretize_bin_size((bin_size_low+bin_size_high)/2, bin_size_step);
