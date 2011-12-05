@@ -112,9 +112,6 @@ expectation_step(const vector<double> &values,
                  vector<double> &mid_probs, 
                  vector<double> &bg_probs) {
   
-    vector<double>::const_iterator x_idx = values.begin();
-    const vector<double>::const_iterator x_lim = values.end();
-  
     double score = 0;
   
     const double fg_log_mixing = log(mixing[0]);

@@ -32,7 +32,6 @@
 #include "numerical_utils.hpp"
 
 using std::vector;
-using std::auto_ptr;
 using std::cerr;
 using std::endl;
 using std::min;
@@ -78,10 +77,6 @@ expectation_step(const vector<double> &values, const vector<double> &scales,
 				 const Distro &fg_distro, const Distro &bg_distro,
 				 vector<double> &fg_probs, vector<double> &bg_probs) 
 {
-  
-    vector<double>::const_iterator x_idx = values.begin();
-    const vector<double>::const_iterator x_lim = values.end();
-  
     double score = 0;
   
     const double fg_log_mixing = log(mixing);

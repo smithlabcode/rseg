@@ -29,7 +29,6 @@
 #include "RNG.hpp"
 
 using std::vector;
-using std::auto_ptr;
 using std::cerr;
 using std::endl;
 using std::pair;
@@ -90,9 +89,6 @@ expectation_step(const vector<double> &values,
                  const SplitDistro &bg_distro,
                  vector<double> &fg_probs, 
                  vector<double> &bg_probs) {
-  
-    vector<double>::const_iterator x_idx = values.begin();
-    const vector<double>::const_iterator x_lim = values.end();
   
     double score = 0;
   
