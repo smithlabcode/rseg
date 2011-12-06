@@ -520,22 +520,17 @@ main(int argc, const char **argv)  {
     opt_parse.add_opt("deadzone-file", 'd', 
 		      "Filename of deadzones", 
 		      false, deads_file);
-    opt_parse.add_opt("max-deadzone-prop", '\0',
-		      "Maximum deadzone proportion allowed for retened bins",
-		      false, max_dead_proportion);
-    opt_parse.add_opt("domain-size", 's', "Expected size of domain (Default 20000)", 
-		      false, fg_size);
-    opt_parse.add_opt("desert-size", 'S', 
-		      "Desert size", 
-		      false, desert_size);
+    opt_parse.add_opt("mode", 'm', "Mode: 2 - test and control; 3 - test and test", 
+		      false, mode);
+    opt_parse.add_opt("iteration", 'i', 
+		      "Maximum number of iterations for HMM training", 
+		      false, max_iterations);
     opt_parse.add_opt("bin-size", 'b', 
 		      "Size of bins (default depends on # of reads)", 
 		      false, bin_size);
     opt_parse.add_opt("bin-size-step", '\0',
               "Intial bin size when reading in raw reads (default 100)", 
 		      false, bin_size_step);
-    opt_parse.add_opt("not-remove-jackpot", '\0', "Do not remove duplicate reads", 
-		      false, REMOVE_JACKPOT);
     opt_parse.add_opt("Waterman", '\0', 
 		      "Using Waterman's method to determine bin size", 
 		      false, waterman);
@@ -548,11 +543,16 @@ main(int argc, const char **argv)  {
     opt_parse.add_opt("smooth", '\0', 
 		      "Whether the rate curve is smooth (default yes)", 
 		      false, smooth);
-    opt_parse.add_opt("mode", 'm', "Mode: 2 - test and control; 3 - test and test", 
-		      false, mode);
-    opt_parse.add_opt("iteration", 'i', 
-		      "Maximum number of iterations for HMM training", 
-		      false, max_iterations);
+    opt_parse.add_opt("max-deadzone-prop", '\0',
+		      "Maximum deadzone proportion allowed for retened bins",
+		      false, max_dead_proportion);
+    opt_parse.add_opt("not-remove-jackpot", '\0', "Do not remove duplicate reads", 
+		      false, REMOVE_JACKPOT);
+    opt_parse.add_opt("domain-size", 's', "Expected size of domain (Default 20000)", 
+		      false, fg_size);
+    opt_parse.add_opt("desert-size", 'S', 
+		      "Desert size", 
+		      false, desert_size);
     opt_parse.add_opt("fg", 'F', "Name of foreground emission distribution", 
 		      false, fg_name);
     opt_parse.add_opt("bg", 'B', "Name of background emission distribution", 
