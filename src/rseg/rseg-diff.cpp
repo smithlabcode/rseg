@@ -582,11 +582,6 @@ main(int argc, const char **argv)  {
 		      false, undef_region_cutoff);
     opt_parse.add_opt("cdf-cutoff", '\0', "Cutoff of cumulative probability for a "
 		      "true fg domain", false, cdf_cutoff); 
-    // opt_parse.add_opt("tolerance", '\0', "Tolerance for convergence", 
-	// 	      false, tolerance);
-    // opt_parse.add_opt("min_prob", '\0', 
-	// 	      "Minimum probability value", 
-	// 	      false, min_prob);
     opt_parse.add_opt("verbose", 'v', "Print more running information", 
 		      false, VERBOSE);
     
@@ -698,6 +693,7 @@ main(int argc, const char **argv)  {
       vector<SplitDistro> distros;
       distros.push_back(SplitDistro(fg_name));
       distros.push_back(SplitDistro(bg_name));
+
       double mixing = 0;
       TwoStateSplitResolveMixture(read_bins_sample, read_bins_a_sample,
 				  read_bins_b_sample, scales_sample,
@@ -707,7 +703,7 @@ main(int argc, const char **argv)  {
       /***********************************
        * STEP 4: TRAIN THE HMM
        */
-    
+
       vector<vector<double> > trans;
       vector<double> start_trans, end_trans;
       set_transitions(bin_size, fg_size, mixing, VERBOSE,
@@ -728,7 +724,7 @@ main(int argc, const char **argv)  {
       /***********************************
        * STEP 5: DECODE THE DOMAINS
        */
-    
+
       vector<bool> classes;
       vector<double> scores;
       if (use_viterbi)
@@ -801,7 +797,6 @@ main(int argc, const char **argv)  {
       /***********************************
        * STEP 4: TRAIN THE HMM
        */
-    
       vector<vector<double> > trans;
       vector<double> start_trans, end_trans;
       set_transitions(bin_size, fg_size, mixing, VERBOSE,
@@ -816,7 +811,7 @@ main(int argc, const char **argv)  {
 
       clear_training_sample(read_bins_sample, read_bins_a_sample,
 			    read_bins_b_sample, scales_sample, reset_points_sample);
-    
+
       if (VERBOSE)
 	report_final_values(distros, start_trans, trans, end_trans);
     
