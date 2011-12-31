@@ -197,8 +197,9 @@ chr1 &   1141700 &1154300 &ENRICHED        &8.85827 &16.3838 &+ \\
 \textbf{ES.K36-scores.wig} is a 4-column
 \href{http://genome.ucsc.edu/goldenPath/help/bedgraph.html}{BedGraph}
 file (Table~\ref{tab:format-bin-score}). Each line shows the posterior
-probability of a bin being from the identified state. This file can be
-used to visulize the status of each bin in UCSC Genome Browser.
+probability of that bin being in the enriched (foreground) state. This
+file can be used to visulize the status of each bin in UCSC Genome
+Browser.
 
 \begin{table}[th]
   \centering
@@ -343,8 +344,40 @@ chr1&    1996977& 2000273& SAMPLE-I-ENRICHED &      11.9379 &3.7683 & + \\
 \textbf{ES.K36-WCE-scores.wig} is a 4-column
 \href{http://genome.ucsc.edu/goldenPath/help/bedgraph.html}{BedGraph}
 file (Table~\ref{tab:format-bin-score}). Each line shows the posterior
-probability of a bin being from the identified state. This file can be
-used to visulize the status of each bin in UCSC Genome Browser.
+probability of that bin being in the enriched (foreground) state. This
+file can be used to visulize the status of each bin in UCSC Genome
+Browser.
+
+\textbf{CD133.K36-CD36-scores.wig} If you use \textit{rseg-diff} with
+the option \textbf{-mode 3}, for example, to compare H3K36me3 profile
+between CD133 and CD36 cells, the score output file is a five-column
+BED file (Table~\ref{tab:format-score-diff}). The $4^{th}$ column
+gives posterior probability that the bin is is hyper-modified in
+Sample I compared to Sample II, and the $5^{th}$ column gives the
+posterior probability that the bin is hypo-modified in Sample I
+compared to Sample II. The posterior probability that the bin does not
+change between the two samples is obtained by subtracting the $4^{th}$
+and $5^{th}$ columns from 1.0.
+
+\begin{table}[th]
+  \centering
+  \begin{tabular}{c c c c c }
+Column 1 & Column 2 & Column 3 &  Column 4 & Column 5  \\
+\hline
+Chromosome  & Start & End &  Posterior scores & Posterior scores \\
+\hline
+chr1 &   1316000& 1316700& 0.000348498&     0.276782 \\
+chr1 &   1316700& 1317400& 0.000521605&     0.411373 \\
+chr1 &   1317400& 1318100& 0.00186753 &     0.900723 \\
+chr1 &   1318100& 1318800& 0.00254065 &     0.914996 \\
+chr1 &   1318800& 1319500& 0.00228736 &     0.910634 \\
+chr1 &   1320200& 1320900& 0.00330582 &     0.936304 \\
+\ldots & \ldots &\ldots &\ldots &\ldots \\ 
+\hline
+  \end{tabular}
+  \caption{\textit{rseg-diff} posterior probability  output with running mode 3}
+  \label{tab:format-score-diff}
+\end{table}
 
 \textbf{ES.K9-WCE-boundaries.bed} and
 \textbf{ES.K36-WCE-boundary-scores.wig} are of the same format as
