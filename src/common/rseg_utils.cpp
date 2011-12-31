@@ -425,6 +425,37 @@ write_wigfile(const vector<vector<double> > &scores,
 }
 
 void
+write_wigfile(const vector<double> &fg_scores,
+              const vector<double> &bg_scores,
+              const vector<vector<SimpleGenomicRegion> > &bin_bounds,
+              const string &wigfile_name) 
+{
+  std::ofstream wigout(wigfile_name.c_str());
+
+  if (!wigout.good())
+    {
+      cerr << "write_bed_file: cannot open " << wigfile_name << endl;
+      exit(-1);
+    }
+
+  size_t k = 0;
+  for (size_t i = 0; i < bin_bounds.size(); ++i)
+    for (size_t j = 0; j < bin_bounds[i].size(); ++j){
+      wigout << bin_bounds[i][j] << "\t" << fg_scores[k] << "\t"
+             << bg_scores[k] << endl;
+      ++k;
+    }
+  
+  if (!wigout.good())
+    {
+      cerr << "write_bed_file: error when writing " << wigfile_name << endl;
+      exit(-1);
+    }
+
+  wigout.close();
+}
+
+void
 write_bed_file(const vector<vector<GenomicRegion> > &regions,
 	       const string &bed_file) 
 {

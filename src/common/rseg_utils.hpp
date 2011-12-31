@@ -108,6 +108,12 @@ write_wigfile(const std::vector<std::vector<double> > &scores,
 	      const std::vector<std::vector<SimpleGenomicRegion> > &bin_bounds,
 	      const std::string &wigfile_name);
 void
+write_wigfile(const std::vector<double > &fg_scores,
+              const std::vector<double > &bg_scores,
+              const std::vector<std::vector<SimpleGenomicRegion> > &bin_bounds,
+              const std::string &wigfile_name);
+
+void
 write_bed_file(const std::vector<std::vector<GenomicRegion> > &regions,
 	       const std::string &bed_file);
 

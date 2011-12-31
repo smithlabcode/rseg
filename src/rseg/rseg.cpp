@@ -173,18 +173,18 @@ output_boundaries(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
 static void
 output_domains(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
 	       const vector<double> &tmp_read_bins,
-               const vector<double> &tmp_scales,
+           const vector<double> &tmp_scales,
 	       const vector<bool> &tmp_classes,
-               vector<double> &tmp_scores,
+           vector<double> &tmp_scores,
 	       const vector<size_t> &reset_points,
 	       const TwoStateScaleHMM &hmm,
 	       const vector<Distro> &distros,
 	       const vector<double> &start_trans,
 	       const vector<vector<double> > &trans,
-               const vector<double> &end_trans,
-               const double posterior_cutoff,
-               const size_t undef_region_cutoff,
-               const double cdf_cutoff, 
+           const vector<double> &end_trans,
+           const double posterior_cutoff,
+           const size_t undef_region_cutoff,
+           const double cdf_cutoff, 
 	       const string dataset_name, const string outdir, 
 	       const bool VERBOSE, const bool WRITE_TRACKS) {
   
@@ -225,6 +225,13 @@ output_domains(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
     {
       const string scores_file_name(path_join(outdir, dataset_name + 
 					      SCORES_TAG + WIG_SUFF));
+      size_t k = 0;
+      for (size_t i = 0; i < scores.size(); ++i)
+        for (size_t j = 0; j < scores[i].size(); ++j)
+        {
+          scores[i][j] == tmp_classes[k] ? scores[i][j] : 1 - scores[i][j];
+          ++k;
+        }
       write_wigfile(scores, bin_bounds, scores_file_name);
       if (VERBOSE)
 	cout << "Bin score file: " + scores_file_name << endl;

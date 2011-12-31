@@ -99,6 +99,18 @@ public:
 		  const size_t class_id,
 		  std::vector<double> &llr_scores) const;
 
+  void
+  PosteriorScores(const std::vector<double> &values,
+          const std::vector<double> &scales,
+		  const std::vector<size_t> &reset_points,
+		  const std::vector<double> &start_trans,
+		  const std::vector<std::vector<double> > &trans,
+		  const std::vector<double> &end_trans,
+		  const SplitDistro &fg_distro,
+		  const SplitDistro &mid_distro,
+		  const SplitDistro &bg_distro,
+          std::vector<double> &fg_scores,
+          std::vector<double> &bg_scores) const;
 
   void
   TransitionPosteriors(const std::vector<double> &values,
@@ -203,6 +215,20 @@ private:
 		  const size_t class_id,
 		  std::vector<double> &llr_scores) const;
 
+  void
+  PosteriorScores(const std::vector<double> &values,
+          const std::vector<double> &scales,
+		  const std::vector<size_t> &reset_points,
+		  const double p_sf, const double p_sm, const double p_sb,
+		  const double p_ff, const double p_fm, const double p_fb, 
+		  const double p_mf, const double p_mm, const double p_mb, 
+		  const double p_bf, const double p_bm, const double p_bb,
+		  const double p_ft, const double p_bt, const double p_mt,
+		  const SplitDistro &fg_distro,
+		  const SplitDistro &mid_distro,
+		  const SplitDistro &bg_distro,
+          std::vector<double> &fg_scores,
+		  std::vector<double> &bg_scores) const;
 
   void
   TransitionPosteriors(const std::vector<double> &values,

@@ -204,11 +204,11 @@ output_domains(
 	       const vector<SplitDistro> &distros, 
 	       const vector<double> &start_trans,
 	       const vector<vector<double> > &trans,
-               const vector<double> &end_trans,
+           const vector<double> &end_trans,
 	       const vector<bool> &tmp_classes,
-               const double posterior_cutoff,
-               const size_t undef_region_cutoff,
-               const double cdf_cutoff,
+           const double posterior_cutoff,
+           const size_t undef_region_cutoff,
+           const double cdf_cutoff,
 	       const string dataset_name, const string outdir, 
 	       const bool VERBOSE, const bool WRITE_TRACKS) 
 {
@@ -247,6 +247,13 @@ output_domains(
     {
       const string scores_file_name(
 				    path_join(outdir, dataset_name + SCORES_TAG + WIG_SUFF));
+      size_t k = 0;
+      for (size_t i = 0; i < scores.size(); ++i)
+        for (size_t j = 0; j < scores[i].size(); ++j)
+        {
+          scores[i][j] == tmp_classes[k] ? scores[i][j] : 1 - scores[i][j];
+          ++k;
+        }
       write_wigfile(scores, bin_bounds, scores_file_name);
       if (VERBOSE)
 	cout << "Bin score file: " + scores_file_name << std::endl;
@@ -403,11 +410,11 @@ output_domains(
 	       const vector<SplitDistro> &distros,
 	       const vector<double> &start_trans,
 	       const vector<vector<double> > &trans,
-               const vector<double> &end_trans,
+           const vector<double> &end_trans,
 	       const vector<size_t> &classes,
-               const double posterior_cutoff,
-               const size_t undef_region_cutoff,
-               const double cdf_cutoff,
+           const double posterior_cutoff,
+           const size_t undef_region_cutoff,
+           const double cdf_cutoff,
 	       const string dataset_name,
 	       const string outdir,
 	       const bool VERBOSE, const bool WRITE_TRACKS) 
@@ -449,9 +456,14 @@ output_domains(
     {
       const string scores_file_name(
 				    path_join(outdir, dataset_name + SCORES_TAG + WIG_SUFF));
-      write_wigfile(scores, bin_bounds, scores_file_name);
+      vector<double> fg_scores, bg_scores;
+      hmm.PosteriorScores(tmp_read_bins, tmp_scales, reset_points,
+		      start_trans, trans, end_trans,
+		      distros.front(), distros[1], distros.back(),
+              fg_scores, bg_scores);
+      write_wigfile(fg_scores, bg_scores, bin_bounds, scores_file_name);
       if (VERBOSE)
-	cout << "Bin score file: " + scores_file_name << std::endl;
+    	cout << "Bin score file: " + scores_file_name << std::endl;
     }
 }
 

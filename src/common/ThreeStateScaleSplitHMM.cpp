@@ -134,7 +134,6 @@ ThreeStateScaleSplitHMM::PosteriorScores(const vector<double> &values,
 }
 
 
-  
 void
 ThreeStateScaleSplitHMM::PosteriorScores(const vector<double> &values,
                                          const std::vector<double> &scales,
@@ -159,6 +158,28 @@ ThreeStateScaleSplitHMM::PosteriorScores(const vector<double> &values,
 
 }
 
+void
+ThreeStateScaleSplitHMM::PosteriorScores(const vector<double> &values,
+                                         const std::vector<double> &scales,
+				    const vector<size_t> &reset_points,
+				    const vector<double> &start_trans,
+				    const vector<vector<double> > &trans,
+				    const vector<double> &end_trans,
+				    const SplitDistro &fg_distro,
+				    const SplitDistro &mid_distro,
+				    const SplitDistro &bg_distro,
+                    vector<double> &fg_scores,
+				    vector<double> &bg_scores) const {
+
+    return PosteriorScores(values, scales, reset_points,
+			 start_trans[0], start_trans[1], start_trans[2],
+			 trans[0][0], trans[0][1], trans[0][2],
+			 trans[1][0], trans[1][1], trans[1][2],
+			 trans[2][0], trans[2][1], trans[2][2],
+			 end_trans[0], end_trans[1], end_trans[2],
+			 fg_distro, mid_distro, bg_distro,
+             fg_scores, bg_scores);
+}
 
 void
 ThreeStateScaleSplitHMM::TransitionPosteriors(const vector<double> &values,
@@ -1085,6 +1106,112 @@ ThreeStateScaleSplitHMM::PosteriorScores(const vector<double> &values,
   }
 }
 
+
+void
+ThreeStateScaleSplitHMM::PosteriorScores(const vector<double> &values,
+		            const std::vector<double> &scales,
+                    const vector<size_t> &reset_points,
+				    const double p_sf, const double p_sm, const double p_sb,
+				    const double p_ff, const double p_fm, const double p_fb, 
+				    const double p_mf, const double p_mm, const double p_mb, 
+				    const double p_bf, const double p_bm, const double p_bb,
+				    const double p_ft, const double p_mt, const double p_bt,
+				    const SplitDistro &fg_distro,
+				    const SplitDistro &mid_distro,
+				    const SplitDistro &bg_distro,
+				    vector<double> &fg_scores,
+				    vector<double> &bg_scores) const {
+  
+  
+  double total_score = 0;
+  
+  const double lp_sf = log(p_sf);
+  const double lp_sm = log(p_sm);
+  const double lp_sb = log(p_sb);
+  
+  const double lp_ff = log(p_ff);
+  const double lp_fm = log(p_fm);
+  const double lp_fb = log(p_fb);
+  const double lp_ft = log(p_ft);
+
+  const double lp_mf = log(p_mf);
+  const double lp_mm = log(p_mm);
+  const double lp_mb = log(p_mb);
+  const double lp_mt = log(p_mt);
+  
+  const double lp_bf = log(p_bf);
+  const double lp_bm = log(p_bm);
+  const double lp_bb = log(p_bb);
+  const double lp_bt = log(p_bt);
+  
+  assert(finite(lp_sf) &&
+	 finite(lp_sm) &&
+	 finite(lp_sb) &&
+	 finite(lp_ff) &&
+	 finite(lp_fm) &&
+	 finite(lp_fb) &&
+	 finite(lp_ft) &&
+	 finite(lp_mf) &&
+	 finite(lp_mm) &&
+	 finite(lp_mb) &&
+	 finite(lp_mt) &&
+	 finite(lp_bf) &&
+	 finite(lp_bm) &&
+	 finite(lp_bb) &&
+	 finite(lp_bt));
+  
+  vector<vector<double> > forward(values.size(), vector<double>(3, 0));
+  vector<vector<double> > backward(values.size(), vector<double>(3, 0));
+  
+  for (size_t i = 0; i < reset_points.size() - 1; ++i) {
+    
+      const double score = forward_algorithm(values, scales,
+					   reset_points[i],
+					   reset_points[i + 1],
+					   lp_sf, lp_sm, lp_sb,
+					   lp_ff, lp_fm, lp_fb, 
+					   lp_mf, lp_mm, lp_mb, 
+					   lp_bf, lp_bm, lp_bb,
+					   lp_ft, lp_mt, lp_bt,
+					   fg_distro,
+					   mid_distro,
+					   bg_distro,
+					   forward);
+    
+    const double backward_score = 
+        backward_algorithm(values, scales,
+			 reset_points[i],
+			 reset_points[i + 1],
+			 lp_sf, lp_sm, lp_sb,
+			 lp_ff, lp_fm, lp_fb, 
+			 lp_mf, lp_mm, lp_mb, 
+			 lp_bf, lp_bm, lp_bb,
+			 lp_ft, lp_mt, lp_bt,
+			 fg_distro,
+			 mid_distro,
+			 bg_distro,
+			 backward);
+    
+    if (DEBUG && (fabs(score - backward_score)/
+		  max(score, backward_score)) > 1e-10)
+      cerr << "fabs(score - backward_score)/"
+	   << "max(score, backward_score) > 1e-10" << endl;
+
+    total_score += score;
+  }
+  
+  fg_scores.resize(values.size());
+  bg_scores.resize(values.size());
+  for (size_t i = 0; i < values.size(); ++i) {
+    const double fg_state = forward[i][0] + backward[i][0];
+    const double mid_state = forward[i][1] + backward[i][1];
+    const double bg_state = forward[i][2] + backward[i][2];
+    const double denom = log_sum_log(fg_state, mid_state, bg_state);
+
+    fg_scores[i] = exp(fg_state - denom);
+    bg_scores[i] = exp(bg_state - denom);
+  }
+}
 
 
 void
