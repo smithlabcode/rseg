@@ -254,7 +254,7 @@ main(int argc, const char **argv) {
     double fg_size = 20000;
         
     // flags
-    bool use_posterior = true;
+    bool USE_POSTERIOR = true;
     bool REMOVE_JACKPOT = true;
     bool VERBOSE = false;
     bool WRITE_BOUNDARY = false;
@@ -265,7 +265,7 @@ main(int argc, const char **argv) {
     // names of statistical distributions to use
     string fg_name = "nbd";
     string bg_name = "nbd";
-  
+    
     size_t desert_size = 20000;
     size_t bin_size_step = 50;
     size_t bin_size = 0;
@@ -299,7 +299,7 @@ main(int argc, const char **argv) {
 		      false, WRITE_TRACKS);
     opt_parse.add_opt("counts", '\0', "write read counts file", 
 		      false, PRINT_READCOUNTS);
-    opt_parse.add_opt("name", '\0', "dataset name (default: input filename)", 
+    opt_parse.add_opt("name", '\0', "dataset name (default: input file without suffix)", 
 		      false, tmp_dataset_name);
     opt_parse.add_opt("chrom", 'c', "file with chromosome sizes (BED format)", 
 		      true, chroms_file);
@@ -307,39 +307,40 @@ main(int argc, const char **argv) {
 		      false, deads_file);
     opt_parse.add_opt("maxitr", 'i', "maximum iterations for training", 
 		      false, max_iterations);
-    opt_parse.add_opt("bin-size", 'b', "Size of bins (default depends on # of reads)", 
+    opt_parse.add_opt("bin-size", 'b', "bin size (default: based on data)", 
 		      false, bin_size);
-    opt_parse.add_opt("bin-size-step", '\0',
-              "Intial bin size when reading in raw reads (default 50)", 
+    opt_parse.add_opt("bin-step", '\0',
+		      "minimum bin size (default: " + toa(bin_size_step) + ")", 
 		      false, bin_size_step);
-    opt_parse.add_opt("not-remove-jackpot", '\0', "Do not remove duplicate reads", 
+    opt_parse.add_opt("duplicates", '\0', "keep duplicate reads", 
 		      false, REMOVE_JACKPOT);
-    opt_parse.add_opt("Waterman", '\0', "using Waterman's method for bin size", 
+    opt_parse.add_opt("Waterman", '\0', "use Waterman's method for bin size", 
 		      false, waterman);
-    opt_parse.add_opt("Hideaki", '\0', "Using Hideaki's method for bin size", 
+    opt_parse.add_opt("Hideaki", '\0', "use Hideaki's method for bin size", 
 		      false, hideaki);
-    opt_parse.add_opt("Hideaki-emp", '\0', "Using Hideaki's empirical method for "
-		      "bin size (default)", false, hideaki_emp);
+    opt_parse.add_opt("Hideaki-emp", '\0', "use Hideaki's empirical method (default)", 
+		      false, hideaki_emp);
     opt_parse.add_opt("smooth", '\0', "Indicate whether the rate curve is assumed smooth", 
 		      false, smooth);
-    opt_parse.add_opt("max-deadzone-prop", '\0',
-		      "Maximum deadzone proportion allowed for retened bins",
+    opt_parse.add_opt("max-dead", '\0',
+		      "max deadzone proportion for retained bins",
 		      false, max_dead_proportion);
-    opt_parse.add_opt("not-remove-jackpot", '\0', "Do not remove duplicate reads", 
-		      false, REMOVE_JACKPOT);
-    opt_parse.add_opt("domain-size", 's', "Expected size of domain (Default 20000)", 
+    opt_parse.add_opt("domain-size", 's', "expected domain size "
+		      "(default: " + toa(fg_size) + ")", 
 		      false, fg_size);
-    opt_parse.add_opt("desert-size", 'S', "Desert size", false, desert_size);
-    opt_parse.add_opt("fg", 'F', "foreground emission distribution name", false, fg_name);
-    opt_parse.add_opt("bg", 'B', "background emission distribution name", false, bg_name);
-    opt_parse.add_opt("posterior", 'P', "Options for posterior decoding "
-		      "(default Viterbi)", false, use_posterior);
+    opt_parse.add_opt("desert", 'S', "desert size "
+		      "(default: " + toa(desert_size) + ")", 
+		      false, desert_size);
+    opt_parse.add_opt("fg", 'F', "foreground emission distribution", false, fg_name);
+    opt_parse.add_opt("bg", 'B', "background emission distribution", false, bg_name);
+    opt_parse.add_opt("posterior", 'P', "use posterior decoding "
+		      "(default: Viterbi)", false, USE_POSTERIOR);
     opt_parse.add_opt("posterior-cutoff", '\0', "Posterior threshold for "
 		      "signigicant bins", false, posterior_cutoff);
-    opt_parse.add_opt("undef-region-cutoff", '\0', "Minimum size of "
-		      "undefined region", false, undef_region_cutoff);
-    opt_parse.add_opt("cdf-cutoff", '\0', "Cutoff of cumulative probability "
-		      "for a true fg domain", false, cdf_cutoff); 
+    opt_parse.add_opt("undefined", '\0', "min size of unmappable region", 
+		      false, undef_region_cutoff);
+    opt_parse.add_opt("cutoff", '\0', "cutoff in cdf for identified domains", 
+		      false, cdf_cutoff); 
     opt_parse.add_opt("verbose", 'v', "Print more running information", 
 		      false, VERBOSE);
 
@@ -457,7 +458,7 @@ main(int argc, const char **argv) {
      */
     vector<bool> classes;
     vector<double> scores;
-    if (use_posterior)
+    if (USE_POSTERIOR)
       hmm.PosteriorDecoding(read_bins, scales, reset_points,
 			    start_trans, trans, end_trans,
 			    distros.front(), distros.back(), classes, scores);
