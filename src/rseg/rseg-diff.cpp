@@ -475,10 +475,10 @@ main(int argc, const char **argv)  {
     string  deads_file, chroms_file, outdir(".");
   
     // expected size of a domain
-    double fg_size = -1;
-  
+    double fg_size = 20000;
+    
     // flags
-    bool use_viterbi = false;
+    bool USE_VITERBI = false;
     bool REMOVE_JACKPOT = true;
     bool VERBOSE = false;
     bool WRITE_BOUNDARY = false;
@@ -516,73 +516,63 @@ main(int argc, const char **argv)  {
     const size_t MAX_INITIALIZATION_ITR = 5;
     
     ////////////////////// COMMAND LINE OPTIONS /////////////////////////
-    OptionParser opt_parse(basename(argv[0]),
-                           "This program segments genome according to mapped"
-                           " read density", "BED_file");
-    opt_parse.add_opt("output-dir", 'o', "Output directory name (default CWD)", 
+    OptionParser opt_parse(strip_path(argv[0]),
+                           "segment the genome according to differential "
+			   "mapped read density", "<mapped-read-locations-A> "
+			   "<mapped-read-locations-B>");
+    opt_parse.add_opt("outdir", 'o', "name of output dir (default: pwd)", 
 		      false, outdir);
-    opt_parse.add_opt("boundary", '\0', "Write boundary file", 
+    opt_parse.add_opt("boundaries", '\0', "write domain boundaries file", 
 		      false, WRITE_BOUNDARY);
-    opt_parse.add_opt("tracks", '\0', "Whether write additional browser tracks", 
+    opt_parse.add_opt("tracks", '\0', "write additional browser track files", 
 		      false, WRITE_TRACKS);
-    opt_parse.add_opt("read-counts", '\0', "Write reads counts "
-		      "file in each bin", false, PRINT_READCOUNTS);
-    opt_parse.add_opt("chrom", 'c', "Name of the file with sizes of "
-		      "chromosomes", true, chroms_file);
-    opt_parse.add_opt("deadzone-file", 'd', 
-		      "Filename of deadzones", 
+    opt_parse.add_opt("counts", '\0', "write read counts file", 
+		      false, PRINT_READCOUNTS);
+    opt_parse.add_opt("chrom", 'c', "file with chromosome sizes (BED format)", 
+		      true, chroms_file);
+    opt_parse.add_opt("deadzones", 'd', "file of deadzones (BED format)", 
 		      false, deads_file);
-    opt_parse.add_opt("mode", 'm', "Mode: 2 - test and control; 3 - test and test", 
-		      false, mode);
-    opt_parse.add_opt("iteration", 'i', 
-		      "Maximum number of iterations for HMM training", 
+    opt_parse.add_opt("maxitr", 'i', "maximum iterations for training", 
 		      false, max_iterations);
-    opt_parse.add_opt("bin-size", 'b', 
-		      "Size of bins (default depends on # of reads)", 
+    opt_parse.add_opt("bin-size", 'b', "bin size (default: based on data)", 
 		      false, bin_size);
-    opt_parse.add_opt("bin-size-step", '\0',
-              "Intial bin size when reading in raw reads (default 100)", 
+    opt_parse.add_opt("bin-step", '\0',
+		      "minimum bin size (default: " + toa(bin_size_step) + ")", 
 		      false, bin_size_step);
-    opt_parse.add_opt("Waterman", '\0', 
-		      "Using Waterman's method to determine bin size", 
-		      false, waterman);
-    opt_parse.add_opt("Hideaki", '\0', 
-		      "Using Hideaki's method to determine bin size", 
-		      false, hideaki);
-    opt_parse.add_opt("Hideaki-emp", '\0', 
-		      "Using Hideaki's empirical method to determine bin size (default)", 
-		      false, hideaki_emp);
-    opt_parse.add_opt("smooth", '\0', 
-		      "Whether the rate curve is smooth (default yes)", 
-		      false, smooth);
-    opt_parse.add_opt("max-deadzone-prop", '\0',
-		      "Maximum deadzone proportion allowed for retened bins",
-		      false, max_dead_proportion);
-    opt_parse.add_opt("not-remove-jackpot", '\0', "Do not remove duplicate reads", 
+    opt_parse.add_opt("duplicates", '\0', "keep duplicate reads", 
 		      false, REMOVE_JACKPOT);
-    opt_parse.add_opt("domain-size", 's', "Expected size of domain (Default 20000)", 
+    opt_parse.add_opt("Waterman", '\0', "use Waterman's method for bin size", 
+		      false, waterman);
+    opt_parse.add_opt("Hideaki", '\0', "use Hideaki's method for bin size", 
+		      false, hideaki);
+    opt_parse.add_opt("Hideaki-emp", '\0', "use Hideaki's empirical method (default)", 
+		      false, hideaki_emp);
+    opt_parse.add_opt("smooth", '\0', "Indicate whether the rate curve is assumed smooth", 
+		      false, smooth);
+    opt_parse.add_opt("max-dead", '\0',
+		      "max deadzone proportion for retained bins",
+		      false, max_dead_proportion);
+    opt_parse.add_opt("domain-size", 's', "expected domain size "
+		      "(default: " + toa(fg_size) + ")", 
 		      false, fg_size);
-    opt_parse.add_opt("desert-size", 'S', 
-		      "Desert size", 
+    opt_parse.add_opt("desert", 'S', "desert size "
+		      "(default: " + toa(desert_size) + ")", 
 		      false, desert_size);
-    opt_parse.add_opt("fg", 'F', "Name of foreground emission distribution", 
-		      false, fg_name);
-    opt_parse.add_opt("bg", 'B', "Name of background emission distribution", 
-		      false, bg_name);
+    opt_parse.add_opt("fg", 'F', "foreground emission distribution", false, fg_name);
+    opt_parse.add_opt("bg", 'B', "background emission distribution", false, bg_name);
     opt_parse.add_opt("training-size", '\0', 
 		      "Max number of data points for training (default: all)",
 		      false, training_size);
-    opt_parse.add_opt("Viterbi", 'V', "use Viterbi decoding (default: posterior)", 
-		      false, use_viterbi);
+    opt_parse.add_opt("Viterbi", 'V', "use Viterbi decoding (default: posterior)",
+		      false, USE_VITERBI);
     opt_parse.add_opt("posterior-cutoff", '\0', 
 		      "Posterior threshold for signigicant bins", 
 		      false, posterior_cutoff);
-    opt_parse.add_opt("undef-region-cutoff", '\0', 
-		      "Minimum size of undefined region", 
+    opt_parse.add_opt("undefined", '\0', "min size of unmappable region", 
 		      false, undef_region_cutoff);
-    opt_parse.add_opt("cdf-cutoff", '\0', "Cutoff of cumulative probability for a "
-		      "true fg domain", false, cdf_cutoff); 
-    opt_parse.add_opt("verbose", 'v', "Print more running information", 
+    opt_parse.add_opt("cutoff", '\0', "cutoff in cdf for identified domains", 
+		      false, cdf_cutoff); 
+    opt_parse.add_opt("verbose", 'v', "print more run information", 
 		      false, VERBOSE);
     
     vector<string> leftover_args;
@@ -727,7 +717,7 @@ main(int argc, const char **argv)  {
 
       vector<bool> classes;
       vector<double> scores;
-      if (use_viterbi)
+      if (USE_VITERBI)
 	hmm.ViterbiDecoding(read_bins, scales, reset_points,
 			    start_trans, trans, end_trans,
 			    distros.front(), distros.back(), classes);
@@ -821,7 +811,7 @@ main(int argc, const char **argv)  {
     
       vector<size_t> classes;
       vector<double> scores;
-      if (use_viterbi)
+      if (USE_VITERBI)
 	hmm.ViterbiDecoding(read_bins, scales, reset_points,
 			    start_trans, trans, end_trans,
 			    distros.front(), distros[1], distros.back(),

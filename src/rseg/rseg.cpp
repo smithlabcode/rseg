@@ -173,18 +173,18 @@ output_boundaries(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
 static void
 output_domains(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
 	       const vector<double> &tmp_read_bins,
-           const vector<double> &tmp_scales,
+	       const vector<double> &tmp_scales,
 	       const vector<bool> &tmp_classes,
-           vector<double> &tmp_scores,
+	       vector<double> &tmp_scores,
 	       const vector<size_t> &reset_points,
 	       const TwoStateScaleHMM &hmm,
 	       const vector<Distro> &distros,
 	       const vector<double> &start_trans,
 	       const vector<vector<double> > &trans,
-           const vector<double> &end_trans,
-           const double posterior_cutoff,
-           const size_t undef_region_cutoff,
-           const double cdf_cutoff, 
+	       const vector<double> &end_trans,
+	       const double posterior_cutoff,
+	       const size_t undef_region_cutoff,
+	       const double cdf_cutoff, 
 	       const string dataset_name, const string outdir, 
 	       const bool VERBOSE, const bool WRITE_TRACKS) {
   
@@ -210,7 +210,7 @@ output_domains(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
   vector<vector<GenomicRegion> > domains;
   build_domains(bin_bounds, classes, scores, posterior_cutoff,
 		domains, undef_region_cutoff);
-    
+  
   // output domains
   pick_domains(bin_bounds, read_bins, scales, distros,
 	       domains, cdf_cutoff);
@@ -228,10 +228,10 @@ output_domains(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
       size_t k = 0;
       for (size_t i = 0; i < scores.size(); ++i)
         for (size_t j = 0; j < scores[i].size(); ++j)
-        {
-          scores[i][j] == tmp_classes[k] ? scores[i][j] : 1 - scores[i][j];
-          ++k;
-        }
+	  {
+	    scores[i][j] == tmp_classes[k] ? scores[i][j] : 1 - scores[i][j];
+	    ++k;
+	  }
       write_wigfile(scores, bin_bounds, scores_file_name);
       if (VERBOSE)
 	cout << "Bin score file: " + scores_file_name << endl;
@@ -335,15 +335,15 @@ main(int argc, const char **argv) {
     opt_parse.add_opt("bg", 'B', "background emission distribution", false, bg_name);
     opt_parse.add_opt("posterior", 'P', "use posterior decoding "
 		      "(default: Viterbi)", false, USE_POSTERIOR);
-    opt_parse.add_opt("posterior-cutoff", '\0', "Posterior threshold for "
-		      "signigicant bins", false, posterior_cutoff);
+    opt_parse.add_opt("posterior-cutoff", '\0', 
+		      "posterior cutoff significance", false, posterior_cutoff);
     opt_parse.add_opt("undefined", '\0', "min size of unmappable region", 
 		      false, undef_region_cutoff);
     opt_parse.add_opt("cutoff", '\0', "cutoff in cdf for identified domains", 
 		      false, cdf_cutoff); 
-    opt_parse.add_opt("verbose", 'v', "Print more running information", 
+    opt_parse.add_opt("verbose", 'v', "print more run information", 
 		      false, VERBOSE);
-
+    
     vector<string> leftover_args;
     opt_parse.parse(argc, argv, leftover_args);
 	
@@ -391,18 +391,18 @@ main(int argc, const char **argv) {
                       scales, reset_points, REMOVE_JACKPOT);
 
     if (VERBOSE)
-        cout << "[SELECTING BIN SIZE] ";
+      cout << "[SELECTING BIN SIZE] ";
     if (bin_size == 0) {
-        if (hideaki)
-            bin_size = select_bin_size_hideaki(
-                read_bins, scales, bin_size_step, smooth);
-        else if (waterman)
-            bin_size = select_bin_size_waterman(
-                read_bins, scales, bin_size_step, smooth);
-        else 
-            bin_size = select_bin_size_hideaki_emp(
-                read_bins, scales, reset_points, bin_size_step,
-                max_dead_proportion);
+      if (hideaki)
+	bin_size = select_bin_size_hideaki(
+					   read_bins, scales, bin_size_step, smooth);
+      else if (waterman)
+	bin_size = select_bin_size_waterman(
+					    read_bins, scales, bin_size_step, smooth);
+      else 
+	bin_size = select_bin_size_hideaki_emp(
+					       read_bins, scales, reset_points, bin_size_step,
+					       max_dead_proportion);
     }
     if (VERBOSE) cout << "bin size =  " << bin_size << endl;
     
@@ -479,11 +479,11 @@ main(int argc, const char **argv) {
 		   posterior_cutoff, undef_region_cutoff, cdf_cutoff,
 		   dataset_name, outdir.c_str(), VERBOSE, WRITE_TRACKS);
     if (WRITE_BOUNDARY)
-        output_boundaries(bin_boundaries_folded,
-              read_bins, scales, classes, reset_points,
-		      hmm, distros, start_trans, trans, end_trans, 
-		      dataset_name, outdir,
-		      VERBOSE, WRITE_TRACKS, Both_Domain_Ends);
+      output_boundaries(bin_boundaries_folded,
+			read_bins, scales, classes, reset_points,
+			hmm, distros, start_trans, trans, end_trans, 
+			dataset_name, outdir,
+			VERBOSE, WRITE_TRACKS, Both_Domain_Ends);
     
     if (PRINT_READCOUNTS) {
       const string read_counts_file_name = 
