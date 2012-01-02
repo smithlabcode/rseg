@@ -288,24 +288,25 @@ main(int argc, const char **argv) {
     double max_dead_proportion = 0.5;
     
     ////////////////////// PARSING COMMAND LINE OPTIONS /////////////////////////
-    OptionParser opt_parse(basename(argv[0]),
-                           "This program segments genome according "
-                           "to mapped read density", "BED_file");
-    opt_parse.add_opt("output-dir", 'o', "Output directory name (default CWD)", 
+    OptionParser opt_parse(strip_path(argv[0]),
+                           "segment the genome according to mapped read density", 
+			   "<mapped-read-locations>");
+    opt_parse.add_opt("outdir", 'o', "name of output dir (default: pwd)", 
 		      false, outdir);
-    opt_parse.add_opt("boundary", '\0', "Write boundary file", 
+    opt_parse.add_opt("boundaries", '\0', "write domain boundaries file", 
 		      false, WRITE_BOUNDARY);
-    opt_parse.add_opt("tracks", '\0', "Whether write additional browser tracks", 
+    opt_parse.add_opt("tracks", '\0', "write additional browser track files", 
 		      false, WRITE_TRACKS);
-    opt_parse.add_opt("read-counts", '\0', "Write reads counts "
-		      "file in each bin", false, PRINT_READCOUNTS);
-    opt_parse.add_opt("name", '\0', "Name of dataset (default: filename)", 
+    opt_parse.add_opt("counts", '\0', "write read counts file", 
+		      false, PRINT_READCOUNTS);
+    opt_parse.add_opt("name", '\0', "dataset name (default: input filename)", 
 		      false, tmp_dataset_name);
-    opt_parse.add_opt("chrom", 'c', "Name of the file with sizes of chromosomes", 
+    opt_parse.add_opt("chrom", 'c', "file with chromosome sizes (BED format)", 
 		      true, chroms_file);
-    opt_parse.add_opt("deadzone-file", 'd', "Filename of deadzones", false, deads_file);
-    opt_parse.add_opt("iteration", 'i', "Maximum number of iterations for "
-		      "HMM training", false, max_iterations);
+    opt_parse.add_opt("deadzones", 'd', "file of deadzones (BED format)", 
+		      false, deads_file);
+    opt_parse.add_opt("maxitr", 'i', "maximum iterations for training", 
+		      false, max_iterations);
     opt_parse.add_opt("bin-size", 'b', "Size of bins (default depends on # of reads)", 
 		      false, bin_size);
     opt_parse.add_opt("bin-size-step", '\0',
