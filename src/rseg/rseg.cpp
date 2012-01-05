@@ -254,7 +254,7 @@ main(int argc, const char **argv) {
     double fg_size = 20000;
         
     // flags
-    bool USE_POSTERIOR = true;
+    bool USE_POSTERIOR = false;
     bool REMOVE_JACKPOT = true;
     bool VERBOSE = false;
     bool WRITE_BOUNDARY = false;
@@ -320,25 +320,25 @@ main(int argc, const char **argv) {
 		      false, hideaki);
     opt_parse.add_opt("Hideaki-emp", '\0', "use Hideaki's empirical method (default)", 
 		      false, hideaki_emp);
-    opt_parse.add_opt("smooth", '\0', "Indicate whether the rate curve is assumed smooth", 
-		      false, smooth);
-    opt_parse.add_opt("max-dead", '\0',
-		      "max deadzone proportion for retained bins",
-		      false, max_dead_proportion);
+    // opt_parse.add_opt("smooth", '\0', "Indicate whether the rate curve is assumed smooth", 
+	// 	      false, smooth);
+    // opt_parse.add_opt("max-dead", '\0',
+	// 	      "max deadzone proportion for retained bins",
+	// 	      false, max_dead_proportion);
     opt_parse.add_opt("domain-size", 's', "expected domain size "
 		      "(default: " + toa(fg_size) + ")", 
 		      false, fg_size);
-    opt_parse.add_opt("desert", 'S', "desert size "
-		      "(default: " + toa(desert_size) + ")", 
-		      false, desert_size);
+    // opt_parse.add_opt("desert", 'S', "desert size "
+	// 	      "(default: " + toa(desert_size) + ")", 
+	// 	      false, desert_size);
     opt_parse.add_opt("fg", 'F', "foreground emission distribution", false, fg_name);
     opt_parse.add_opt("bg", 'B', "background emission distribution", false, bg_name);
     opt_parse.add_opt("posterior", 'P', "use posterior decoding "
 		      "(default: Viterbi)", false, USE_POSTERIOR);
-    opt_parse.add_opt("posterior-cutoff", '\0', 
-		      "posterior cutoff significance", false, posterior_cutoff);
-    opt_parse.add_opt("undefined", '\0', "min size of unmappable region", 
-		      false, undef_region_cutoff);
+    // opt_parse.add_opt("posterior-cutoff", '\0', 
+	// 	      "posterior cutoff significance", false, posterior_cutoff);
+    // opt_parse.add_opt("undefined", '\0', "min size of unmappable region", 
+	// 	      false, undef_region_cutoff);
     opt_parse.add_opt("cutoff", '\0', "cutoff in cdf for identified domains", 
 		      false, cdf_cutoff); 
     opt_parse.add_opt("verbose", 'v', "print more run information", 
