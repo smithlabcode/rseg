@@ -104,10 +104,18 @@ operator>>(BAMFile& in, SimpleGenomicRegion& region)
     if (samread(in.file_handler, algn_p) >= 0)
     {
         const bam1_core_t *c = &algn_p->core;
+        uint32_t *cigar = bam1_cigar(algn_p);
+        size_t len = 0;
+        for (size_t i = 0; i < c->n_cigar; ++i)
+        {
+            int op = cigar[i]&0xf;
+            if (op == BAM_CMATCH || op == BAM_CDEL || op == BAM_CREF_SKIP)
+                len += cigar[i]>>4;
+        }
         
         region.set_chrom(in.file_handler->header->target_name[c->tid]);
         region.set_start(c->pos);
-        region.set_end(c->pos + c->l_qseq + 1);
+        region.set_end(c->pos + len);
     }
     else
         in.GOOD = false;
@@ -117,7 +125,6 @@ operator>>(BAMFile& in, SimpleGenomicRegion& region)
     return in;
 }
 
-
 BAMFile& 
 operator>>(BAMFile& in, GenomicRegion& region)
 {
@@ -126,10 +133,18 @@ operator>>(BAMFile& in, GenomicRegion& region)
     if (samread(in.file_handler, algn_p) >= 0)
     {
         const bam1_core_t *c = &algn_p->core;
-        
+        uint32_t *cigar = bam1_cigar(algn_p);
+        size_t len = 0;
+        for (size_t i = 0; i < c->n_cigar; ++i)
+        {
+            int op = cigar[i]&0xf;
+            if (op == BAM_CMATCH || op == BAM_CDEL || op == BAM_CREF_SKIP)
+                len += cigar[i]>>4;
+        }
+
         region.set_chrom(in.file_handler->header->target_name[c->tid]);
         region.set_start(c->pos);
-        region.set_end(c->pos + c->l_qseq + 1);
+        region.set_end(c->pos + len);
         region.set_name(bam1_qname(algn_p));
         region.set_score(c->qual);                       
         region.set_strand(c->flag & BAM_FREVERSE ? '-' : '+'); 
