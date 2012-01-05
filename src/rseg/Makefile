@@ -25,15 +25,16 @@ endif
 
 COMMON_LIB = ../common
 GSL_LIB = ../gsl
+SAMTOOL_LIB = ../samtools
 
 SOURCES = $(wildcard *.cpp)
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 PROGS =  rseg rseg-diff deadzones
 
-INCLUDEDIRS = $(SMITHLAB_CPP) $(COMMON_LIB) $(GSL_LIB)
+INCLUDEDIRS = $(SMITHLAB_CPP) $(COMMON_LIB) $(GSL_LIB) $(SAMTOOL_LIB)
 INCLUDEARGS = $(addprefix -I,$(INCLUDEDIRS))
 
-# LIBS += -lgsl -lgslcblas 
+LIBS = -lz -lm 
 
 CXX = g++
 CC = gcc
@@ -55,7 +56,7 @@ all: $(PROGS)
 rseg: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
 	smithlab_utils.o OptionParser.o RNG.o) \
 	$(addprefix $(COMMON_LIB)/, numerical_utils.o rseg_utils.o \
-	Distro.o SplitDistro.o Smoothing.o \
+	Distro.o SplitDistro.o Smoothing.o BAMFile.o \
 	SortGenomicRegion.o LoadReadsByRegion.o SelectBinSize.o ReadCounts.o \
 	TwoStateScaleHMM.o TwoStateScaleResolveMixture.o \
 	EvaluateBoundaries.o) \
@@ -63,12 +64,17 @@ rseg: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
 	bessel_I1.o bessel_In.o bessel_temme.o coerce.o elementary.o error.o exp.o \
 	fdiv.o gamma.o gauss.o infnan.o log.o math.o mean.o message.o\
 	mt.o poch.o pow_int.o psi.o rng.o stream.o trig.o variance.o \
-	wmean.o wvariance.o zeta.o)
+	wmean.o wvariance.o zeta.o) \
+	$(addprefix $(SAMTOOL_LIB)/, bgzf.o kstring.o bam_aux.o bam.o \
+	bam_import.o sam.o bam_index.o bam_pileup.o bam_lpileup.o bam_md.o \
+	razf.o faidx.o bedidx.o  bam_sort.o sam_header.o bam_reheader.o \
+	kprobaln.o bam_cat.o  knetfile.o)
+
 
 rseg-diff: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
 	smithlab_utils.o OptionParser.o RNG.o) \
 	$(addprefix $(COMMON_LIB)/, numerical_utils.o rseg_utils.o \
-	Distro.o SplitDistro.o Smoothing.o \
+	Distro.o SplitDistro.o Smoothing.o BAMFile.o \
 	SortGenomicRegion.o LoadReadsByRegion.o SelectBinSize.o ReadCounts.o \
 	TwoStateScaleSplitHMM.o TwoStateScaleSplitResolveMixture.o \
 	ThreeStateScaleSplitHMM.o ThreeStateScaleSplitResolveMixture.o \
@@ -77,7 +83,11 @@ rseg-diff: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
 	bessel_I1.o bessel_In.o bessel_temme.o coerce.o elementary.o error.o exp.o \
 	fdiv.o gamma.o gauss.o infnan.o log.o math.o mean.o message.o\
 	mt.o poch.o pow_int.o psi.o rng.o stream.o trig.o variance.o \
-	wmean.o wvariance.o zeta.o)
+	wmean.o wvariance.o zeta.o) \
+	$(addprefix $(SAMTOOL_LIB)/, bgzf.o kstring.o bam_aux.o bam.o \
+	bam_import.o sam.o bam_index.o bam_pileup.o bam_lpileup.o bam_md.o \
+	razf.o faidx.o bedidx.o  bam_sort.o sam_header.o bam_reheader.o \
+	kprobaln.o bam_cat.o  knetfile.o)
 
 deadzones: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
 	smithlab_utils.o OptionParser.o)
