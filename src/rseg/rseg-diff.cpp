@@ -484,6 +484,7 @@ main(int argc, const char **argv)  {
     bool WRITE_BOUNDARY = false;
     bool WRITE_TRACKS = false;
     bool PRINT_READCOUNTS = false;
+    bool BAM_FORMAT = false;
 
     // mode
     int mode = 2;
@@ -532,6 +533,8 @@ main(int argc, const char **argv)  {
 		      true, chroms_file);
     opt_parse.add_opt("deadzones", 'd', "file of deadzones (BED format)", 
 		      false, deads_file);
+    opt_parse.add_opt("bam", 'B', "Input reads file is BAM format", 
+		      false, BAM_FORMAT);
     opt_parse.add_opt("maxitr", 'i', "maximum iterations for training", 
 		      false, max_iterations);
     opt_parse.add_opt("bin-size", 'b', "bin size (default: based on data)", 
@@ -623,7 +626,8 @@ main(int argc, const char **argv)  {
     vector<size_t> reset_points;
     LoadReadsByRegion(VERBOSE, chroms_file, reads_file_a, reads_file_b,
                       deads_file, bin_size_step, bin_boundaries, read_bins_a,
-                      read_bins_b, scales, reset_points, REMOVE_JACKPOT);
+                      read_bins_b, scales, reset_points,
+                      BAM_FORMAT, REMOVE_JACKPOT);
 
     if (VERBOSE)
         cout << "[SELECTING BIN SIZE] ";

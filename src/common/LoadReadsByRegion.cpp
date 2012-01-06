@@ -435,15 +435,15 @@ LoadReadsByRegion(const bool VERBOSE,
           std::vector<double> &read_bins,
           std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
+          const bool BAM_FORMAT,
           const bool REMOVE_JACKPOT)
 {
-    const string ext_name = reads_file.substr(reads_file.find_last_of('.'));
-    if (ext_name == ".bed" || ext_name == ".BED")
-        LoadReadsByRegionBED(VERBOSE, chroms_file, reads_file, deads_file,
+    if (BAM_FORMAT)
+        LoadReadsByRegionBAM(VERBOSE, chroms_file, reads_file, deads_file,
                              bin_size, bin_boundaries, read_bins,
                              nondead_scales, reset_points, REMOVE_JACKPOT);
     else
-        LoadReadsByRegionBAM(VERBOSE, chroms_file, reads_file, deads_file,
+        LoadReadsByRegionBED(VERBOSE, chroms_file, reads_file, deads_file,
                              bin_size, bin_boundaries, read_bins,
                              nondead_scales, reset_points, REMOVE_JACKPOT);
 }
@@ -461,16 +461,16 @@ LoadReadsByRegion(const bool VERBOSE,
           std::vector<double> &read_bins_b,
           std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
+          const bool BAM_FORMAT,
           const bool REMOVE_JACKPOT)
 {
-    const string ext_name = reads_file_a.substr(reads_file_a.find_last_of('.'));
-    if (ext_name == ".bed" || ext_name == ".BED")
-        LoadReadsByRegionBED(VERBOSE, chroms_file, reads_file_a, reads_file_b,
+    if (BAM_FORMAT)
+        LoadReadsByRegionBAM(VERBOSE, chroms_file, reads_file_a, reads_file_b,
                              deads_file, bin_size, bin_boundaries,
                              read_bins_a, read_bins_b, nondead_scales,
                              reset_points, REMOVE_JACKPOT);
     else
-        LoadReadsByRegionBAM(VERBOSE, chroms_file, reads_file_a, reads_file_b,
+        LoadReadsByRegionBED(VERBOSE, chroms_file, reads_file_a, reads_file_b,
                              deads_file, bin_size, bin_boundaries,
                              read_bins_a, read_bins_b, nondead_scales,
                              reset_points, REMOVE_JACKPOT);
