@@ -33,11 +33,13 @@
 #include "ReadCounts.hpp"
 #include "TwoStateScaleResolveMixture.hpp"
 #include "TwoStateScaleHMM.hpp"
+#include "ModelParams.hpp"
 #include "EvaluateBoundaries.hpp"
 #include "LoadReadsByRegion.hpp"
 #include "SelectBinSize.hpp"
 #include "OptionParser.hpp"
 #include "rseg_utils.hpp"
+
 
 using std::string;
 using std::vector;
@@ -65,18 +67,13 @@ output_boundaries(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
                   const vector<double> &start_trans,
                   const vector<vector<double> > &trans,
                   const vector<double> &end_trans,
-                  const string &dataset_name, const string &outdir, 
-                  const bool VERBOSE, const bool WRITE_TRACKS,
+                  const string &boundary_file,
+                  const string &boundary_score_file,
+                  const bool VERBOSE,
                   const bool Both_Domain_Ends = true) {
 
   static const double FDR = 0.05;
   
-  static const string BED_SUFF = string(".bed");
-  static const string WIG_SUFF = string(".wig");
-  static const string DOMAINS_TAG = string("-domains");
-  static const string BOUNDARY_TAG = string("-boundaries");
-  static const string SCORES_TAG = string("-scores");
-
   const Distro &fg_distro = distros.front();
   const Distro &bg_distro = distros.back();
   vector<double> f_to_f_scores, f_to_b_scores, b_to_f_scores, b_to_b_scores;
@@ -154,18 +151,14 @@ output_boundaries(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
 		   cutoff, boundaries);
   
   // write result files
-  const string boundary_filename(path_join(outdir, dataset_name + 
-					   BOUNDARY_TAG + BED_SUFF));
   if (VERBOSE)
-    cout << "Boundary file: " + boundary_filename << endl;
-  WriteBEDFile(boundary_filename, boundaries);
+    cout << "Boundary file: " + boundary_file << endl;
+  WriteBEDFile(boundary_file, boundaries);
   
-  if (WRITE_TRACKS) {
-    const string bound_scores_filename(path_join(outdir, dataset_name + 
-						 "-boundary-scores" + WIG_SUFF));
+  if (!boundary_score_file.empty() && boundary_score_file != "None") {
     if (VERBOSE)
-      cout << "Boundary score file: " + bound_scores_filename << endl;
-    write_wigfile(boundary_scores, bin_bounds, bound_scores_filename);
+      cout << "Boundary score file: " + boundary_score_file << endl;
+    write_wigfile(boundary_scores, bin_bounds, boundary_score_file);
   }
 }
 
@@ -185,14 +178,9 @@ output_domains(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
 	       const double posterior_cutoff,
 	       const size_t undef_region_cutoff,
 	       const double cdf_cutoff, 
-	       const string dataset_name, const string outdir, 
-	       const bool VERBOSE, const bool WRITE_TRACKS) {
-  
-  static const string BED_SUFF = string(".bed");
-  static const string WIG_SUFF = string(".wig");
-  static const string DOMAINS_TAG = string("-domains");
-  static const string BOUNDARY_TAG = string("-boundaries");
-  static const string SCORES_TAG = string("-scores");
+           const string &domain_file,
+           const string &posterior_score_file,
+	       const bool VERBOSE) {
   
   // Obtain the scores for the current domain class
   if (tmp_scores.size() == 0)
@@ -215,16 +203,12 @@ output_domains(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
   pick_domains(bin_bounds, read_bins, scales, distros,
 	       domains, cdf_cutoff);
     
-  const string domain_file_name =
-    path_join(outdir ,dataset_name + DOMAINS_TAG + BED_SUFF);
-  write_bed_file(domains, domain_file_name);
+  write_bed_file(domains, domain_file);
   if (VERBOSE)
-    cout << "Domains file: " + domain_file_name << endl;
+    cout << "Domains file: " + domain_file << endl;
     
-  if (WRITE_TRACKS)
+  if (!posterior_score_file.empty() && posterior_score_file != "None")
     {
-      const string scores_file_name(path_join(outdir, dataset_name + 
-					      SCORES_TAG + WIG_SUFF));
       size_t k = 0;
       for (size_t i = 0; i < scores.size(); ++i)
         for (size_t j = 0; j < scores[i].size(); ++j)
@@ -232,9 +216,9 @@ output_domains(const vector<vector<SimpleGenomicRegion> > &bin_bounds,
 	    scores[i][j] == tmp_classes[k] ? scores[i][j] : 1 - scores[i][j];
 	    ++k;
 	  }
-      write_wigfile(scores, bin_bounds, scores_file_name);
+      write_wigfile(scores, bin_bounds, posterior_score_file);
       if (VERBOSE)
-	cout << "Bin score file: " + scores_file_name << endl;
+	cout << "Bin score file: " + posterior_score_file << endl;
     }
 }
 
@@ -246,10 +230,9 @@ main(int argc, const char **argv) {
     string reads_file;
     string deads_file;
     string chroms_file;
-
-    string outdir = ".";
-    string tmp_dataset_name;
-  
+    string in_param_file;
+    string out_param_file;
+    
     // expected size of a domain
     double fg_size = 20000;
         
@@ -257,11 +240,14 @@ main(int argc, const char **argv) {
     bool USE_POSTERIOR = false;
     bool REMOVE_JACKPOT = true;
     bool VERBOSE = false;
-    bool WRITE_BOUNDARY = false;
-    bool WRITE_TRACKS = false;
-    bool PRINT_READCOUNTS = false;
     bool BAM_FORMAT = false;
     bool Both_Domain_Ends = true;
+
+    string domain_file = "/dev/stdout";
+    string posterior_score_file = "";
+    string boundary_file = "";
+    string boundary_score_file = "";
+    string read_counts_file = "";
     
     // names of statistical distributions to use
     string fg_name = "nbd";
@@ -292,22 +278,25 @@ main(int argc, const char **argv) {
     OptionParser opt_parse(strip_path(argv[0]),
                            "segment the genome according to mapped read density", 
 			   "<mapped-read-locations>");
-    opt_parse.add_opt("outdir", 'o', "name of output dir (default: pwd)", 
-		      false, outdir);
-    opt_parse.add_opt("boundaries", '\0', "write domain boundaries file", 
-		      false, WRITE_BOUNDARY);
-    opt_parse.add_opt("tracks", '\0', "write additional browser track files", 
-		      false, WRITE_TRACKS);
-    opt_parse.add_opt("counts", '\0', "write read counts file", 
-		      false, PRINT_READCOUNTS);
-    opt_parse.add_opt("name", '\0', "dataset name (default: input file without suffix)", 
-		      false, tmp_dataset_name);
+    opt_parse.add_opt("out", 'o', "domain output file", false, domain_file);
+    opt_parse.add_opt("score", '\0', "Posterior scores file", 
+                      false, posterior_score_file);
+    opt_parse.add_opt("readcount", '\0', "readcounts file", 
+                      false, read_counts_file);
+    opt_parse.add_opt("boundary", '\0', "domain boundary file", 
+                      false, boundary_file);
+    opt_parse.add_opt("boundary-score", '\0', "boundary transition scores file", 
+                      false, boundary_score_file);
     opt_parse.add_opt("chrom", 'c', "file with chromosome sizes (BED format)", 
 		      true, chroms_file);
     opt_parse.add_opt("deadzones", 'd', "file of deadzones (BED format)", 
 		      false, deads_file);
     opt_parse.add_opt("bam", 'B', "Input reads file is BAM format", 
 		      false, BAM_FORMAT);
+    opt_parse.add_opt("param-in", '\0', "Input parameters file", 
+		      false, in_param_file);
+    opt_parse.add_opt("param-out", '\0', "Output parameters file", 
+		      false, out_param_file);
     opt_parse.add_opt("maxitr", 'i', "maximum iterations for training", 
 		      false, max_iterations);
     opt_parse.add_opt("bin-size", 'b', "bin size (default: based on data)", 
@@ -375,11 +364,9 @@ main(int argc, const char **argv) {
       cerr << "ERROR: chromsome sizes required (BED format file)" << endl;
       return EXIT_FAILURE;
     }
-    const string dataset_name = (tmp_dataset_name.size()) ? 
-      tmp_dataset_name : strip_path_and_bed_suffix(reads_file.c_str());
     
     if (VERBOSE)
-      cout << "[PROCESSING] " <<  dataset_name << endl;
+        cout << "[PROCESSING] " <<  strip_path(reads_file) << endl;
     
     /***********************************
      * STEP 1: READ IN THE DATA
@@ -427,31 +414,41 @@ main(int argc, const char **argv) {
     /***********************************
      * STEP 3: ESTIMATE EMISSION PARAMS
      */ 
-    if (VERBOSE)
-      cout << "[ESTIMATIN PARAMETERS]" << endl;
-    
+    const TwoStateScaleHMM hmm(min_prob, tolerance, max_iterations, VERBOSE);
+    size_t state_num = 2;
     vector<Distro> distros;
-    distros.push_back(Distro(fg_name));
-    distros.push_back(Distro(bg_name));
-
-    assert(read_bins.size() == scales.size());
-
-    double mixing = 0;
-    TwoStateResolveMixture(read_bins, scales, MAX_INITIALIZATION_ITR, 
-			   tolerance, VERBOSE, distros.front(), distros.back(), mixing);
-    
-    /***********************************
-     * STEP 4: TRAIN THE HMM
-     */
-    
     vector<vector<double> > trans;
     vector<double> start_trans, end_trans;
-    set_transitions(bin_size, fg_size, mixing, VERBOSE,
-		    start_trans, trans, end_trans);
     
-    const TwoStateScaleHMM hmm(min_prob, tolerance, max_iterations, VERBOSE);
-    hmm.BaumWelchTraining(read_bins, scales, reset_points, start_trans, trans, 
-			  end_trans, distros.front(), distros.back());
+    if (!in_param_file.empty())
+      read_param_file(in_param_file, state_num,
+                      start_trans, trans, end_trans, distros);
+    else
+    {
+      if (VERBOSE)
+        cout << "[ESTIMATIN PARAMETERS]" << endl;
+    
+
+      distros.push_back(Distro(fg_name));
+      distros.push_back(Distro(bg_name));
+
+      assert(read_bins.size() == scales.size());
+
+      double mixing = 0;
+      TwoStateResolveMixture(read_bins, scales, MAX_INITIALIZATION_ITR, 
+                             tolerance, VERBOSE, distros.front(), distros.back(),
+                             mixing);
+      
+      set_transitions(bin_size, fg_size, mixing, VERBOSE,
+                      start_trans, trans, end_trans);
+    
+      hmm.BaumWelchTraining(read_bins, scales, reset_points, start_trans, trans, 
+                            end_trans, distros.front(), distros.back());
+    }
+
+    if (!out_param_file.empty())
+      write_param_file(out_param_file, state_num,
+                       start_trans, trans, end_trans, distros);
     
     if (VERBOSE)
       report_final_values(distros, start_trans, trans, end_trans);
@@ -474,25 +471,21 @@ main(int argc, const char **argv) {
      * STEP 6: WRITE THE RESULTS
      */
     // make sure the output dir is valid
-    chk_and_mk_dirs(outdir);
-    
     output_domains(bin_boundaries_folded,
 		   read_bins, scales, classes, scores, reset_points,
 		   hmm, distros, start_trans, trans, end_trans, 
 		   posterior_cutoff, undef_region_cutoff, cdf_cutoff,
-		   dataset_name, outdir.c_str(), VERBOSE, WRITE_TRACKS);
-    if (WRITE_BOUNDARY)
+           domain_file, posterior_score_file, VERBOSE);
+    if (!boundary_file.empty() && boundary_file != "None")
       output_boundaries(bin_boundaries_folded,
 			read_bins, scales, classes, reset_points,
 			hmm, distros, start_trans, trans, end_trans, 
-			dataset_name, outdir,
-			VERBOSE, WRITE_TRACKS, Both_Domain_Ends);
+            boundary_file, boundary_score_file, 
+			VERBOSE, Both_Domain_Ends);
     
-    if (PRINT_READCOUNTS) {
-      const string read_counts_file_name = 
-	path_join(outdir, dataset_name + "-counts.bed");
+    if (!read_counts_file.empty() && read_counts_file != "None") {
       write_read_counts_by_bin(bin_boundaries_folded, read_bins, scales,
-                               classes, read_counts_file_name, VERBOSE);
+                               classes, read_counts_file, VERBOSE);
     }
   }
   catch (SMITHLABException &e) {
