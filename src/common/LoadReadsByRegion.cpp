@@ -88,6 +88,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
         continue;
     if (gr < prev_gr) {
       cerr << "ERROR: reads not sorted in " << reads_file << endl;
+      cerr << prev_gr << endl << gr << endl;
       exit(-1);
     }
     prev_gr = gr;
@@ -173,6 +174,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
         continue;
     if (gr < prev_gr) {
       cerr << "ERROR: reads not sorted in " << reads_file_a << endl;
+      cerr << prev_gr << endl << gr << endl;
       exit(-1);
     }
     prev_gr = gr;
@@ -200,6 +202,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
         continue;
     if (gr < prev_gr) {
       cerr << "ERROR: reads not sorted in " << reads_file_b << endl;
+      cerr << prev_gr << endl << gr << endl;
       exit(-1);
     }
     prev_gr = gr;
@@ -281,6 +284,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
         continue;
     if (gr < prev_gr) {
       cerr << "ERROR: reads not sorted in " << reads_file << endl;
+      cerr << prev_gr << endl << gr << endl;
       exit(-1);
     }
     prev_gr = gr;
@@ -364,6 +368,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
         continue;
     if (gr < prev_gr) {
       cerr << "ERROR: reads not sorted in " << reads_file_a << endl;
+      cerr << prev_gr << endl << gr << endl;
       exit(-1);
     }
     prev_gr = gr;
@@ -390,6 +395,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
         continue;
     if (gr < prev_gr) {
       cerr << "ERROR: reads not sorted in " << reads_file_b << endl;
+      cerr << prev_gr << endl << gr << endl;
       exit(-1);
     }
     prev_gr = gr;
