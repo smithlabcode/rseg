@@ -32,6 +32,9 @@
 using std::vector;
 using std::string;
 using std::endl;
+using std::cerr;
+using std::getline;
+
 
 static void
 convert_to_stringstream(const string &infile, std::stringstream &ss)
@@ -65,13 +68,13 @@ read_param_file(const string &infile, size_t &n,
     ss >> n; 
     string tmp_str;
     getline(ss, tmp_str);
-    
-    distros.resize(n);
+
+    distros.clear();
     for (size_t i = 0; i < n; ++i)
     {
         string tmp_str;
         getline(ss, tmp_str);
-        distros[i] = Distro_Type(tmp_str);
+        distros.push_back(Distro_Type(tmp_str));
     }
     
     start_trans.resize(n);
