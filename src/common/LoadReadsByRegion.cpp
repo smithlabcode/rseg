@@ -95,7 +95,18 @@ LoadReadsByRegionBED(const bool VERBOSE,
     if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
     else gr.set_start(gr.get_end() - 1);
 
-    while (i < bin_boundaries.size() && bin_boundaries[i] < gr) ++i;
+    while (i < bin_boundaries.size()
+           && (bin_boundaries[i].get_chrom() < gr.get_chrom()
+               || (bin_boundaries[i].get_chrom() == gr.get_chrom()
+                   && bin_boundaries[i].get_end() <= gr.get_start())))
+        ++i;
+
+    // adjust for jump caused by negative strand reads
+    while (i >= 0
+           && (bin_boundaries[i].get_chrom() == gr.get_chrom()
+               && bin_boundaries[i].get_start() >= gr.get_end()))
+        --i;
+
     if (i >= bin_boundaries.size() || !bin_boundaries[i].contains(gr))
       continue;
     ++read_bins[i];
@@ -181,7 +192,18 @@ LoadReadsByRegionBED(const bool VERBOSE,
     if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
     else gr.set_start(gr.get_end() - 1);
 
-    while (i < bin_boundaries.size() && bin_boundaries[i] < gr) ++i;
+    while (i < bin_boundaries.size()
+           && (bin_boundaries[i].get_chrom() < gr.get_chrom()
+               || (bin_boundaries[i].get_chrom() == gr.get_chrom()
+                   && bin_boundaries[i].get_end() <= gr.get_start())))
+        ++i;
+
+    // adjust for jump caused by negative strand reads
+    while (i >= 0
+           && (bin_boundaries[i].get_chrom() == gr.get_chrom()
+               && bin_boundaries[i].get_start() >= gr.get_end()))
+        --i;
+
     if (i >= bin_boundaries.size() || !bin_boundaries[i].contains(gr))
       continue;
     ++read_bins_a[i];
@@ -209,7 +231,17 @@ LoadReadsByRegionBED(const bool VERBOSE,
     if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
     else gr.set_start(gr.get_end() - 1);
 
-    while (i < bin_boundaries.size() && bin_boundaries[i] < gr) ++i;
+    while (i < bin_boundaries.size()
+           && (bin_boundaries[i].get_chrom() < gr.get_chrom()
+               || (bin_boundaries[i].get_chrom() == gr.get_chrom()
+                   && bin_boundaries[i].get_end() <= gr.get_start())))
+        ++i;
+
+    // adjust for jump caused by negative strand reads
+    while (i >= 0
+           && (bin_boundaries[i].get_chrom() == gr.get_chrom()
+               && bin_boundaries[i].get_start() >= gr.get_end()))
+        --i;
     if (i >= bin_boundaries.size() || !bin_boundaries[i].contains(gr))
       continue;
     ++read_bins_b[i];
@@ -291,7 +323,17 @@ LoadReadsByRegionBAM(const bool VERBOSE,
     if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
     else gr.set_start(gr.get_end() - 1);
 
-    while (i < bin_boundaries.size() && bin_boundaries[i] < gr) ++i;
+    while (i < bin_boundaries.size()
+           && (bin_boundaries[i].get_chrom() < gr.get_chrom()
+               || (bin_boundaries[i].get_chrom() == gr.get_chrom()
+                   && bin_boundaries[i].get_end() <= gr.get_start())))
+        ++i;
+
+    // adjust for jump caused by negative strand reads
+    while (i >= 0
+           && (bin_boundaries[i].get_chrom() == gr.get_chrom()
+               && bin_boundaries[i].get_start() >= gr.get_end()))
+        --i;
     if (i >= bin_boundaries.size() || !bin_boundaries[i].contains(gr))
       continue;
     ++read_bins[i];
@@ -375,7 +417,17 @@ LoadReadsByRegionBAM(const bool VERBOSE,
     if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
     else gr.set_start(gr.get_end() - 1);
 
-    while (i < bin_boundaries.size() && bin_boundaries[i] < gr) ++i;
+    while (i < bin_boundaries.size()
+           && (bin_boundaries[i].get_chrom() < gr.get_chrom()
+               || (bin_boundaries[i].get_chrom() == gr.get_chrom()
+                   && bin_boundaries[i].get_end() <= gr.get_start())))
+        ++i;
+
+    // adjust for jump caused by negative strand reads
+    while (i >= 0
+           && (bin_boundaries[i].get_chrom() == gr.get_chrom()
+               && bin_boundaries[i].get_start() >= gr.get_end()))
+        --i;
     if (i >= bin_boundaries.size() || !bin_boundaries[i].contains(gr))
       continue;
     ++read_bins_a[i];
@@ -402,7 +454,17 @@ LoadReadsByRegionBAM(const bool VERBOSE,
     if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
     else gr.set_start(gr.get_end() - 1);
 
-    while (i < bin_boundaries.size() && bin_boundaries[i] < gr) ++i;
+    while (i < bin_boundaries.size()
+           && (bin_boundaries[i].get_chrom() < gr.get_chrom()
+               || (bin_boundaries[i].get_chrom() == gr.get_chrom()
+                   && bin_boundaries[i].get_end() <= gr.get_start())))
+        ++i;
+
+    // adjust for jump caused by negative strand reads
+    while (i >= 0
+           && (bin_boundaries[i].get_chrom() == gr.get_chrom()
+               && bin_boundaries[i].get_start() >= gr.get_end()))
+        --i;
     if (i >= bin_boundaries.size() || !bin_boundaries[i].contains(gr))
       continue;
     ++read_bins_b[i];

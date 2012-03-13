@@ -24,6 +24,7 @@
 #include <vector>
 #include "GenomicRegion.hpp"
 
+
 void
 AdjustBinSize(const std::vector<double> &old_read_bins,
               const std::vector<double> &old_nondead_scales,

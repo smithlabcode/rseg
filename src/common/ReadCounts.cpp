@@ -57,15 +57,15 @@ AdjustBinSize(const vector<double> &old_read_bins,
         const size_t start = old_reset_points[i];
         const size_t end = old_reset_points[i + 1];
         size_t j = start;
-        while (j < end - n_steps)
-        {	
+        while (j +  n_steps <= end)
+        {       
             read_bins.push_back(
                 std::accumulate(old_read_bins.begin() + j,
-                                old_read_bins.begin() + j + n_steps - 1, 0.0)); 
+                                old_read_bins.begin() + j + n_steps, 0.0)); 
 
             nondead_scales.push_back(
                 std::accumulate(old_nondead_scales.begin() + j,
-                                old_nondead_scales.begin() + j + n_steps - 1,
+                                old_nondead_scales.begin() + j + n_steps,
                                 0.0) / n_steps);
             j += n_steps;
         }
@@ -97,6 +97,7 @@ GetCorrectedReadCounts(const vector<double> &read_bins,
         }
 }
 
+
 void
 AdjustBinSize(vector<SimpleGenomicRegion> &old_bin_boundaries,
               vector<double> &old_read_bins,
@@ -113,26 +114,27 @@ AdjustBinSize(vector<SimpleGenomicRegion> &old_bin_boundaries,
     vector<size_t> reset_points;
     
     const size_t n_steps = bin_size / old_bin_size;
+
     reset_points.push_back(0);
     for (size_t i = 0; i < old_reset_points.size() - 1; ++i)
     {
         const size_t start = old_reset_points[i];
         const size_t end = old_reset_points[i + 1];
         size_t j = start;
-        while (j + n_steps < end )
+        while (j + n_steps <= end )
         {	
-            assert(j + n_steps -1 < old_bin_boundaries.size());
+            assert(j + n_steps - 1 < old_bin_boundaries.size());
             bin_boundaries.push_back(old_bin_boundaries[j]);
             bin_boundaries.back().set_end(
                 old_bin_boundaries[j + n_steps - 1].get_end());
             
             read_bins.push_back(
                 std::accumulate(old_read_bins.begin() + j,
-                                old_read_bins.begin() + j + n_steps - 1, 0.0)); 
+                                old_read_bins.begin() + j + n_steps, 0.0)); 
 
             nondead_scales.push_back(
                 std::accumulate(old_nondead_scales.begin() + j,
-                                old_nondead_scales.begin() + j + n_steps - 1,
+                                old_nondead_scales.begin() + j + n_steps,
                                 0.0) / n_steps); 
             j += n_steps;
         }
@@ -150,6 +152,7 @@ AdjustBinSize(vector<SimpleGenomicRegion> &old_bin_boundaries,
     std::swap(old_read_bins, read_bins);
     std::swap(old_nondead_scales, nondead_scales);
     std::swap(old_reset_points, reset_points);
+
 }
 
 void
@@ -165,7 +168,7 @@ RemoveDeserts(vector<SimpleGenomicRegion> &old_bin_boundaries,
     vector<double> read_bins;
     vector<double> nondead_scales;
     vector<size_t> reset_points;
-    
+
     reset_points.push_back(0);
     for (size_t i = 0; i < old_reset_points.size() - 1; ++i)
     {
@@ -192,6 +195,7 @@ RemoveDeserts(vector<SimpleGenomicRegion> &old_bin_boundaries,
         if (reset_points.back() < bin_boundaries.size())
             reset_points.push_back(bin_boundaries.size());
     }
+
 
     std::swap(old_bin_boundaries, bin_boundaries);
     std::swap(old_read_bins, read_bins);
@@ -222,7 +226,7 @@ AdjustBinSize(vector<SimpleGenomicRegion> &old_bin_boundaries,
         const size_t start = old_reset_points[i];
         const size_t end = old_reset_points[i + 1];
         size_t j = start;
-        while (j < end - n_steps)
+        while (j + n_steps <= end )
         {	
             bin_boundaries.push_back(old_bin_boundaries[j]);
             bin_boundaries.back().set_end(
@@ -230,17 +234,17 @@ AdjustBinSize(vector<SimpleGenomicRegion> &old_bin_boundaries,
             
             read_bins_a.push_back(
                 std::accumulate(old_read_bins_a.begin() + j,
-                                old_read_bins_a.begin() + j + n_steps - 1,
+                                old_read_bins_a.begin() + j + n_steps,
                                 0.0)); 
 
             read_bins_b.push_back(
                 std::accumulate(old_read_bins_b.begin() + j,
-                                old_read_bins_b.begin() + j + n_steps - 1,
+                                old_read_bins_b.begin() + j + n_steps,
                                 0.0)); 
 
             nondead_scales.push_back(
                 std::accumulate(old_nondead_scales.begin() + j,
-                                old_nondead_scales.begin() + j + n_steps - 1,
+                                old_nondead_scales.begin() + j + n_steps,
                                 0.0) / n_steps); 
             j += n_steps;
         }
