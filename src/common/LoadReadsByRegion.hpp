@@ -37,6 +37,7 @@ LoadReadsByRegion(const bool VERBOSE,
           std::vector<double> &read_bins,
 		  std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
+          const size_t FRAGMENT_LEN = 0,        
           const bool BAM_FORMAT = false,
           const bool REMOVE_JACKPOT = true);
 
@@ -52,6 +53,7 @@ LoadReadsByRegion(const bool VERBOSE,
           std::vector<double> &read_bins_b,
 		  std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
+          const size_t FRAGMENT_LEN = 0,        
           const bool BAM_FORMAT = false,
           const bool REMOVE_JACKPOT = true);
 #endif

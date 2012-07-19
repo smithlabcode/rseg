@@ -51,6 +51,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
           std::vector<double> &read_bins,
           std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
+          const size_t FRAGMENT_LEN,           
           const bool REMOVE_JACKPOT) 
 {
   // get the chroms
@@ -92,8 +93,18 @@ LoadReadsByRegionBED(const bool VERBOSE,
       exit(-1);
     }
     prev_gr = gr;
-    if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
-    else gr.set_start(gr.get_end() - 1);
+
+    const size_t half_len = FRAGMENT_LEN / 2;
+    if (gr.pos_strand())
+    {
+        gr.set_start(gr.get_start() + half_len);
+        gr.set_end(gr.get_start() + 1);
+    }
+    else 
+    {
+        gr.set_end(gr.get_end() - half_len);
+        gr.set_start(gr.get_end() - 1);        
+    }
 
     while (i < bin_boundaries.size()
            && (bin_boundaries[i].get_chrom() < gr.get_chrom()
@@ -148,6 +159,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
           std::vector<double> &read_bins_b,
 		  std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
+          const size_t FRAGMENT_LEN,           
           const bool REMOVE_JACKPOT)
 {
   // get the chroms
@@ -189,8 +201,18 @@ LoadReadsByRegionBED(const bool VERBOSE,
       exit(-1);
     }
     prev_gr = gr;
-    if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
-    else gr.set_start(gr.get_end() - 1);
+
+    const size_t half_len = FRAGMENT_LEN / 2;
+    if (gr.pos_strand())
+    {
+        gr.set_start(gr.get_start() + half_len);
+        gr.set_end(gr.get_start() + 1);
+    }
+    else 
+    {
+        gr.set_end(gr.get_end() - half_len);
+        gr.set_start(gr.get_end() - 1);        
+    }
 
     while (i < bin_boundaries.size()
            && (bin_boundaries[i].get_chrom() < gr.get_chrom()
@@ -228,8 +250,18 @@ LoadReadsByRegionBED(const bool VERBOSE,
       exit(-1);
     }
     prev_gr = gr;
-    if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
-    else gr.set_start(gr.get_end() - 1);
+
+    const size_t half_len = FRAGMENT_LEN / 2;
+    if (gr.pos_strand())
+    {
+        gr.set_start(gr.get_start() + half_len);
+        gr.set_end(gr.get_start() + 1);
+    }
+    else 
+    {
+        gr.set_end(gr.get_end() - half_len);
+        gr.set_start(gr.get_end() - 1);        
+    }
 
     while (i < bin_boundaries.size()
            && (bin_boundaries[i].get_chrom() < gr.get_chrom()
@@ -281,6 +313,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
           std::vector<double> &read_bins,
           std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
+          const size_t FRAGMENT_LEN,           
           const bool REMOVE_JACKPOT) 
 {
   // get the chroms
@@ -320,8 +353,18 @@ LoadReadsByRegionBAM(const bool VERBOSE,
       exit(-1);
     }
     prev_gr = gr;
-    if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
-    else gr.set_start(gr.get_end() - 1);
+
+    const size_t half_len = FRAGMENT_LEN / 2;
+    if (gr.pos_strand())
+    {
+        gr.set_start(gr.get_start() + half_len);
+        gr.set_end(gr.get_start() + 1);
+    }
+    else 
+    {
+        gr.set_end(gr.get_end() - half_len);
+        gr.set_start(gr.get_end() - 1);        
+    }
 
     while (i < bin_boundaries.size()
            && (bin_boundaries[i].get_chrom() < gr.get_chrom()
@@ -375,6 +418,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
           std::vector<double> &read_bins_b,
 		  std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
+          const size_t FRAGMENT_LEN,           
           const bool REMOVE_JACKPOT)
 {
   // get the chroms
@@ -414,8 +458,18 @@ LoadReadsByRegionBAM(const bool VERBOSE,
       exit(-1);
     }
     prev_gr = gr;
-    if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
-    else gr.set_start(gr.get_end() - 1);
+
+    const size_t half_len = FRAGMENT_LEN / 2;
+    if (gr.pos_strand())
+    {
+        gr.set_start(gr.get_start() + half_len);
+        gr.set_end(gr.get_start() + 1);
+    }
+    else 
+    {
+        gr.set_end(gr.get_end() - half_len);
+        gr.set_start(gr.get_end() - 1);        
+    }
 
     while (i < bin_boundaries.size()
            && (bin_boundaries[i].get_chrom() < gr.get_chrom()
@@ -451,8 +505,18 @@ LoadReadsByRegionBAM(const bool VERBOSE,
       exit(-1);
     }
     prev_gr = gr;
-    if (gr.pos_strand()) gr.set_end(gr.get_start() + 1);
-    else gr.set_start(gr.get_end() - 1);
+
+    const size_t half_len = FRAGMENT_LEN / 2;
+    if (gr.pos_strand())
+    {
+        gr.set_start(gr.get_start() + half_len);
+        gr.set_end(gr.get_start() + 1);
+    }
+    else 
+    {
+        gr.set_end(gr.get_end() - half_len);
+        gr.set_start(gr.get_end() - 1);        
+    }
 
     while (i < bin_boundaries.size()
            && (bin_boundaries[i].get_chrom() < gr.get_chrom()
@@ -503,17 +567,20 @@ LoadReadsByRegion(const bool VERBOSE,
           std::vector<double> &read_bins,
           std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
+          const size_t FRAGMENT_LEN,        
           const bool BAM_FORMAT,
           const bool REMOVE_JACKPOT)
 {
     if (BAM_FORMAT)
         LoadReadsByRegionBAM(VERBOSE, chroms_file, reads_file, deads_file,
                              bin_size, bin_boundaries, read_bins,
-                             nondead_scales, reset_points, REMOVE_JACKPOT);
+                             nondead_scales, reset_points,
+                             FRAGMENT_LEN, REMOVE_JACKPOT);
     else
         LoadReadsByRegionBED(VERBOSE, chroms_file, reads_file, deads_file,
                              bin_size, bin_boundaries, read_bins,
-                             nondead_scales, reset_points, REMOVE_JACKPOT);
+                             nondead_scales, reset_points,
+                             FRAGMENT_LEN, REMOVE_JACKPOT);
 }
 
 
@@ -529,6 +596,7 @@ LoadReadsByRegion(const bool VERBOSE,
           std::vector<double> &read_bins_b,
           std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
+          const size_t FRAGMENT_LEN,        
           const bool BAM_FORMAT,
           const bool REMOVE_JACKPOT)
 {
@@ -536,12 +604,12 @@ LoadReadsByRegion(const bool VERBOSE,
         LoadReadsByRegionBAM(VERBOSE, chroms_file, reads_file_a, reads_file_b,
                              deads_file, bin_size, bin_boundaries,
                              read_bins_a, read_bins_b, nondead_scales,
-                             reset_points, REMOVE_JACKPOT);
+                             reset_points, FRAGMENT_LEN, REMOVE_JACKPOT);
     else
         LoadReadsByRegionBED(VERBOSE, chroms_file, reads_file_a, reads_file_b,
                              deads_file, bin_size, bin_boundaries,
                              read_bins_a, read_bins_b, nondead_scales,
-                             reset_points, REMOVE_JACKPOT);
+                             reset_points, FRAGMENT_LEN, REMOVE_JACKPOT);
 }
 
 

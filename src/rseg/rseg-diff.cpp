@@ -468,6 +468,7 @@ main(int argc, const char **argv)  {
     size_t desert_size = 20000;
     size_t bin_size_step = 50;
     size_t bin_size = 0;
+    size_t FRAGMENT_LEN = 0;
     bool waterman = false;
     bool hideaki = false;
     bool hideaki_emp = false;
@@ -522,23 +523,26 @@ main(int argc, const char **argv)  {
 		      false, bin_size_step);
     opt_parse.add_opt("duplicates", '\0', "keep duplicate reads", 
 		      false, REMOVE_JACKPOT);
+    opt_parse.add_opt("fragment_length", '\0',
+                      "Extend reads to fragment length (default not to extend)", 
+                      false, FRAGMENT_LEN);
     opt_parse.add_opt("Waterman", '\0', "use Waterman's method for bin size", 
 		      false, waterman);
     opt_parse.add_opt("Hideaki", '\0', "use Hideaki's method for bin size", 
 		      false, hideaki);
     opt_parse.add_opt("Hideaki-emp", '\0', "use Hideaki's empirical method (default)", 
 		      false, hideaki_emp);
-    // opt_parse.add_opt("smooth", '\0', "Indicate whether the rate curve is assumed smooth", 
-	// 	      false, smooth);
-    // opt_parse.add_opt("max-dead", '\0',
-	// 	      "max deadzone proportion for retained bins",
-	// 	      false, max_dead_proportion);
+    opt_parse.add_opt("smooth", '\0', "Indicate whether the rate curve is assumed smooth", 
+                      false, smooth);
+    opt_parse.add_opt("max-dead", '\0',
+              "max deadzone proportion for retained bins",
+	 	      false, max_dead_proportion);
     opt_parse.add_opt("domain-size", 's', "expected domain size "
 		      "(default: " + toa(fg_size) + ")", 
 		      false, fg_size);
-    // opt_parse.add_opt("desert", 'S', "desert size "
-	// 	      "(default: " + toa(desert_size) + ")", 
-	// 	      false, desert_size);
+    opt_parse.add_opt("desert", 'S', "desert size "
+	 	      "(default: " + toa(desert_size) + ")", 
+	 	      false, desert_size);
     opt_parse.add_opt("fg", 'F', "foreground emission distribution", false, fg_name);
     opt_parse.add_opt("bg", 'B', "background emission distribution", false, bg_name);
     opt_parse.add_opt("training-size", '\0', 
@@ -546,14 +550,11 @@ main(int argc, const char **argv)  {
 		      false, training_size);
     opt_parse.add_opt("posterior", 'P', "use posterior decoding "
 		      "(default: Viterbi)", false, USE_POSTERIOR);
-
-    // opt_parse.add_opt("Viterbi", 'V', "use Viterbi decoding (default: posterior)",
-	// 	      false, USE_VITERBI);
-    // opt_parse.add_opt("posterior-cutoff", '\0', 
-	// 	      "Posterior threshold for signigicant bins", 
-	// 	      false, posterior_cutoff);
-    // opt_parse.add_opt("undefined", '\0', "min size of unmappable region", 
-	// 	      false, undef_region_cutoff);
+    opt_parse.add_opt("posterior-cutoff", '\0', 
+	 	      "Posterior threshold for signigicant bins", 
+	 	      false, posterior_cutoff);
+    opt_parse.add_opt("undefined", '\0', "min size of unmappable region", 
+	 	      false, undef_region_cutoff);
     opt_parse.add_opt("cutoff", '\0', "cutoff in cdf for identified domains", 
 		      false, cdf_cutoff); 
     opt_parse.add_opt("verbose", 'v', "print more run information", 
@@ -601,7 +602,7 @@ main(int argc, const char **argv)  {
     LoadReadsByRegion(VERBOSE, chroms_file, reads_file_a, reads_file_b,
                       deads_file, bin_size_step, bin_boundaries, read_bins_a,
                       read_bins_b, scales, reset_points,
-                      BAM_FORMAT, REMOVE_JACKPOT);
+                      FRAGMENT_LEN, BAM_FORMAT, REMOVE_JACKPOT);
 
     if (VERBOSE)
         cout << "[SELECTING BIN SIZE] ";
