@@ -63,7 +63,7 @@ static void
 sort_index(const bool VERBOSE, const size_t kmer, const string &prefix,
 	   const string &seq, vector<size_t> &ambigs,
            const unordered_map<size_t, size_t> &invalid_pool) { 
-  
+
   if (VERBOSE) cerr << "[BUILDING INDEX] ";
   vector<size_t> index;
   const string::const_iterator lim(seq.end() - kmer + 1);
@@ -395,7 +395,7 @@ main(int argc, const char **argv) {
     
     // Parameter variables
     size_t kmer = 0;
-    size_t prefix_len = 0;
+    size_t prefix_len = 5;
     string outfile;
     string fasta_suffix = "fa";
   
@@ -409,7 +409,8 @@ main(int argc, const char **argv) {
     opt_parse.add_opt("output", 'o', "Name of output file (default: stdout)", 
 		      true, outfile);
     opt_parse.add_opt("kmer", 'k', "Width of k-mers", true, kmer);
-    opt_parse.add_opt("prefix", 'p', "prefix length", false, prefix_len);
+    opt_parse.add_opt("prefix", 'p', "prefix length (default 5)",
+                      false, prefix_len);
     // opt_parse.add_opt("bisulfite", 'B', "get bisulfite deadzones", 
 	// 	      false, BISULFITE);
     // opt_parse.add_opt("ag-wild", 'A', "A/G wildcard for bisulfite", 
@@ -502,7 +503,10 @@ main(int argc, const char **argv) {
     if (VERBOSE)
       cerr << "[IDENTIFYING AMBIGUOUS INDEXES]" << endl;
     vector<size_t> ambigs;
+
     sort_index(VERBOSE, BISULFITE, AG_WILDCARD, kmer, prefix_len, long_seq, ambigs, invalid_pool);
+
+
     long_seq.clear();
     
     if (ambigs.empty()) {
