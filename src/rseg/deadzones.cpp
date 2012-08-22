@@ -378,6 +378,7 @@ identify_chromosomes(const bool VERBOSE,
   if (isdir(chrom_file.c_str())) 
     read_dir(chrom_file, fasta_suffix, chrom_files);
   else chrom_files.push_back(chrom_file);
+  std::sort(chrom_files.begin(), chrom_files.end());
   if (VERBOSE) {
     cerr << "[DONE]" << endl 
 	 << "chromosome files found (approx size):" << endl;
