@@ -176,7 +176,7 @@ write_dead(std::ofstream &out, const string &chrom_name,
         out << deadzones[i] << endl;
         ++i;
       } else {
-        out << gaps[j] << "T" << "\t" << 0 << "\t" << strand << endl;
+        out << gaps[j] << "\tT" << "\t" << 0 << "\t" << strand << endl;
         ++j;
       }
     } else {
@@ -199,7 +199,7 @@ write_dead(std::ofstream &out, const string &chrom_name,
     ++i;
   }
   while (j < gaps.size()) {
-    out << gaps[j] << "T" << "\t" << 0 << "\t" << strand << endl;
+    out << gaps[j] << "\tT" << "\t" << 0 << "\t" << strand << endl;
     ++j;
   }
 }
