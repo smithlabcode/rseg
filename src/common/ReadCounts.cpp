@@ -24,7 +24,7 @@
 #include <cassert>
 #include <numeric>
 #include <sys/types.h>
-#include <unistd.h>>
+#include <unistd.h>
 
 #include "ReadCounts.hpp"
 #include "RNG.hpp"
