@@ -20,12 +20,14 @@
  * 02110-1301 USA
  */
 
-#include "ReadCounts.hpp"
-#include "RNG.hpp"
-
 #include <cmath>
 #include <cassert>
 #include <numeric>
+#include <sys/types.h>
+#include <unistd.h>>
+
+#include "ReadCounts.hpp"
+#include "RNG.hpp"
 
 using std::vector;
 using std::string;
