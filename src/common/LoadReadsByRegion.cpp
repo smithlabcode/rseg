@@ -347,7 +347,10 @@ LoadReadsByRegionBAM(const bool VERBOSE,
         && prev_gr.get_strand() == gr.get_strand()
         && prev_gr.get_chrom() == gr.get_chrom())
         continue;
-    if (gr < prev_gr) {
+    if (gr.get_chrom() < prev_gr.get_chrom()
+        || gr.get_start() < prev_gr.get_start()
+        || gr.get_end() < prev_gr.get_end()
+        || gr.get_strand() < prev_gr.get_strand()) {
       cerr << "ERROR: reads not sorted in " << reads_file << endl;
       cerr << prev_gr << endl << gr << endl;
       exit(-1);
@@ -452,7 +455,10 @@ LoadReadsByRegionBAM(const bool VERBOSE,
         && prev_gr.get_strand() == gr.get_strand()
         && prev_gr.get_chrom() == gr.get_chrom())
         continue;
-    if (gr < prev_gr) {
+    if (gr.get_chrom() < prev_gr.get_chrom()
+        || gr.get_start() < prev_gr.get_start()
+        || gr.get_end() < prev_gr.get_end()
+        || gr.get_strand() < prev_gr.get_strand()) {
       cerr << "ERROR: reads not sorted in " << reads_file_a << endl;
       cerr << prev_gr << endl << gr << endl;
       exit(-1);
@@ -499,7 +505,10 @@ LoadReadsByRegionBAM(const bool VERBOSE,
         && prev_gr.get_strand() == gr.get_strand()
         && prev_gr.get_chrom() == gr.get_chrom())
         continue;
-    if (gr < prev_gr) {
+    if (gr.get_chrom() < prev_gr.get_chrom()
+        || gr.get_start() < prev_gr.get_start()
+        || gr.get_end() < prev_gr.get_end()
+        || gr.get_strand() < prev_gr.get_strand()) {
       cerr << "ERROR: reads not sorted in " << reads_file_b << endl;
       cerr << prev_gr << endl << gr << endl;
       exit(-1);
