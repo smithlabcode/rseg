@@ -60,7 +60,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
   vector<SimpleGenomicRegion> chroms;
   ReadBEDFile(chroms_file, chroms);
   if (!check_sorted(chroms, true))
-    SortGenomicRegion::sort_regions_collapse(chroms);
+    SortGenomicRegion::sort_regions(chroms);
 
   // Create bins
   reset_points.push_back(0);
@@ -168,7 +168,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
   vector<SimpleGenomicRegion> chroms;
   ReadBEDFile(chroms_file, chroms);
   if (!check_sorted(chroms, true))
-    SortGenomicRegion::sort_regions_collapse(chroms);
+    SortGenomicRegion::sort_regions(chroms);
 
   // Create bins
   reset_points.push_back(0);
@@ -322,7 +322,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
   vector<SimpleGenomicRegion> chroms;
   ReadBEDFile(chroms_file, chroms);
   if (!check_sorted(chroms, true))
-    SortGenomicRegion::sort_regions_collapse(chroms);
+    SortGenomicRegion::sort_regions(chroms);
 
   // Create bins
   reset_points.push_back(0);
@@ -430,7 +430,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
   vector<SimpleGenomicRegion> chroms;
   ReadBEDFile(chroms_file, chroms);
   if (!check_sorted(chroms, true))
-    SortGenomicRegion::sort_regions_collapse(chroms);
+    SortGenomicRegion::sort_regions(chroms);
 
   // Create bins
   reset_points.push_back(0);
