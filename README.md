@@ -10,5 +10,6 @@ either comparsion between two cell types or between two kinds of
 histone modifications.
 
 Please visit the RSEG Homepage for more information:
-http://smithlab.usc.edu/histone/rseg/
+
+  http://smithlabresearch.org/software/rseg
 
