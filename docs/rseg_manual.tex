@@ -625,7 +625,7 @@ analyzing epigenomic domains.
 done with standard UNIX \textit{sort} tool as following:
 \begin{verbatim}
 $ export LC_ALL=C
-$ sort -k1,1 -k3,3n -k2,2n -o sorted.bed input.bed
+$ sort -k1,1 -k3,3n -k2,2n -k6,6 -o sorted.bed input.bed
 \end{verbatim}
 Note that we need to set the locale of the shell environment to the C
 programming language locale. 
