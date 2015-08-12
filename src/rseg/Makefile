@@ -19,6 +19,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+SMITHLAB_CPP = ../smithlab_cpp
 ifndef SMITHLAB_CPP
 $(error Must define SMITHLAB_CPP variable)
 endif
@@ -34,7 +35,7 @@ PROGS =  rseg rseg-diff deadzones
 INCLUDEDIRS = $(SMITHLAB_CPP) $(COMMON_LIB) $(GSL_LIB) $(SAMTOOL_LIB)
 INCLUDEARGS = $(addprefix -I,$(INCLUDEDIRS))
 
-LIBS = -lz -lm 
+LIBS = -lz -lm
 
 CXX = g++
 CC = gcc
@@ -49,6 +50,11 @@ endif
 
 ifdef OPT
 CXXFLAGS += $(OPTFLAGS)
+endif
+
+ifeq "$(shell uname)" "Darwin"
+CXXFLAGS += -arch x86_64
+CCFLAGS += -arch x86_64 -std=gnu89
 endif
 
 all: $(PROGS)
@@ -96,7 +102,7 @@ deadzones: $(addprefix $(SMITHLAB_CPP)/, GenomicRegion.o smithlab_os.o \
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(INCLUDEARGS)
 
 %.o: %.c
-	$(CC) $(CCFLAGS) -c -o $@ $^ $(INCLUDEARGS) 
+	$(CC) $(CCFLAGS) -c -o $@ $^ $(INCLUDEARGS)
 
 %: %.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(INCLUDEARGS) $(LIBS)
