@@ -27,11 +27,7 @@
 #include <iostream>
 #include <string>
 
-#ifndef __APPLE__
-    #include <tr1/unordered_map>
-#else
-    #include <unordered_map>
-#endif
+#include <tr1/unordered_map>
 
 class SplitDistro_ {
 public:
@@ -40,13 +36,13 @@ public:
   SplitDistro_(const SplitDistro_ &);
   SplitDistro_& operator=(const SplitDistro_ &);
   virtual ~SplitDistro_();
-
+  
   virtual size_t required_params() const = 0;
-
+  
   virtual double get_mean() const = 0;
   double operator()(double val) const;
   double operator()(const std::vector<double> &) const;
-
+  
   virtual double log_likelihood(double val) const = 0;
   virtual double log_likelihood(const double val, const double scale) const = 0;
   double log_likelihood(const std::vector<double> &vals) const;
@@ -55,7 +51,7 @@ public:
   double log_likelihood(std::vector<double>::const_iterator a,
 			std::vector<double>::const_iterator b) const;
   virtual void
-  estimate_params_ml(const std::vector<double> &,
+  estimate_params_ml(const std::vector<double> &, 
 		     const std::vector<double> &) = 0;
   virtual void
   estimate_params_ml(const std::vector<double> &,
@@ -72,11 +68,11 @@ public:
 
   virtual void
   set_params(const std::vector<double> &p) {params = p;}
-  static double
+  static double 
   log_sum_log_vec(const std::vector<double> &vals, size_t limit);
-
+  
 protected:
-
+  
   std::vector<double> params;
   std::vector<double> workspace_vals_a;
   std::vector<double> workspace_vals_b;
@@ -91,7 +87,7 @@ split_distro_factory(std::string name);
 
 class SplitDistro {
 public:
-
+  
   SplitDistro() : d(0) {}
   SplitDistro(const std::string &name, const std::string &params);
   SplitDistro(const std::string &name, const std::vector<double> &params);
@@ -101,11 +97,11 @@ public:
   ~SplitDistro();
 
   double get_mean() const {return d->get_mean();}
-
+    
 
   double operator()(double val) const;
   double operator()(const std::vector<double> &) const;
-  void estimate_params_ml(const std::vector<double> &,
+  void estimate_params_ml(const std::vector<double> &, 
 			  const std::vector<double> &);
   void estimate_params_ml(const std::vector<double> &,
 			  const std::vector<double> &,
@@ -129,10 +125,10 @@ public:
   std::vector<double> get_params() const {return d->get_params();}
   void set_params(const std::vector<double> &p) {d->set_params(p);}
 
-  static double
+  static double 
   log_sum_log_vec(const std::vector<double> &vals, size_t limit);
-
-
+  
+  
 private:
   std::string name;
   SplitDistro_ *d;
@@ -155,12 +151,12 @@ public:
   SkellamDistro(const SkellamDistro &rhs);
   SkellamDistro& operator=(const SkellamDistro &rhs);
   ~SkellamDistro() {}
-
+    
   double get_mean() const {return params[0] - params[1];}
   size_t required_params() const {return 2;}
   double log_likelihood(double val) const;
   double log_likelihood(const double val, const double scale) const;
-  void estimate_params_ml(const std::vector<double> &vals_a,
+  void estimate_params_ml(const std::vector<double> &vals_a, 
 			  const std::vector<double> &vals_b);
   void estimate_params_ml(const std::vector<double> &vals_a,
 			  const std::vector<double> &vals_b,
@@ -191,7 +187,7 @@ public:
   size_t required_params() const {return 2;}
   double log_likelihood(double val) const;
   double log_likelihood(const double val, const double scale) const;
-  void estimate_params_ml(const std::vector<double> &vals_a,
+  void estimate_params_ml(const std::vector<double> &vals_a, 
 			  const std::vector<double> &vals_b);
   void estimate_params_ml(const std::vector<double> &vals_a,
 			  const std::vector<double> &vals_b,
@@ -219,13 +215,13 @@ public:
   ~NegBinomDiffDistro() {}
 
   double get_mean() const {return params[0] - params[2];}
-
+  
   size_t required_params() const {return 4;}
-  void hq_estimate_params_ml(const std::vector<double> &vals_a,
+  void hq_estimate_params_ml(const std::vector<double> &vals_a, 
 			     const std::vector<double> &vals_b);
-  void andrew_estimate_params_ml(const std::vector<double> &vals_a,
+  void andrew_estimate_params_ml(const std::vector<double> &vals_a, 
 				 const std::vector<double> &vals_b);
-  void estimate_params_ml(const std::vector<double> &vals_a,
+  void estimate_params_ml(const std::vector<double> &vals_a, 
                           const std::vector<double> &vals_b);
   void hq_estimate_params_ml(const std::vector<double> &vals_a,
 			     const std::vector<double> &vals_b,
@@ -245,7 +241,7 @@ public:
   double log_likelihood(const double val, const double scale) const;
 
   void set_params(const std::vector<double> &p) {
-    SplitDistro_::set_params(p);
+    SplitDistro_::set_params(p); 
     ll_hash.clear();
     set_helpers();
   }
@@ -255,22 +251,19 @@ private:
   static const double max_allowed_alpha;
   static const double min_allowed_alpha;
   static const double alpha_allowed_error;
-
-#ifndef __APPLE__
+  
   mutable std::tr1::unordered_map<int, double> ll_hash;
-#else
-  mutable std::unordered_map<int, double> ll_hash;
-#endif
+
   double r1;
   double p1;
-
+  
   double r2;
   double p2;
-
+    
   double q1;
   double q2;
   double c;
-
+  
   double r1_log_p1_M_lnG_r1_P_r2_log_p2_M_lnG_r2;
 };
 
