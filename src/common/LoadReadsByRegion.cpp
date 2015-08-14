@@ -37,22 +37,36 @@ using std::string;
 using std::min;
 using std::max;
 
+template <class T> bool
+check_sorted(const std::vector<T> &regions, bool require_unique = false) {
+  if (require_unique) {
+    for (size_t i = 1; i < regions.size(); ++i)
+      if (regions[i] <= regions[i - 1])
+	return false;
+  }
+  else
+    for (size_t i = 1; i < regions.size(); ++i)
+      if (regions[i] < regions[i - 1])
+	return false;
+  return true;
+}
+
 /*************************************************
  * This function takes the names of three files (a reads file, a
  * chromosome file, and a dead zones file [possibly empty])
  */
 static void
 LoadReadsByRegionBED(const bool VERBOSE,
-		  const std::string &chroms_file, 
-		  const std::string &reads_file, 
+		  const std::string &chroms_file,
+		  const std::string &reads_file,
 		  const std::string &deads_file,
-		  const size_t bin_size, 
+		  const size_t bin_size,
           std::vector<SimpleGenomicRegion> &bin_boundaries,
           std::vector<double> &read_bins,
           std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
-          const size_t FRAGMENT_LEN,           
-          const bool REMOVE_JACKPOT) 
+          const size_t FRAGMENT_LEN,
+          const bool REMOVE_JACKPOT)
 {
   // get the chroms
   if (VERBOSE)
@@ -66,7 +80,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
   reset_points.push_back(0);
   for (size_t i = 0; i < chroms.size(); ++i) {
     const string chrom(chroms[i].get_chrom());
-    for (size_t j = 0; j < chroms[i].get_width(); j += bin_size) 
+    for (size_t j = 0; j < chroms[i].get_width(); j += bin_size)
       bin_boundaries.push_back(SimpleGenomicRegion(chrom, j, j + bin_size));
     if (bin_boundaries.size() > reset_points.back())
         reset_points.push_back(bin_boundaries.size());
@@ -100,10 +114,10 @@ LoadReadsByRegionBED(const bool VERBOSE,
         gr.set_start(gr.get_start() + half_len);
         gr.set_end(gr.get_start() + 1);
     }
-    else 
+    else
     {
         gr.set_end(gr.get_end() - half_len);
-        gr.set_start(gr.get_end() - 1);        
+        gr.set_start(gr.get_end() - 1);
     }
 
     while (i < bin_boundaries.size()
@@ -149,17 +163,17 @@ LoadReadsByRegionBED(const bool VERBOSE,
  */
 static void
 LoadReadsByRegionBED(const bool VERBOSE,
-		  const std::string &chroms_file, 
-		  const std::string &reads_file_a, 
-		  const std::string &reads_file_b, 
+		  const std::string &chroms_file,
+		  const std::string &reads_file_a,
+		  const std::string &reads_file_b,
 		  const std::string &deads_file,
-		  const size_t bin_size, 
+		  const size_t bin_size,
           std::vector<SimpleGenomicRegion> &bin_boundaries,
           std::vector<double> &read_bins_a,
           std::vector<double> &read_bins_b,
 		  std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
-          const size_t FRAGMENT_LEN,           
+          const size_t FRAGMENT_LEN,
           const bool REMOVE_JACKPOT)
 {
   // get the chroms
@@ -174,7 +188,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
   reset_points.push_back(0);
   for (size_t i = 0; i < chroms.size(); ++i) {
     const string chrom(chroms[i].get_chrom());
-    for (size_t j = 0; j < chroms[i].get_width(); j += bin_size) 
+    for (size_t j = 0; j < chroms[i].get_width(); j += bin_size)
       bin_boundaries.push_back(SimpleGenomicRegion(chrom, j, j + bin_size));
     if (bin_boundaries.size() > reset_points.back())
         reset_points.push_back(bin_boundaries.size());
@@ -208,10 +222,10 @@ LoadReadsByRegionBED(const bool VERBOSE,
         gr.set_start(gr.get_start() + half_len);
         gr.set_end(gr.get_start() + 1);
     }
-    else 
+    else
     {
         gr.set_end(gr.get_end() - half_len);
-        gr.set_start(gr.get_end() - 1);        
+        gr.set_start(gr.get_end() - 1);
     }
 
     while (i < bin_boundaries.size()
@@ -257,10 +271,10 @@ LoadReadsByRegionBED(const bool VERBOSE,
         gr.set_start(gr.get_start() + half_len);
         gr.set_end(gr.get_start() + 1);
     }
-    else 
+    else
     {
         gr.set_end(gr.get_end() - half_len);
-        gr.set_start(gr.get_end() - 1);        
+        gr.set_start(gr.get_end() - 1);
     }
 
     while (i < bin_boundaries.size()
@@ -305,16 +319,16 @@ LoadReadsByRegionBED(const bool VERBOSE,
  */
 static void
 LoadReadsByRegionBAM(const bool VERBOSE,
-		  const std::string &chroms_file, 
-		  const std::string &reads_file, 
+		  const std::string &chroms_file,
+		  const std::string &reads_file,
 		  const std::string &deads_file,
-		  const size_t bin_size, 
+		  const size_t bin_size,
           std::vector<SimpleGenomicRegion> &bin_boundaries,
           std::vector<double> &read_bins,
           std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
-          const size_t FRAGMENT_LEN,           
-          const bool REMOVE_JACKPOT) 
+          const size_t FRAGMENT_LEN,
+          const bool REMOVE_JACKPOT)
 {
   // get the chroms
   if (VERBOSE)
@@ -328,7 +342,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
   reset_points.push_back(0);
   for (size_t i = 0; i < chroms.size(); ++i) {
     const string chrom(chroms[i].get_chrom());
-    for (size_t j = 0; j < chroms[i].get_width(); j += bin_size) 
+    for (size_t j = 0; j < chroms[i].get_width(); j += bin_size)
       bin_boundaries.push_back(SimpleGenomicRegion(chrom, j, j + bin_size));
     if (bin_boundaries.size() > reset_points.back())
         reset_points.push_back(bin_boundaries.size());
@@ -363,10 +377,10 @@ LoadReadsByRegionBAM(const bool VERBOSE,
         gr.set_start(gr.get_start() + half_len);
         gr.set_end(gr.get_start() + 1);
     }
-    else 
+    else
     {
         gr.set_end(gr.get_end() - half_len);
-        gr.set_start(gr.get_end() - 1);        
+        gr.set_start(gr.get_end() - 1);
     }
 
     while (i < bin_boundaries.size()
@@ -411,17 +425,17 @@ LoadReadsByRegionBAM(const bool VERBOSE,
  */
 static void
 LoadReadsByRegionBAM(const bool VERBOSE,
-		  const std::string &chroms_file, 
-		  const std::string &reads_file_a, 
-		  const std::string &reads_file_b, 
+		  const std::string &chroms_file,
+		  const std::string &reads_file_a,
+		  const std::string &reads_file_b,
 		  const std::string &deads_file,
-		  const size_t bin_size, 
+		  const size_t bin_size,
           std::vector<SimpleGenomicRegion> &bin_boundaries,
           std::vector<double> &read_bins_a,
           std::vector<double> &read_bins_b,
 		  std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
-          const size_t FRAGMENT_LEN,           
+          const size_t FRAGMENT_LEN,
           const bool REMOVE_JACKPOT)
 {
   // get the chroms
@@ -436,7 +450,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
   reset_points.push_back(0);
   for (size_t i = 0; i < chroms.size(); ++i) {
     const string chrom(chroms[i].get_chrom());
-    for (size_t j = 0; j < chroms[i].get_width(); j += bin_size) 
+    for (size_t j = 0; j < chroms[i].get_width(); j += bin_size)
       bin_boundaries.push_back(SimpleGenomicRegion(chrom, j, j + bin_size));
     if (bin_boundaries.size() > reset_points.back())
         reset_points.push_back(bin_boundaries.size());
@@ -471,10 +485,10 @@ LoadReadsByRegionBAM(const bool VERBOSE,
         gr.set_start(gr.get_start() + half_len);
         gr.set_end(gr.get_start() + 1);
     }
-    else 
+    else
     {
         gr.set_end(gr.get_end() - half_len);
-        gr.set_start(gr.get_end() - 1);        
+        gr.set_start(gr.get_end() - 1);
     }
 
     while (i < bin_boundaries.size()
@@ -521,10 +535,10 @@ LoadReadsByRegionBAM(const bool VERBOSE,
         gr.set_start(gr.get_start() + half_len);
         gr.set_end(gr.get_start() + 1);
     }
-    else 
+    else
     {
         gr.set_end(gr.get_end() - half_len);
-        gr.set_start(gr.get_end() - 1);        
+        gr.set_start(gr.get_end() - 1);
     }
 
     while (i < bin_boundaries.size()
@@ -568,15 +582,15 @@ LoadReadsByRegionBAM(const bool VERBOSE,
 ////////////////////////////////////////////////////////
 void
 LoadReadsByRegion(const bool VERBOSE,
-		  const std::string &chroms_file, 
-		  const std::string &reads_file, 
+		  const std::string &chroms_file,
+		  const std::string &reads_file,
 		  const std::string &deads_file,
-		  const size_t bin_size, 
+		  const size_t bin_size,
           std::vector<SimpleGenomicRegion> &bin_boundaries,
           std::vector<double> &read_bins,
           std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
-          const size_t FRAGMENT_LEN,        
+          const size_t FRAGMENT_LEN,
           const bool BAM_FORMAT,
           const bool REMOVE_JACKPOT)
 {
@@ -595,17 +609,17 @@ LoadReadsByRegion(const bool VERBOSE,
 
 void
 LoadReadsByRegion(const bool VERBOSE,
-		  const std::string &chroms_file, 
-		  const std::string &reads_file_a, 
-		  const std::string &reads_file_b, 
+		  const std::string &chroms_file,
+		  const std::string &reads_file_a,
+		  const std::string &reads_file_b,
 		  const std::string &deads_file,
-		  const size_t bin_size, 
+		  const size_t bin_size,
           std::vector<SimpleGenomicRegion> &bin_boundaries,
           std::vector<double> &read_bins_a,
           std::vector<double> &read_bins_b,
           std::vector<double> &nondead_scales,
           std::vector<size_t> &reset_points,
-          const size_t FRAGMENT_LEN,        
+          const size_t FRAGMENT_LEN,
           const bool BAM_FORMAT,
           const bool REMOVE_JACKPOT)
 {

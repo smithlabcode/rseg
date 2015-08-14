@@ -55,6 +55,10 @@ endif
 ifeq "$(shell uname)" "Darwin"
 CXXFLAGS += -arch x86_64
 CCFLAGS += -arch x86_64 -std=gnu89
+ifeq "$(shell if [ `sysctl -n kern.osrelease | cut -d . -f 1` -ge 13 ];\
+                  then echo 'true'; fi)" "true"
+CXXFLAGS += -stdlib=libstdc++
+endif
 endif
 
 all: $(PROGS)
