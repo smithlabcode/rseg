@@ -42,12 +42,12 @@ check_sorted(const std::vector<T> &regions, bool require_unique = false) {
   if (require_unique) {
     for (size_t i = 1; i < regions.size(); ++i)
       if (regions[i] <= regions[i - 1])
-	return false;
+        return false;
   }
   else
     for (size_t i = 1; i < regions.size(); ++i)
       if (regions[i] < regions[i - 1])
-	return false;
+        return false;
   return true;
 }
 
@@ -57,16 +57,16 @@ check_sorted(const std::vector<T> &regions, bool require_unique = false) {
  */
 static void
 LoadReadsByRegionBED(const bool VERBOSE,
-		  const std::string &chroms_file,
-		  const std::string &reads_file,
-		  const std::string &deads_file,
-		  const size_t bin_size,
-          std::vector<SimpleGenomicRegion> &bin_boundaries,
-          std::vector<double> &read_bins,
-          std::vector<double> &nondead_scales,
-          std::vector<size_t> &reset_points,
-          const size_t FRAGMENT_LEN,
-          const bool REMOVE_JACKPOT)
+                     const std::string &chroms_file,
+                     const std::string &reads_file,
+                     const std::string &deads_file,
+                     const size_t bin_size,
+                     std::vector<SimpleGenomicRegion> &bin_boundaries,
+                     std::vector<double> &read_bins,
+                     std::vector<double> &nondead_scales,
+                     std::vector<size_t> &reset_points,
+                     const size_t FRAGMENT_LEN,
+                     const bool REMOVE_JACKPOT)
 {
   // get the chroms
   if (VERBOSE)
@@ -83,12 +83,12 @@ LoadReadsByRegionBED(const bool VERBOSE,
     for (size_t j = 0; j < chroms[i].get_width(); j += bin_size)
       bin_boundaries.push_back(SimpleGenomicRegion(chrom, j, j + bin_size));
     if (bin_boundaries.size() > reset_points.back())
-        reset_points.push_back(bin_boundaries.size());
+      reset_points.push_back(bin_boundaries.size());
   }
 
   // Load the reads, tabulating counts in bins
   if (VERBOSE)
-      cout << "[LOADING_DATA] reads"  << endl;
+    cout << "[LOADING_DATA] reads"  << endl;
   read_bins.resize(bin_boundaries.size(), 0);
   std::ifstream in(reads_file.c_str());
   string line;
@@ -100,7 +100,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
         && prev_gr.get_start() == gr.get_start()
         && prev_gr.get_strand() == gr.get_strand()
         && prev_gr.get_chrom() == gr.get_chrom())
-        continue;
+      continue;
     if (gr < prev_gr) {
       cerr << "ERROR: reads not sorted in " << reads_file << endl;
       cerr << prev_gr << endl << gr << endl;
@@ -109,28 +109,26 @@ LoadReadsByRegionBED(const bool VERBOSE,
     prev_gr = gr;
 
     const size_t half_len = FRAGMENT_LEN / 2;
-    if (gr.pos_strand())
-    {
-        gr.set_start(gr.get_start() + half_len);
-        gr.set_end(gr.get_start() + 1);
+    if (gr.pos_strand()) {
+      gr.set_start(gr.get_start() + half_len);
+      gr.set_end(gr.get_start() + 1);
     }
-    else
-    {
-        gr.set_end(gr.get_end() - half_len);
-        gr.set_start(gr.get_end() - 1);
+    else {
+      gr.set_end(gr.get_end() - half_len);
+      gr.set_start(gr.get_end() - 1);
     }
 
-    while (i < bin_boundaries.size()
-           && (bin_boundaries[i].get_chrom() < gr.get_chrom()
-               || (bin_boundaries[i].get_chrom() == gr.get_chrom()
-                   && bin_boundaries[i].get_end() <= gr.get_start())))
-        ++i;
+    while (i < bin_boundaries.size() &&
+           (bin_boundaries[i].get_chrom() < gr.get_chrom() ||
+            (bin_boundaries[i].get_chrom() == gr.get_chrom() &&
+             bin_boundaries[i].get_end() <= gr.get_start())))
+      ++i;
 
     // adjust for jump caused by negative strand reads
-    while (i >= 0
-           && (bin_boundaries[i].get_chrom() == gr.get_chrom()
-               && bin_boundaries[i].get_start() >= gr.get_end()))
-        --i;
+    while (i >= 0 &&
+           (bin_boundaries[i].get_chrom() == gr.get_chrom() &&
+            bin_boundaries[i].get_start() >= gr.get_end()))
+      --i;
 
     if (i >= bin_boundaries.size() || !bin_boundaries[i].contains(gr))
       continue;
@@ -139,7 +137,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
 
   // load the dead zones
   if (VERBOSE)
-      cerr << "[LOADING_DATA] deadzones"  << endl;
+    cerr << "[LOADING_DATA] deadzones"  << endl;
   nondead_scales.resize(bin_boundaries.size(), 1.0);
   in.close();
   in.open(deads_file.c_str());
@@ -149,7 +147,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
     while (i < bin_boundaries.size() && !bin_boundaries[i].overlaps(gr)) ++i;
     while (i < bin_boundaries.size() && bin_boundaries[i].overlaps(gr)) {
       const double dead = min(bin_boundaries[i].get_end(), gr.get_end())
-          - max(bin_boundaries[i].get_start(), gr.get_start());
+        - max(bin_boundaries[i].get_start(), gr.get_start());
       nondead_scales[i] -= dead / bin_size;
       ++i;
     }
@@ -163,18 +161,18 @@ LoadReadsByRegionBED(const bool VERBOSE,
  */
 static void
 LoadReadsByRegionBED(const bool VERBOSE,
-		  const std::string &chroms_file,
-		  const std::string &reads_file_a,
-		  const std::string &reads_file_b,
-		  const std::string &deads_file,
-		  const size_t bin_size,
-          std::vector<SimpleGenomicRegion> &bin_boundaries,
-          std::vector<double> &read_bins_a,
-          std::vector<double> &read_bins_b,
-		  std::vector<double> &nondead_scales,
-          std::vector<size_t> &reset_points,
-          const size_t FRAGMENT_LEN,
-          const bool REMOVE_JACKPOT)
+                     const std::string &chroms_file,
+                     const std::string &reads_file_a,
+                     const std::string &reads_file_b,
+                     const std::string &deads_file,
+                     const size_t bin_size,
+                     std::vector<SimpleGenomicRegion> &bin_boundaries,
+                     std::vector<double> &read_bins_a,
+                     std::vector<double> &read_bins_b,
+                     std::vector<double> &nondead_scales,
+                     std::vector<size_t> &reset_points,
+                     const size_t FRAGMENT_LEN,
+                     const bool REMOVE_JACKPOT)
 {
   // get the chroms
   if (VERBOSE)
@@ -191,12 +189,12 @@ LoadReadsByRegionBED(const bool VERBOSE,
     for (size_t j = 0; j < chroms[i].get_width(); j += bin_size)
       bin_boundaries.push_back(SimpleGenomicRegion(chrom, j, j + bin_size));
     if (bin_boundaries.size() > reset_points.back())
-        reset_points.push_back(bin_boundaries.size());
+      reset_points.push_back(bin_boundaries.size());
   }
 
   // Load the reads, tabulating counts in bins
   if (VERBOSE)
-      cout << "[LOADING_DATA] reads"  << endl;
+    cout << "[LOADING_DATA] reads"  << endl;
   read_bins_a.resize(bin_boundaries.size(), 0);
   std::ifstream in(reads_file_a.c_str());
   string line;
@@ -208,7 +206,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
         && prev_gr.get_start() == gr.get_start()
         && prev_gr.get_strand() == gr.get_strand()
         && prev_gr.get_chrom() == gr.get_chrom())
-        continue;
+      continue;
     if (gr < prev_gr) {
       cerr << "ERROR: reads not sorted in " << reads_file_a << endl;
       cerr << prev_gr << endl << gr << endl;
@@ -218,27 +216,27 @@ LoadReadsByRegionBED(const bool VERBOSE,
 
     const size_t half_len = FRAGMENT_LEN / 2;
     if (gr.pos_strand())
-    {
+      {
         gr.set_start(gr.get_start() + half_len);
         gr.set_end(gr.get_start() + 1);
-    }
+      }
     else
-    {
+      {
         gr.set_end(gr.get_end() - half_len);
         gr.set_start(gr.get_end() - 1);
-    }
+      }
 
     while (i < bin_boundaries.size()
            && (bin_boundaries[i].get_chrom() < gr.get_chrom()
                || (bin_boundaries[i].get_chrom() == gr.get_chrom()
                    && bin_boundaries[i].get_end() <= gr.get_start())))
-        ++i;
+      ++i;
 
     // adjust for jump caused by negative strand reads
     while (i >= 0
            && (bin_boundaries[i].get_chrom() == gr.get_chrom()
                && bin_boundaries[i].get_start() >= gr.get_end()))
-        --i;
+      --i;
 
     if (i >= bin_boundaries.size() || !bin_boundaries[i].contains(gr))
       continue;
@@ -257,7 +255,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
         && prev_gr.get_start() == gr.get_start()
         && prev_gr.get_strand() == gr.get_strand()
         && prev_gr.get_chrom() == gr.get_chrom())
-        continue;
+      continue;
     if (gr < prev_gr) {
       cerr << "ERROR: reads not sorted in " << reads_file_b << endl;
       cerr << prev_gr << endl << gr << endl;
@@ -267,27 +265,27 @@ LoadReadsByRegionBED(const bool VERBOSE,
 
     const size_t half_len = FRAGMENT_LEN / 2;
     if (gr.pos_strand())
-    {
+      {
         gr.set_start(gr.get_start() + half_len);
         gr.set_end(gr.get_start() + 1);
-    }
+      }
     else
-    {
+      {
         gr.set_end(gr.get_end() - half_len);
         gr.set_start(gr.get_end() - 1);
-    }
+      }
 
     while (i < bin_boundaries.size()
            && (bin_boundaries[i].get_chrom() < gr.get_chrom()
                || (bin_boundaries[i].get_chrom() == gr.get_chrom()
                    && bin_boundaries[i].get_end() <= gr.get_start())))
-        ++i;
+      ++i;
 
     // adjust for jump caused by negative strand reads
     while (i >= 0
            && (bin_boundaries[i].get_chrom() == gr.get_chrom()
                && bin_boundaries[i].get_start() >= gr.get_end()))
-        --i;
+      --i;
     if (i >= bin_boundaries.size() || !bin_boundaries[i].contains(gr))
       continue;
     ++read_bins_b[i];
@@ -295,7 +293,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
 
   // load the dead zones
   if (VERBOSE)
-      cout << "[LOADING_DATA] deadzones"  << endl;
+    cout << "[LOADING_DATA] deadzones"  << endl;
   nondead_scales.resize(bin_boundaries.size(), 1.0);
   in.close();
   in.open(deads_file.c_str());
@@ -305,7 +303,7 @@ LoadReadsByRegionBED(const bool VERBOSE,
     while (i < bin_boundaries.size() && !bin_boundaries[i].overlaps(gr)) ++i;
     while (i < bin_boundaries.size() && bin_boundaries[i].overlaps(gr)) {
       const double dead = min(bin_boundaries[i].get_end(), gr.get_end())
-          - max(bin_boundaries[i].get_start(), gr.get_start());
+        - max(bin_boundaries[i].get_start(), gr.get_start());
       nondead_scales[i] -= dead / bin_size;
       ++i;
     }
@@ -319,16 +317,16 @@ LoadReadsByRegionBED(const bool VERBOSE,
  */
 static void
 LoadReadsByRegionBAM(const bool VERBOSE,
-		  const std::string &chroms_file,
-		  const std::string &reads_file,
-		  const std::string &deads_file,
-		  const size_t bin_size,
-          std::vector<SimpleGenomicRegion> &bin_boundaries,
-          std::vector<double> &read_bins,
-          std::vector<double> &nondead_scales,
-          std::vector<size_t> &reset_points,
-          const size_t FRAGMENT_LEN,
-          const bool REMOVE_JACKPOT)
+                     const std::string &chroms_file,
+                     const std::string &reads_file,
+                     const std::string &deads_file,
+                     const size_t bin_size,
+                     std::vector<SimpleGenomicRegion> &bin_boundaries,
+                     std::vector<double> &read_bins,
+                     std::vector<double> &nondead_scales,
+                     std::vector<size_t> &reset_points,
+                     const size_t FRAGMENT_LEN,
+                     const bool REMOVE_JACKPOT)
 {
   // get the chroms
   if (VERBOSE)
@@ -345,12 +343,12 @@ LoadReadsByRegionBAM(const bool VERBOSE,
     for (size_t j = 0; j < chroms[i].get_width(); j += bin_size)
       bin_boundaries.push_back(SimpleGenomicRegion(chrom, j, j + bin_size));
     if (bin_boundaries.size() > reset_points.back())
-        reset_points.push_back(bin_boundaries.size());
+      reset_points.push_back(bin_boundaries.size());
   }
 
   // Load the reads, tabulating counts in bins
   if (VERBOSE)
-      cout << "[LOADING_DATA] reads"  << endl;
+    cout << "[LOADING_DATA] reads"  << endl;
   read_bins.resize(bin_boundaries.size(), 0);
   BAMFile in(reads_file);
   size_t i = 0;
@@ -360,7 +358,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
         && prev_gr.get_start() == gr.get_start()
         && prev_gr.get_strand() == gr.get_strand()
         && prev_gr.get_chrom() == gr.get_chrom())
-        continue;
+      continue;
     if (gr.get_chrom() < prev_gr.get_chrom()
         || gr.get_start() < prev_gr.get_start()
         || gr.get_end() < prev_gr.get_end()
@@ -373,27 +371,27 @@ LoadReadsByRegionBAM(const bool VERBOSE,
 
     const size_t half_len = FRAGMENT_LEN / 2;
     if (gr.pos_strand())
-    {
+      {
         gr.set_start(gr.get_start() + half_len);
         gr.set_end(gr.get_start() + 1);
-    }
+      }
     else
-    {
+      {
         gr.set_end(gr.get_end() - half_len);
         gr.set_start(gr.get_end() - 1);
-    }
+      }
 
     while (i < bin_boundaries.size()
            && (bin_boundaries[i].get_chrom() < gr.get_chrom()
                || (bin_boundaries[i].get_chrom() == gr.get_chrom()
                    && bin_boundaries[i].get_end() <= gr.get_start())))
-        ++i;
+      ++i;
 
     // adjust for jump caused by negative strand reads
     while (i >= 0
            && (bin_boundaries[i].get_chrom() == gr.get_chrom()
                && bin_boundaries[i].get_start() >= gr.get_end()))
-        --i;
+      --i;
     if (i >= bin_boundaries.size() || !bin_boundaries[i].contains(gr))
       continue;
     ++read_bins[i];
@@ -401,7 +399,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
 
   // load the dead zones
   if (VERBOSE)
-      cerr << "[LOADING_DATA] deadzones"  << endl;
+    cerr << "[LOADING_DATA] deadzones"  << endl;
   nondead_scales.resize(bin_boundaries.size(), 1.0);
   std::ifstream dead_in(deads_file.c_str());
   i = 0;
@@ -411,7 +409,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
     while (i < bin_boundaries.size() && !bin_boundaries[i].overlaps(gr)) ++i;
     while (i < bin_boundaries.size() && bin_boundaries[i].overlaps(gr)) {
       const double dead = min(bin_boundaries[i].get_end(), gr.get_end())
-          - max(bin_boundaries[i].get_start(), gr.get_start());
+        - max(bin_boundaries[i].get_start(), gr.get_start());
       nondead_scales[i] -= dead / bin_size;
       ++i;
     }
@@ -425,18 +423,18 @@ LoadReadsByRegionBAM(const bool VERBOSE,
  */
 static void
 LoadReadsByRegionBAM(const bool VERBOSE,
-		  const std::string &chroms_file,
-		  const std::string &reads_file_a,
-		  const std::string &reads_file_b,
-		  const std::string &deads_file,
-		  const size_t bin_size,
-          std::vector<SimpleGenomicRegion> &bin_boundaries,
-          std::vector<double> &read_bins_a,
-          std::vector<double> &read_bins_b,
-		  std::vector<double> &nondead_scales,
-          std::vector<size_t> &reset_points,
-          const size_t FRAGMENT_LEN,
-          const bool REMOVE_JACKPOT)
+                     const std::string &chroms_file,
+                     const std::string &reads_file_a,
+                     const std::string &reads_file_b,
+                     const std::string &deads_file,
+                     const size_t bin_size,
+                     std::vector<SimpleGenomicRegion> &bin_boundaries,
+                     std::vector<double> &read_bins_a,
+                     std::vector<double> &read_bins_b,
+                     std::vector<double> &nondead_scales,
+                     std::vector<size_t> &reset_points,
+                     const size_t FRAGMENT_LEN,
+                     const bool REMOVE_JACKPOT)
 {
   // get the chroms
   if (VERBOSE)
@@ -453,12 +451,12 @@ LoadReadsByRegionBAM(const bool VERBOSE,
     for (size_t j = 0; j < chroms[i].get_width(); j += bin_size)
       bin_boundaries.push_back(SimpleGenomicRegion(chrom, j, j + bin_size));
     if (bin_boundaries.size() > reset_points.back())
-        reset_points.push_back(bin_boundaries.size());
+      reset_points.push_back(bin_boundaries.size());
   }
 
   // Load the reads, tabulating counts in bins
   if (VERBOSE)
-      cout << "[LOADING_DATA] reads"  << endl;
+    cout << "[LOADING_DATA] reads"  << endl;
   read_bins_a.resize(bin_boundaries.size(), 0);
   BAMFile in(reads_file_a);
   size_t i = 0;
@@ -468,7 +466,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
         && prev_gr.get_start() == gr.get_start()
         && prev_gr.get_strand() == gr.get_strand()
         && prev_gr.get_chrom() == gr.get_chrom())
-        continue;
+      continue;
     if (gr.get_chrom() < prev_gr.get_chrom()
         || gr.get_start() < prev_gr.get_start()
         || gr.get_end() < prev_gr.get_end()
@@ -481,27 +479,27 @@ LoadReadsByRegionBAM(const bool VERBOSE,
 
     const size_t half_len = FRAGMENT_LEN / 2;
     if (gr.pos_strand())
-    {
+      {
         gr.set_start(gr.get_start() + half_len);
         gr.set_end(gr.get_start() + 1);
-    }
+      }
     else
-    {
+      {
         gr.set_end(gr.get_end() - half_len);
         gr.set_start(gr.get_end() - 1);
-    }
+      }
 
     while (i < bin_boundaries.size()
            && (bin_boundaries[i].get_chrom() < gr.get_chrom()
                || (bin_boundaries[i].get_chrom() == gr.get_chrom()
                    && bin_boundaries[i].get_end() <= gr.get_start())))
-        ++i;
+      ++i;
 
     // adjust for jump caused by negative strand reads
     while (i >= 0
            && (bin_boundaries[i].get_chrom() == gr.get_chrom()
                && bin_boundaries[i].get_start() >= gr.get_end()))
-        --i;
+      --i;
     if (i >= bin_boundaries.size() || !bin_boundaries[i].contains(gr))
       continue;
     ++read_bins_a[i];
@@ -518,7 +516,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
         && prev_gr.get_start() == gr.get_start()
         && prev_gr.get_strand() == gr.get_strand()
         && prev_gr.get_chrom() == gr.get_chrom())
-        continue;
+      continue;
     if (gr.get_chrom() < prev_gr.get_chrom()
         || gr.get_start() < prev_gr.get_start()
         || gr.get_end() < prev_gr.get_end()
@@ -531,27 +529,27 @@ LoadReadsByRegionBAM(const bool VERBOSE,
 
     const size_t half_len = FRAGMENT_LEN / 2;
     if (gr.pos_strand())
-    {
+      {
         gr.set_start(gr.get_start() + half_len);
         gr.set_end(gr.get_start() + 1);
-    }
+      }
     else
-    {
+      {
         gr.set_end(gr.get_end() - half_len);
         gr.set_start(gr.get_end() - 1);
-    }
+      }
 
     while (i < bin_boundaries.size()
            && (bin_boundaries[i].get_chrom() < gr.get_chrom()
                || (bin_boundaries[i].get_chrom() == gr.get_chrom()
                    && bin_boundaries[i].get_end() <= gr.get_start())))
-        ++i;
+      ++i;
 
     // adjust for jump caused by negative strand reads
     while (i >= 0
            && (bin_boundaries[i].get_chrom() == gr.get_chrom()
                && bin_boundaries[i].get_start() >= gr.get_end()))
-        --i;
+      --i;
     if (i >= bin_boundaries.size() || !bin_boundaries[i].contains(gr))
       continue;
     ++read_bins_b[i];
@@ -559,7 +557,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
 
   // load the dead zones
   if (VERBOSE)
-      cout << "[LOADING_DATA] deadzones"  << endl;
+    cout << "[LOADING_DATA] deadzones"  << endl;
   nondead_scales.resize(bin_boundaries.size(), 1.0);
   std::ifstream dead_in(deads_file.c_str());
   i = 0;
@@ -569,7 +567,7 @@ LoadReadsByRegionBAM(const bool VERBOSE,
     while (i < bin_boundaries.size() && !bin_boundaries[i].overlaps(gr)) ++i;
     while (i < bin_boundaries.size() && bin_boundaries[i].overlaps(gr)) {
       const double dead = min(bin_boundaries[i].get_end(), gr.get_end())
-          - max(bin_boundaries[i].get_start(), gr.get_start());
+        - max(bin_boundaries[i].get_start(), gr.get_start());
       nondead_scales[i] -= dead / bin_size;
       ++i;
     }
@@ -582,57 +580,55 @@ LoadReadsByRegionBAM(const bool VERBOSE,
 ////////////////////////////////////////////////////////
 void
 LoadReadsByRegion(const bool VERBOSE,
-		  const std::string &chroms_file,
-		  const std::string &reads_file,
-		  const std::string &deads_file,
-		  const size_t bin_size,
-          std::vector<SimpleGenomicRegion> &bin_boundaries,
-          std::vector<double> &read_bins,
-          std::vector<double> &nondead_scales,
-          std::vector<size_t> &reset_points,
-          const size_t FRAGMENT_LEN,
-          const bool BAM_FORMAT,
-          const bool REMOVE_JACKPOT)
-{
-    if (BAM_FORMAT)
-        LoadReadsByRegionBAM(VERBOSE, chroms_file, reads_file, deads_file,
-                             bin_size, bin_boundaries, read_bins,
-                             nondead_scales, reset_points,
-                             FRAGMENT_LEN, REMOVE_JACKPOT);
-    else
-        LoadReadsByRegionBED(VERBOSE, chroms_file, reads_file, deads_file,
-                             bin_size, bin_boundaries, read_bins,
-                             nondead_scales, reset_points,
-                             FRAGMENT_LEN, REMOVE_JACKPOT);
+                  const std::string &chroms_file,
+                  const std::string &reads_file,
+                  const std::string &deads_file,
+                  const size_t bin_size,
+                  std::vector<SimpleGenomicRegion> &bin_boundaries,
+                  std::vector<double> &read_bins,
+                  std::vector<double> &nondead_scales,
+                  std::vector<size_t> &reset_points,
+                  const size_t FRAGMENT_LEN,
+                  const bool BAM_FORMAT,
+                  const bool REMOVE_JACKPOT) {
+  if (BAM_FORMAT)
+    LoadReadsByRegionBAM(VERBOSE, chroms_file, reads_file, deads_file,
+                         bin_size, bin_boundaries, read_bins,
+                         nondead_scales, reset_points,
+                         FRAGMENT_LEN, REMOVE_JACKPOT);
+  else
+    LoadReadsByRegionBED(VERBOSE, chroms_file, reads_file, deads_file,
+                         bin_size, bin_boundaries, read_bins,
+                         nondead_scales, reset_points,
+                         FRAGMENT_LEN, REMOVE_JACKPOT);
 }
 
 
 void
 LoadReadsByRegion(const bool VERBOSE,
-		  const std::string &chroms_file,
-		  const std::string &reads_file_a,
-		  const std::string &reads_file_b,
-		  const std::string &deads_file,
-		  const size_t bin_size,
-          std::vector<SimpleGenomicRegion> &bin_boundaries,
-          std::vector<double> &read_bins_a,
-          std::vector<double> &read_bins_b,
-          std::vector<double> &nondead_scales,
-          std::vector<size_t> &reset_points,
-          const size_t FRAGMENT_LEN,
-          const bool BAM_FORMAT,
-          const bool REMOVE_JACKPOT)
-{
-    if (BAM_FORMAT)
-        LoadReadsByRegionBAM(VERBOSE, chroms_file, reads_file_a, reads_file_b,
-                             deads_file, bin_size, bin_boundaries,
-                             read_bins_a, read_bins_b, nondead_scales,
-                             reset_points, FRAGMENT_LEN, REMOVE_JACKPOT);
-    else
-        LoadReadsByRegionBED(VERBOSE, chroms_file, reads_file_a, reads_file_b,
-                             deads_file, bin_size, bin_boundaries,
-                             read_bins_a, read_bins_b, nondead_scales,
-                             reset_points, FRAGMENT_LEN, REMOVE_JACKPOT);
+                  const std::string &chroms_file,
+                  const std::string &reads_file_a,
+                  const std::string &reads_file_b,
+                  const std::string &deads_file,
+                  const size_t bin_size,
+                  std::vector<SimpleGenomicRegion> &bin_boundaries,
+                  std::vector<double> &read_bins_a,
+                  std::vector<double> &read_bins_b,
+                  std::vector<double> &nondead_scales,
+                  std::vector<size_t> &reset_points,
+                  const size_t FRAGMENT_LEN,
+                  const bool BAM_FORMAT,
+                  const bool REMOVE_JACKPOT) {
+  if (BAM_FORMAT)
+    LoadReadsByRegionBAM(VERBOSE, chroms_file, reads_file_a, reads_file_b,
+                         deads_file, bin_size, bin_boundaries,
+                         read_bins_a, read_bins_b, nondead_scales,
+                         reset_points, FRAGMENT_LEN, REMOVE_JACKPOT);
+  else
+    LoadReadsByRegionBED(VERBOSE, chroms_file, reads_file_a, reads_file_b,
+                         deads_file, bin_size, bin_boundaries,
+                         read_bins_a, read_bins_b, nondead_scales,
+                         reset_points, FRAGMENT_LEN, REMOVE_JACKPOT);
 }
 
 

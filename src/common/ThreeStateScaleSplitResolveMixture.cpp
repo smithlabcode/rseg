@@ -36,24 +36,25 @@ using std::cerr;
 using std::endl;
 using std::pair;
 using std::make_pair;
+using std::isfinite;
 
 static void
-initialize_values(const vector<double> &values, 
-                  const vector<double> &values_a, 
-                  const vector<double> &values_b, 
+initialize_values(const vector<double> &values,
+                  const vector<double> &values_a,
+                  const vector<double> &values_b,
                   const vector<double> &scales,
                   SplitDistro &fg_distro,
                   SplitDistro &mid_distro,
                   SplitDistro &bg_distro) {
-		 
+
     vector<double> fg_part_a;
     vector<double> fg_part_b;
     vector<double> fg_scales;
-    
+
     vector<double> mid_part_a;
     vector<double> mid_part_b;
     vector<double> mid_scales;
-	
+
     vector<double> bg_part_a;
     vector<double> bg_part_b;
     vector<double> bg_scales;
@@ -61,15 +62,15 @@ initialize_values(const vector<double> &values,
     double val_weight = 0;
     for (size_t i = 0; i < values.size(); ++i)
         val_weight += fabs(values[i]);
-  
+
     assert(val_weight > 0);
     double val_per_part = std::ceil(val_weight/3);
-  
+
     vector<pair<double, size_t> > helper;
     for (size_t i = 0; i < values.size(); ++i)
         helper.push_back(make_pair(values[i], i));
     sort(helper.begin(), helper.end(), std::greater<pair<double, size_t> >());
-  
+
     size_t i = 0;
     //   const size_t lim1 = helper.size()/3;
 
@@ -98,72 +99,72 @@ initialize_values(const vector<double> &values,
 
     // Obtain initial estimates of distribution values
     fg_distro.estimate_params_ml(fg_part_a, fg_part_b, fg_scales);
-    mid_distro.estimate_params_ml(mid_part_a, mid_part_b, mid_scales); 
+    mid_distro.estimate_params_ml(mid_part_a, mid_part_b, mid_scales);
     bg_distro.estimate_params_ml(bg_part_a, bg_part_b, bg_scales);
 }
 
 static double
-expectation_step(const vector<double> &values, 
+expectation_step(const vector<double> &values,
                  const vector<double> &scales,
                  const vector<double> &mixing,
-                 const SplitDistro &fg_distro, 
-                 const SplitDistro &mid_distro, 
+                 const SplitDistro &fg_distro,
+                 const SplitDistro &mid_distro,
                  const SplitDistro &bg_distro,
-                 vector<double> &fg_probs, 
-                 vector<double> &mid_probs, 
+                 vector<double> &fg_probs,
+                 vector<double> &mid_probs,
                  vector<double> &bg_probs) {
-  
+
     double score = 0;
-  
+
     const double fg_log_mixing = log(mixing[0]);
-    assert(finite(fg_log_mixing));
+    assert(isfinite(fg_log_mixing));
     const double mid_log_mixing = log(mixing[1]);
-    assert(finite(mid_log_mixing));
+    assert(isfinite(mid_log_mixing));
     const double bg_log_mixing = log(mixing[2]);
-    assert(finite(bg_log_mixing));
-  
+    assert(isfinite(bg_log_mixing));
+
     for (size_t i = 0; i < values.size(); ++i) {
-    
+
         const double fg_part =
             fg_log_mixing + fg_distro.log_likelihood(values[i], scales[i]);
-        assert(finite(fg_part));
-    
+        assert(isfinite(fg_part));
+
         const double mid_part =
             mid_log_mixing + mid_distro.log_likelihood(values[i], scales[i]);
-        if (!finite(mid_part)) {
+        if (!isfinite(mid_part)) {
             cout << values[i] << "\t" << mid_distro.log_likelihood(values[i]) << endl;
             cout << mid_distro << endl;
         }
-        assert(finite(mid_part));
+        assert(isfinite(mid_part));
         const double bg_part =
             bg_log_mixing + bg_distro.log_likelihood(values[i], scales[i]);
-        assert(finite(fg_part));
-    
+        assert(isfinite(fg_part));
+
         const double denom = log_sum_log(fg_part, mid_part, bg_part);
-        assert(finite(denom));
-    
+        assert(isfinite(denom));
+
         fg_probs[i] = exp(fg_part - denom);
         mid_probs[i] = exp(mid_part - denom);
         bg_probs[i] = exp(bg_part - denom);
-    
+
         score += denom;
     }
-  
+
     return score;
 }
 
 
 static void
-maximization_step(const vector<double> &values, 
-                  const vector<double> &vals_a, 
-                  const vector<double> &vals_b, 
+maximization_step(const vector<double> &values,
+                  const vector<double> &vals_a,
+                  const vector<double> &vals_b,
                   const vector<double> &scales,
                   const vector<double> &fg_probs,
                   const vector<double> &mid_probs,
                   const vector<double> &bg_probs,
                   vector<double> &mixing,
-                  SplitDistro &fg_distro, 
-                  SplitDistro &mid_distro, 
+                  SplitDistro &fg_distro,
+                  SplitDistro &mid_distro,
                   SplitDistro &bg_distro) {
 
     //   cerr << "FG Distro:" << endl;
@@ -180,13 +181,13 @@ maximization_step(const vector<double> &values,
         log_fg_probs[i] = log(log_fg_probs[i]);
         log_mid_probs[i] = log(log_mid_probs[i]);
         log_bg_probs[i] = log(log_bg_probs[i]);
-    }    
-  
+    }
+
     mixing[0] = SplitDistro::log_sum_log_vec(log_fg_probs, log_fg_probs.size());
     mixing[1] = SplitDistro::log_sum_log_vec(log_mid_probs, log_mid_probs.size());
     mixing[2] = SplitDistro::log_sum_log_vec(log_bg_probs, log_bg_probs.size());
     const double mix_sum = log_sum_log(mixing[0], mixing[1], mixing[2]);
-  
+
     mixing[0] = exp(mixing[0] - mix_sum);
     mixing[1] = exp(mixing[1] - mix_sum);
     mixing[2] = exp(mixing[2] - mix_sum);
@@ -197,50 +198,50 @@ ThreeStateScaleSplitResolveMixture(const vector<double> &values,
                               const vector<double> &vals_a,
                               const vector<double> &vals_b,
                               const std::vector<double> &scales,
-                              const size_t max_iterations, 
-                              const double tolerance, 
+                              const size_t max_iterations,
+                              const double tolerance,
                               const int VERBOSE,
                               SplitDistro &fg_distro,
                               SplitDistro &mid_distro,
-                              SplitDistro &bg_distro, 
-                              std::vector<double> &mixing) 
+                              SplitDistro &bg_distro,
+                              std::vector<double> &mixing)
 {
     static const size_t THREE = 3;
-  
+
     // partition the observations to get the initial guess
     initialize_values(values, vals_a, vals_b, scales,
                      fg_distro, mid_distro, bg_distro);
-    
-    
+
+
     vector<double> fg_probs(values.size(), 0);
     vector<double> mid_probs(values.size(), 0);
     vector<double> bg_probs(values.size(), 0);
-    
+
     mixing = vector<double>(THREE, 1.0/THREE);
-    
+
     if (VERBOSE)
         cout << endl << std::setw(10) << "DELTA"
              << std::setw(14) << "(PARAMS,MIX)" << endl;
-    
+
     // Do the expectation maximization
     double prev_score = std::numeric_limits<double>::max();
     for (size_t itr = 0; itr < max_iterations; ++itr) {
-        const double score = 
+        const double score =
             expectation_step(values, scales,
-                             mixing, fg_distro, mid_distro, bg_distro, 
+                             mixing, fg_distro, mid_distro, bg_distro,
                              fg_probs, mid_probs, bg_probs);
         maximization_step(values, vals_a, vals_b, scales,
-                          fg_probs, mid_probs, bg_probs, 
+                          fg_probs, mid_probs, bg_probs,
                           mixing, fg_distro, mid_distro, bg_distro);
-    
+
         if (VERBOSE) {
-            cout << std::setw(10) << std::setprecision(4) 
+            cout << std::setw(10) << std::setprecision(4)
                  << (prev_score - score)/prev_score << endl
-                 << std::setw(14) << fg_distro << " " 
+                 << std::setw(14) << fg_distro << " "
                  << std::setw(10) << mixing[0] << endl
-                 << std::setw(14) << mid_distro << " " 
+                 << std::setw(14) << mid_distro << " "
                  << std::setw(10) << mixing[1] << endl
-                 << std::setw(14) << bg_distro << " " 
+                 << std::setw(14) << bg_distro << " "
                  << std::setw(10) << mixing[2] << endl
                  << endl;
         }

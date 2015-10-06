@@ -35,6 +35,7 @@ using std::cerr;
 using std::endl;
 using std::string;
 using std::auto_ptr;
+using std::isfinite;
 
 
 inline double
@@ -54,25 +55,25 @@ TwoStateScaleHMM::log_sum_log(const double p, const double q) const {
 double
 TwoStateScaleHMM::forward_algorithm(const vector<double> &vals,
                                const vector<double> &scales,
-			       const size_t start, const size_t end,
-			       const double lp_sf, const double lp_sb,
-			       const double lp_ff, const double lp_fb, 
-			       const double lp_ft,
-			       const double lp_bf, const double lp_bb, 
-			       const double lp_bt,
-			       const Distro &fg_distro,
-			       const Distro &bg_distro,
-			       vector<pair<double, double> > &f) const {
-  
+                               const size_t start, const size_t end,
+                               const double lp_sf, const double lp_sb,
+                               const double lp_ff, const double lp_fb,
+                               const double lp_ft,
+                               const double lp_bf, const double lp_bb,
+                               const double lp_bt,
+                               const Distro &fg_distro,
+                               const Distro &bg_distro,
+                               vector<pair<double, double> > &f) const {
+
     f[start].first = fg_distro.log_likelihood(vals[start], scales[start]) + lp_sf;
     f[start].second = bg_distro.log_likelihood(vals[start], scales[start]) + lp_sb;
-  
+
   for (size_t i = start + 1; i < end; ++i) {
     const size_t k = i - 1;
     f[i].first = (fg_distro.log_likelihood(vals[i], scales[i]) +
-		  log_sum_log(f[k].first + lp_ff, f[k].second + lp_bf));
-    f[i].second = (bg_distro.log_likelihood(vals[i], scales[i]) + 
-		   log_sum_log(f[k].first + lp_fb, f[k].second + lp_bb));
+                  log_sum_log(f[k].first + lp_ff, f[k].second + lp_bf));
+    f[i].second = (bg_distro.log_likelihood(vals[i], scales[i]) +
+                   log_sum_log(f[k].first + lp_fb, f[k].second + lp_bb));
   }
   return log_sum_log(f[end - 1].first + lp_ft, f[end - 1].second + lp_bt);
 }
@@ -81,19 +82,19 @@ TwoStateScaleHMM::forward_algorithm(const vector<double> &vals,
 double
 TwoStateScaleHMM::backward_algorithm(const vector<double> &vals,
                                 const vector<double> &scales,
-				const size_t start, const size_t end,
-				const double lp_sf, const double lp_sb,
-				const double lp_ff, const double lp_fb, 
-				const double lp_ft,
-				const double lp_bf, const double lp_bb, 
-				const double lp_bt,
-				const Distro &fg_distro,
-				const Distro &bg_distro,
-				vector<pair<double, double> > &b) const {
-  
+                                const size_t start, const size_t end,
+                                const double lp_sf, const double lp_sb,
+                                const double lp_ff, const double lp_fb,
+                                const double lp_ft,
+                                const double lp_bf, const double lp_bb,
+                                const double lp_bt,
+                                const Distro &fg_distro,
+                                const Distro &bg_distro,
+                                vector<pair<double, double> > &b) const {
+
   b[end - 1].first = lp_ft;
   b[end - 1].second = lp_bt;
-  
+
   for (size_t k = end - 1; k > start; --k) {
     size_t i = k - 1;
     const double fg_a = fg_distro.log_likelihood(vals[k], scales[k]) + b[k].first;
@@ -112,7 +113,7 @@ TwoStateScaleHMM::backward_algorithm(const vector<double> &vals,
 
 double
 TwoStateScaleHMM::log_sum_log_vec(const vector<double> &vals, size_t limit) const {
-  const vector<double>::const_iterator x = 
+  const vector<double>::const_iterator x =
     std::max_element(vals.begin(), vals.begin() + limit);
   const double max_val = *x;
   const size_t max_idx = x - vals.begin();
@@ -121,7 +122,7 @@ TwoStateScaleHMM::log_sum_log_vec(const vector<double> &vals, size_t limit) cons
     if (i != max_idx) {
       sum += exp(vals[i] - max_val);
 #ifdef DEBUG
-      assert(finite(sum));
+      assert(isfinite(sum));
 #endif
     }
   }
@@ -131,9 +132,9 @@ TwoStateScaleHMM::log_sum_log_vec(const vector<double> &vals, size_t limit) cons
 
 void
 TwoStateScaleHMM::estimate_emissions(const vector<pair<double, double> > &f,
-				const vector<pair<double, double> > &b,
-				vector<double> &fg_probs,
-				vector<double> &bg_probs) const {
+                                const vector<pair<double, double> > &b,
+                                vector<double> &fg_probs,
+                                vector<double> &bg_probs) const {
   for (size_t i = 0; i < b.size(); ++i) {
     const double fg = (f[i].first + b[i].first);
     const double bg = (f[i].second + b[i].second);
@@ -147,30 +148,30 @@ TwoStateScaleHMM::estimate_emissions(const vector<pair<double, double> > &f,
 void
 TwoStateScaleHMM::estimate_transitions(const vector<double> &vals,
                                   const vector<double> &scales,
-				  const size_t start, const size_t end,
-				  const vector<pair<double, double> > &f,
-				  const vector<pair<double, double> > &b,
-				  const double total,
-				  const Distro &fg_distro,
-				  const Distro &bg_distro,
-				  const double lp_ff, const double lp_fb,
-				  const double lp_bf, const double lp_bb,
-				  const double lp_ft, const double lp_bt,
-				  vector<double> &ff_vals,
-				  vector<double> &fb_vals,
-				  vector<double> &bf_vals,
-				  vector<double> &bb_vals) const {
-  
+                                  const size_t start, const size_t end,
+                                  const vector<pair<double, double> > &f,
+                                  const vector<pair<double, double> > &b,
+                                  const double total,
+                                  const Distro &fg_distro,
+                                  const Distro &bg_distro,
+                                  const double lp_ff, const double lp_fb,
+                                  const double lp_bf, const double lp_bb,
+                                  const double lp_ft, const double lp_bt,
+                                  vector<double> &ff_vals,
+                                  vector<double> &fb_vals,
+                                  vector<double> &bf_vals,
+                                  vector<double> &bb_vals) const {
+
     for (size_t i = start + 1; i < end; ++i)
     {
         const size_t k = i - 1;
-        
+
         const double lp_fg = fg_distro.log_likelihood(vals[i], scales[i]) - total;
         const double lp_bg = bg_distro.log_likelihood(vals[i], scales[i]) - total;
-        
+
         ff_vals[k] = f[k].first + lp_ff + lp_fg + b[i].first;
         fb_vals[k] = f[k].first + lp_fb + lp_bg + b[i].second;
-        
+
         bf_vals[k] = f[k].second + lp_bf + lp_fg + b[i].first;
         bb_vals[k] = f[k].second + lp_bb + lp_bg + b[i].second;
     }
@@ -179,20 +180,20 @@ TwoStateScaleHMM::estimate_transitions(const vector<double> &vals,
 double
 TwoStateScaleHMM::single_iteration(const vector<double> &values,
                               const vector<double> &scales,
-			      const vector<size_t> &reset_points,
-			      vector<pair<double, double> > &forward,
-			      vector<pair<double, double> > &backward,
-			      double &p_sf, double &p_sb,
-			      double &p_ff, double &p_fb, double &p_ft,
-			      double &p_bf, double &p_bb, double &p_bt,
-			      Distro &fg_distro,
-			      Distro &bg_distro) const {
-  
+                              const vector<size_t> &reset_points,
+                              vector<pair<double, double> > &forward,
+                              vector<pair<double, double> > &backward,
+                              double &p_sf, double &p_sb,
+                              double &p_ff, double &p_fb, double &p_ft,
+                              double &p_bf, double &p_bb, double &p_bt,
+                              Distro &fg_distro,
+                              Distro &bg_distro) const {
+
   vector<double> log_fg_expected;
   vector<double> log_bg_expected;
-  
+
   double total_score = 0;
-  
+
   const double lp_sf = log(p_sf);
   const double lp_sb = log(p_sb);
   const double lp_ff = log(p_ff);
@@ -201,49 +202,49 @@ TwoStateScaleHMM::single_iteration(const vector<double> &values,
   const double lp_bf = log(p_bf);
   const double lp_bb = log(p_bb);
   const double lp_bt = log(p_bt);
-  
-  assert(finite(lp_sf) && finite(lp_sb) && 
-	 finite(lp_ff) && finite(lp_fb) && finite(lp_ft) && 
-	 finite(lp_bf) && finite(lp_bb) && finite(lp_bt));
+
+  assert(isfinite(lp_sf) && isfinite(lp_sb) &&
+         isfinite(lp_ff) && isfinite(lp_fb) && isfinite(lp_ft) &&
+         isfinite(lp_bf) && isfinite(lp_bb) && isfinite(lp_bt));
 
   // for estimating transitions
   vector<double> ff_vals(values.size(), 0);
   vector<double> fb_vals(values.size(), 0);
   vector<double> bf_vals(values.size(), 0);
   vector<double> bb_vals(values.size(), 0);
-  
+
   for (size_t i = 0; i < reset_points.size() - 1; ++i) {
       const double score = forward_algorithm(values, scales,
-					   reset_points[i], 
-					   reset_points[i + 1],
-					   lp_sf, lp_sb,
-					   lp_ff, lp_fb, lp_ft,
-					   lp_bf, lp_bb, lp_bt,
-					   fg_distro, bg_distro, forward);
-    const double backward_score = 
+                                           reset_points[i],
+                                           reset_points[i + 1],
+                                           lp_sf, lp_sb,
+                                           lp_ff, lp_fb, lp_ft,
+                                           lp_bf, lp_bb, lp_bt,
+                                           fg_distro, bg_distro, forward);
+    const double backward_score =
         backward_algorithm(values, scales,
-			 reset_points[i], 
-			 reset_points[i + 1],
-			 lp_sf, lp_sb,
-			 lp_ff, lp_fb, lp_ft,
-			 lp_bf, lp_bb, lp_bt,
-			 fg_distro, bg_distro, backward);
-    
+                         reset_points[i],
+                         reset_points[i + 1],
+                         lp_sf, lp_sb,
+                         lp_ff, lp_fb, lp_ft,
+                         lp_bf, lp_bb, lp_bt,
+                         fg_distro, bg_distro, backward);
+
     if (DEBUG && (fabs(score - backward_score)/
-		  max(score, backward_score)) > 1e-10)
+                  max(score, backward_score)) > 1e-10)
       cerr << "fabs(score - backward_score)/"
-	   << "max(score, backward_score) > 1e-10" << endl;
-    
+           << "max(score, backward_score) > 1e-10" << endl;
+
     estimate_transitions(values, scales,
-			 reset_points[i], 
-			 reset_points[i + 1],
-			 forward, backward,
-			 score, 
-			 fg_distro, bg_distro,
-			 lp_ff, lp_fb, lp_bf, 
-			 lp_bb, lp_ft, lp_bt,
-			 ff_vals, fb_vals,
-			 bf_vals, bb_vals);
+                         reset_points[i],
+                         reset_points[i + 1],
+                         forward, backward,
+                         score,
+                         fg_distro, bg_distro,
+                         lp_ff, lp_fb, lp_bf,
+                         lp_bb, lp_ft, lp_bt,
+                         ff_vals, fb_vals,
+                         bf_vals, bb_vals);
 
     total_score += score;
   }
@@ -267,27 +268,27 @@ TwoStateScaleHMM::single_iteration(const vector<double> &values,
 //   const double p_bf_new_estimate = exp(log_sum_log_vec(bf_vals, values.size() - 1));
 //   const double p_bb_new_estimate = exp(log_sum_log_vec(bb_vals, values.size() - 1));
 
-  
+
   double denom = (p_ff_new_estimate + p_fb_new_estimate);
   p_ff = p_ff_new_estimate/denom - p_ft/2.0;
   p_fb = p_fb_new_estimate/denom - p_ft/2.0;
-  
+
   if (p_ff < MIN_PROB) {
     if (DEBUG)
       cerr << "p_ff < MIN_PROB" << endl;
     p_ff = MIN_PROB;
   }
-  
+
   if (p_fb < MIN_PROB) {
     if (DEBUG)
       cerr << "p_fb < MIN_PROB" << endl;
     p_fb = MIN_PROB;
   }
-  
+
   denom = (p_bf_new_estimate + p_bb_new_estimate);
   p_bf = p_bf_new_estimate/denom - p_bt/2.0;
   p_bb = p_bb_new_estimate/denom - p_bt/2.0;
-  
+
   if (p_bf < MIN_PROB) {
     if (DEBUG)
       cerr << "p_bf < MIN_PROB" << endl;
@@ -304,10 +305,10 @@ TwoStateScaleHMM::single_iteration(const vector<double> &values,
   vector<double> fg_probs(values.size());
   vector<double> bg_probs(values.size());
   estimate_emissions(forward, backward, fg_probs, bg_probs);
-  
+
   fg_distro.estimate_params_ml(values, scales, fg_probs);
   bg_distro.estimate_params_ml(values, scales, bg_probs);
-  
+
   return total_score;
 }
 
@@ -315,52 +316,52 @@ TwoStateScaleHMM::single_iteration(const vector<double> &values,
 double
 TwoStateScaleHMM::BaumWelchTraining(const std::vector<double> &values,
                                const std::vector<double> &scales,
-			       const std::vector<size_t> &reset_points,
-			       vector<double> &start_trans,
-			       vector<vector<double> > &trans, 
-			       vector<double> &end_trans,
-			       Distro &fg_distro,
-			       Distro &bg_distro) const {
-  
+                               const std::vector<size_t> &reset_points,
+                               vector<double> &start_trans,
+                               vector<vector<double> > &trans,
+                               vector<double> &end_trans,
+                               Distro &fg_distro,
+                               Distro &bg_distro) const {
+
   assert(start_trans.size() >= 2);
   assert(end_trans.size() >= 2);
   assert(trans.size() >= 2);
   for (size_t i = 0; i < trans.size(); ++i)
     assert(trans[i].size() >= 2);
-  
+
   return BaumWelchTraining(values, scales, reset_points,
-			   start_trans[0], start_trans[1],
-			   trans[0][0], trans[0][1], end_trans[0],
-			   trans[1][0], trans[1][1], end_trans[1],
-			   fg_distro, bg_distro);
+                           start_trans[0], start_trans[1],
+                           trans[0][0], trans[0][1], end_trans[0],
+                           trans[1][0], trans[1][1], end_trans[1],
+                           fg_distro, bg_distro);
 }
 
 double
 TwoStateScaleHMM::BaumWelchTraining(const vector<double> &values,
                                const vector<double> &scales,
-			       const vector<size_t> &reset_points,
-			       double &p_sf, double &p_sb,
-			       double &p_ff, double &p_fb, double &p_ft,
-			       double &p_bf, double &p_bb, double &p_bt,
-			       Distro &fg_distro,
-			       Distro &bg_distro) const {
-  
+                               const vector<size_t> &reset_points,
+                               double &p_sf, double &p_sb,
+                               double &p_ff, double &p_fb, double &p_ft,
+                               double &p_bf, double &p_bb, double &p_bt,
+                               Distro &fg_distro,
+                               Distro &bg_distro) const {
+
   vector<pair<double, double> > forward(values.size(), pair<double, double>(0, 0));
   vector<pair<double, double> > backward(values.size(), pair<double, double>(0, 0));
-  
+
   if (VERBOSE)
     cout << setw(5)  << "ITR"
-    	 << setw(10) << "F size"
-    	 << setw(10) << "B size"
-    	 << setw(18) << "F PARAMS"
-    	 << setw(18) << "B PARAMS"
-    	 << setw(14) << "DELTA"
-    	 << endl;
-  
+         << setw(10) << "F size"
+         << setw(10) << "B size"
+         << setw(18) << "F PARAMS"
+         << setw(18) << "B PARAMS"
+         << setw(14) << "DELTA"
+         << endl;
+
   double prev_total = -std::numeric_limits<double>::max();
-  
+
   for (size_t i = 0; i < max_iterations; ++i) {
-    
+
     double p_sf_est = p_sf;
     double p_sb_est = p_sb;
     double p_ff_est = p_ff;
@@ -369,31 +370,31 @@ TwoStateScaleHMM::BaumWelchTraining(const vector<double> &values,
     double p_bb_est = p_bb;
     double p_ft_est = p_ft;
     double p_bt_est = p_bt;
-    
+
     double total = single_iteration(values, scales,
-				    reset_points,
-				    forward, backward,
-				    p_sf_est, p_sb_est,
-				    p_ff_est, p_fb_est, p_ft_est,
-				    p_bf_est, p_bb_est, p_bt_est,
-				    fg_distro, bg_distro);
-    
+                                    reset_points,
+                                    forward, backward,
+                                    p_sf_est, p_sb_est,
+                                    p_ff_est, p_fb_est, p_ft_est,
+                                    p_bf_est, p_bb_est, p_bt_est,
+                                    fg_distro, bg_distro);
+
     if ((prev_total - total)/prev_total < tolerance) {
       if (VERBOSE)
-	cout << "CONVERGED" << endl << endl;
+        cout << "CONVERGED" << endl << endl;
       break;
     }
-    
+
     if (VERBOSE) {
       cout << setw(5) << i + 1
-	   << setw(10) << 1/p_fb_est
-	   << setw(10) << 1/p_bf_est
-	   << setw(18) << fg_distro.tostring()
-	   << setw(18) << bg_distro.tostring()
-	   << setw(14) << (prev_total - total)/prev_total
-	   << endl;
+           << setw(10) << 1/p_fb_est
+           << setw(10) << 1/p_bf_est
+           << setw(18) << fg_distro.tostring()
+           << setw(18) << bg_distro.tostring()
+           << setw(14) << (prev_total - total)/prev_total
+           << endl;
     }
-    
+
     p_sf = p_sf_est;
     p_sb = p_sb_est;
     p_ff = p_ff_est;
@@ -411,43 +412,43 @@ TwoStateScaleHMM::BaumWelchTraining(const vector<double> &values,
 void
 TwoStateScaleHMM::PosteriorScores(const vector<double> &values,
                              const vector<double> &scales,
-			     const vector<size_t> &reset_points,
-			     const vector<double> &start_trans,
-			     const vector<vector<double> > &trans, 
-			     const vector<double> &end_trans,
-			     const Distro &fg_distro,
-			     const Distro &bg_distro,
-			     const vector<bool> &classes,
-			     vector<double> &llr_scores) const {
+                             const vector<size_t> &reset_points,
+                             const vector<double> &start_trans,
+                             const vector<vector<double> > &trans,
+                             const vector<double> &end_trans,
+                             const Distro &fg_distro,
+                             const Distro &bg_distro,
+                             const vector<bool> &classes,
+                             vector<double> &llr_scores) const {
 
   assert(start_trans.size() >= 2);
   assert(end_trans.size() >= 2);
   assert(trans.size() >= 2);
   for (size_t i = 0; i < trans.size(); ++i)
     assert(trans[i].size() >= 2);
-  
+
   return PosteriorScores(values, scales, reset_points,
-			 start_trans[0], start_trans[1],
-			 trans[0][0], trans[0][1], end_trans[0],
-			 trans[1][0], trans[1][1], end_trans[1],
-			 fg_distro, bg_distro, classes, llr_scores);
+                         start_trans[0], start_trans[1],
+                         trans[0][0], trans[0][1], end_trans[0],
+                         trans[1][0], trans[1][1], end_trans[1],
+                         fg_distro, bg_distro, classes, llr_scores);
 }
 
 
 void
 TwoStateScaleHMM::PosteriorScores(const vector<double> &values,
                              const vector<double> &scales,
-			     const vector<size_t> &reset_points,
-			     double p_sf, double p_sb,
-			     double p_ff, double p_fb, double p_ft,
-			     double p_bf, double p_bb, double p_bt,
-			     const Distro &fg_distro,
-			     const Distro &bg_distro,
-			     const vector<bool> &classes,
-			     vector<double> &llr_scores) const {
+                             const vector<size_t> &reset_points,
+                             double p_sf, double p_sb,
+                             double p_ff, double p_fb, double p_ft,
+                             double p_bf, double p_bb, double p_bt,
+                             const Distro &fg_distro,
+                             const Distro &bg_distro,
+                             const vector<bool> &classes,
+                             vector<double> &llr_scores) const {
 
   double total_score = 0;
-  
+
   const double lp_sf = log(p_sf);
   const double lp_sb = log(p_sb);
   const double lp_ff = log(p_ff);
@@ -456,40 +457,40 @@ TwoStateScaleHMM::PosteriorScores(const vector<double> &values,
   const double lp_bf = log(p_bf);
   const double lp_bb = log(p_bb);
   const double lp_bt = log(p_bt);
-  
-  assert(finite(lp_sf) && finite(lp_sb) && 
-	 finite(lp_ff) && finite(lp_fb) && finite(lp_ft) && 
-	 finite(lp_bf) && finite(lp_bb) && finite(lp_bt));
+
+  assert(isfinite(lp_sf) && isfinite(lp_sb) &&
+         isfinite(lp_ff) && isfinite(lp_fb) && isfinite(lp_ft) &&
+         isfinite(lp_bf) && isfinite(lp_bb) && isfinite(lp_bt));
 
   vector<pair<double, double> > forward(values.size(), pair<double, double>(0, 0));
   vector<pair<double, double> > backward(values.size(), pair<double, double>(0, 0));
 
   for (size_t i = 0; i < reset_points.size() - 1; ++i) {
       const double score = forward_algorithm(values, scales,
-					   reset_points[i],
-					   reset_points[i + 1],
-					   lp_sf, lp_sb,
-					   lp_ff, lp_fb, lp_ft,
-					   lp_bf, lp_bb, lp_bt,
-					   fg_distro, bg_distro, forward);
-    
-    const double backward_score = 
+                                           reset_points[i],
+                                           reset_points[i + 1],
+                                           lp_sf, lp_sb,
+                                           lp_ff, lp_fb, lp_ft,
+                                           lp_bf, lp_bb, lp_bt,
+                                           fg_distro, bg_distro, forward);
+
+    const double backward_score =
         backward_algorithm(values, scales,
-			 reset_points[i],
-			 reset_points[i + 1],
-			 lp_sf, lp_sb,
-			 lp_ff, lp_fb, lp_ft,
-			 lp_bf, lp_bb, lp_bt,
-			 fg_distro, bg_distro, backward);
-    
+                         reset_points[i],
+                         reset_points[i + 1],
+                         lp_sf, lp_sb,
+                         lp_ff, lp_fb, lp_ft,
+                         lp_bf, lp_bb, lp_bt,
+                         fg_distro, bg_distro, backward);
+
     if (DEBUG && (fabs(score - backward_score)/
-		  max(score, backward_score)) > 1e-10)
+                  max(score, backward_score)) > 1e-10)
       cerr << "fabs(score - backward_score)/"
-	   << "max(score, backward_score) > 1e-10" << endl;
+           << "max(score, backward_score) > 1e-10" << endl;
 
     total_score += score;
   }
-  
+
   llr_scores.resize(values.size());
   for (size_t i = 0; i < values.size(); ++i) {
     const double fg_state = forward[i].first + backward[i].first;
@@ -504,44 +505,44 @@ TwoStateScaleHMM::PosteriorScores(const vector<double> &values,
 void
 TwoStateScaleHMM::PosteriorScores(const vector<double> &values,
                              const vector<double> &scales,
-			     const vector<size_t> &reset_points,
-			     const vector<double> &start_trans,
-			     const vector<vector<double> > &trans, 
-			     const vector<double> &end_trans,
-			     const Distro &fg_distro,
-			     const Distro &bg_distro,
-			     const bool fg_class,
-			     vector<double> &llr_scores) const {
-  
+                             const vector<size_t> &reset_points,
+                             const vector<double> &start_trans,
+                             const vector<vector<double> > &trans,
+                             const vector<double> &end_trans,
+                             const Distro &fg_distro,
+                             const Distro &bg_distro,
+                             const bool fg_class,
+                             vector<double> &llr_scores) const {
+
   assert(start_trans.size() >= 2);
   assert(end_trans.size() >= 2);
   assert(trans.size() >= 2);
   for (size_t i = 0; i < trans.size(); ++i)
     assert(trans[i].size() >= 2);
-  
+
   return PosteriorScores(values, scales, reset_points,
-			 start_trans[0], start_trans[1],
-			 trans[0][0], trans[0][1], end_trans[0],
-			 trans[1][0], trans[1][1], end_trans[1],
-			 fg_distro, bg_distro, fg_class, llr_scores);
+                         start_trans[0], start_trans[1],
+                         trans[0][0], trans[0][1], end_trans[0],
+                         trans[1][0], trans[1][1], end_trans[1],
+                         fg_distro, bg_distro, fg_class, llr_scores);
 }
 
 
 void
 TwoStateScaleHMM::PosteriorScores(const vector<double> &values,
                              const vector<double> &scales,
-			     const vector<size_t> &reset_points,
-			     double p_sf, double p_sb,
-			     double p_ff, double p_fb, double p_ft,
-			     double p_bf, double p_bb, double p_bt,
-			     const Distro &fg_distro,
-			     const Distro &bg_distro,
-			     const bool fg_class,
-			     vector<double> &llr_scores) const {
-  
+                             const vector<size_t> &reset_points,
+                             double p_sf, double p_sb,
+                             double p_ff, double p_fb, double p_ft,
+                             double p_bf, double p_bb, double p_bt,
+                             const Distro &fg_distro,
+                             const Distro &bg_distro,
+                             const bool fg_class,
+                             vector<double> &llr_scores) const {
+
 
   double total_score = 0;
-  
+
   const double lp_sf = log(p_sf);
   const double lp_sb = log(p_sb);
   const double lp_ff = log(p_ff);
@@ -550,40 +551,40 @@ TwoStateScaleHMM::PosteriorScores(const vector<double> &values,
   const double lp_bf = log(p_bf);
   const double lp_bb = log(p_bb);
   const double lp_bt = log(p_bt);
-  
-  assert(finite(lp_sf) && finite(lp_sb) && 
-	 finite(lp_ff) && finite(lp_fb) && finite(lp_ft) && 
-	 finite(lp_bf) && finite(lp_bb) && finite(lp_bt));
+
+  assert(isfinite(lp_sf) && isfinite(lp_sb) &&
+         isfinite(lp_ff) && isfinite(lp_fb) && isfinite(lp_ft) &&
+         isfinite(lp_bf) && isfinite(lp_bb) && isfinite(lp_bt));
 
   vector<pair<double, double> > forward(values.size(), pair<double, double>(0, 0));
   vector<pair<double, double> > backward(values.size(), pair<double, double>(0, 0));
 
   for (size_t i = 0; i < reset_points.size() - 1; ++i) {
       const double score = forward_algorithm(values, scales,
-					   reset_points[i],
-					   reset_points[i + 1],
-					   lp_sf, lp_sb,
-					   lp_ff, lp_fb, lp_ft,
-					   lp_bf, lp_bb, lp_bt,
-					   fg_distro, bg_distro, forward);
-    
-    const double backward_score = 
+                                           reset_points[i],
+                                           reset_points[i + 1],
+                                           lp_sf, lp_sb,
+                                           lp_ff, lp_fb, lp_ft,
+                                           lp_bf, lp_bb, lp_bt,
+                                           fg_distro, bg_distro, forward);
+
+    const double backward_score =
         backward_algorithm(values, scales,
-			 reset_points[i],
-			 reset_points[i + 1],
-			 lp_sf, lp_sb,
-			 lp_ff, lp_fb, lp_ft,
-			 lp_bf, lp_bb, lp_bt,
-			 fg_distro, bg_distro, backward);
-    
+                         reset_points[i],
+                         reset_points[i + 1],
+                         lp_sf, lp_sb,
+                         lp_ff, lp_fb, lp_ft,
+                         lp_bf, lp_bb, lp_bt,
+                         fg_distro, bg_distro, backward);
+
     if (DEBUG && (fabs(score - backward_score)/
-		  max(score, backward_score)) > 1e-10)
+                  max(score, backward_score)) > 1e-10)
       cerr << "fabs(score - backward_score)/"
-	   << "max(score, backward_score) > 1e-10" << endl;
+           << "max(score, backward_score) > 1e-10" << endl;
 
     total_score += score;
   }
-  
+
   llr_scores.resize(values.size());
   for (size_t i = 0; i < values.size(); ++i) {
     const double fg_state = forward[i].first + backward[i].first;
@@ -598,44 +599,44 @@ TwoStateScaleHMM::PosteriorScores(const vector<double> &values,
 void
 TwoStateScaleHMM::TransitionPosteriors(const vector<double> &values,
                                   const vector<double> &scales,
-				  const vector<size_t> &reset_points,
-				  const vector<double> &start_trans,
-				  const vector<vector<double> > &trans, 
-				  const vector<double> &end_trans,
-				  const Distro &fg_distro,
-				  const Distro &bg_distro,
-				  const size_t transition,
-				  vector<double> &llr_scores) const {
-  
+                                  const vector<size_t> &reset_points,
+                                  const vector<double> &start_trans,
+                                  const vector<vector<double> > &trans,
+                                  const vector<double> &end_trans,
+                                  const Distro &fg_distro,
+                                  const Distro &bg_distro,
+                                  const size_t transition,
+                                  vector<double> &llr_scores) const {
+
   assert(start_trans.size() >= 2);
   assert(end_trans.size() >= 2);
   assert(trans.size() >= 2);
   for (size_t i = 0; i < trans.size(); ++i)
     assert(trans[i].size() >= 2);
-  
+
   return TransitionPosteriors(values, scales, reset_points,
-			      start_trans[0], start_trans[1],
-			      trans[0][0], trans[0][1], end_trans[0],
-			      trans[1][0], trans[1][1], end_trans[1],
-			      fg_distro, bg_distro, transition, llr_scores);
+                              start_trans[0], start_trans[1],
+                              trans[0][0], trans[0][1], end_trans[0],
+                              trans[1][0], trans[1][1], end_trans[1],
+                              fg_distro, bg_distro, transition, llr_scores);
 }
 
 
 void
 TwoStateScaleHMM::TransitionPosteriors(const vector<double> &values,
                                   const std::vector<double> &scales,
-				  const vector<size_t> &reset_points,
-				  double p_sf, double p_sb,
-				  double p_ff, double p_fb, double p_ft,
-				  double p_bf, double p_bb, double p_bt,
-				  const Distro &fg_distro,
-				  const Distro &bg_distro,
-				  const size_t transition,
-				  vector<double> &scores) const {
-  
+                                  const vector<size_t> &reset_points,
+                                  double p_sf, double p_sb,
+                                  double p_ff, double p_fb, double p_ft,
+                                  double p_bf, double p_bb, double p_bt,
+                                  const Distro &fg_distro,
+                                  const Distro &bg_distro,
+                                  const size_t transition,
+                                  vector<double> &scores) const {
+
 
   double total_score = 0;
-  
+
   const double lp_sf = log(p_sf);
   const double lp_sb = log(p_sb);
   const double lp_ff = log(p_ff);
@@ -644,39 +645,39 @@ TwoStateScaleHMM::TransitionPosteriors(const vector<double> &values,
   const double lp_bf = log(p_bf);
   const double lp_bb = log(p_bb);
   const double lp_bt = log(p_bt);
-  
-  assert(finite(lp_sf) && finite(lp_sb) && 
-	 finite(lp_ff) && finite(lp_fb) && finite(lp_ft) && 
-	 finite(lp_bf) && finite(lp_bb) && finite(lp_bt));
-  
+
+  assert(isfinite(lp_sf) && isfinite(lp_sb) &&
+         isfinite(lp_ff) && isfinite(lp_fb) && isfinite(lp_ft) &&
+         isfinite(lp_bf) && isfinite(lp_bb) && isfinite(lp_bt));
+
   vector<pair<double, double> > forward(values.size(), pair<double, double>(0, 0));
   vector<pair<double, double> > backward(values.size(), pair<double, double>(0, 0));
-  
+
   for (size_t i = 0; i < reset_points.size() - 1; ++i) {
       const double score = forward_algorithm(values, scales,
-					   reset_points[i],
-					   reset_points[i + 1],
-					   lp_sf, lp_sb,
-					   lp_ff, lp_fb, lp_ft,
-					   lp_bf, lp_bb, lp_bt,
-					   fg_distro, bg_distro, forward);
-    
-    const double backward_score = 
+                                           reset_points[i],
+                                           reset_points[i + 1],
+                                           lp_sf, lp_sb,
+                                           lp_ff, lp_fb, lp_ft,
+                                           lp_bf, lp_bb, lp_bt,
+                                           fg_distro, bg_distro, forward);
+
+    const double backward_score =
         backward_algorithm(
             values, scales,
             reset_points[i], reset_points[i + 1],
             lp_sf, lp_sb, lp_ff, lp_fb, lp_ft,
             lp_bf, lp_bb, lp_bt,
             fg_distro, bg_distro, backward);
-    
+
     if (DEBUG && (fabs(score - backward_score)/
-		  max(score, backward_score)) > 1e-10)
+                  max(score, backward_score)) > 1e-10)
       cerr << "fabs(score - backward_score)/"
-	   << "max(score, backward_score) > 1e-10" << endl;
+           << "max(score, backward_score) > 1e-10" << endl;
 
     total_score += score;
   }
-  
+
   scores.resize(values.size());
   size_t j = 0;
   for (size_t i = 0; i < values.size(); ++i) {
@@ -686,23 +687,23 @@ TwoStateScaleHMM::TransitionPosteriors(const vector<double> &values,
     }
     else {
       const double fg_to_fg_state = forward[i - 1].first + lp_ff + // transition
-	// emission for value i + 1
+        // emission for value i + 1
           fg_distro.log_likelihood(values[i], scales[i]) + backward[i].first;
-      const double fg_to_bg_state = forward[i - 1].first + lp_fb + 
-	bg_distro.log_likelihood(values[i], scales[i]) + backward[i].second;
-      const double bg_to_fg_state = forward[i - 1].second + lp_bf + 
-	fg_distro.log_likelihood(values[i], scales[i]) + backward[i].first;
-      const double bg_to_bg_state = forward[i - 1].second + lp_bb + 
-	bg_distro.log_likelihood(values[i], scales[i]) + backward[i].second;
+      const double fg_to_bg_state = forward[i - 1].first + lp_fb +
+        bg_distro.log_likelihood(values[i], scales[i]) + backward[i].second;
+      const double bg_to_fg_state = forward[i - 1].second + lp_bf +
+        fg_distro.log_likelihood(values[i], scales[i]) + backward[i].first;
+      const double bg_to_bg_state = forward[i - 1].second + lp_bb +
+        bg_distro.log_likelihood(values[i], scales[i]) + backward[i].second;
       const double denom = log_sum_log(log_sum_log(fg_to_fg_state, fg_to_bg_state),
-				       log_sum_log(bg_to_fg_state, bg_to_bg_state));
+                                       log_sum_log(bg_to_fg_state, bg_to_bg_state));
       double numerator = fg_to_fg_state;
       if (transition == 1)
-	numerator = fg_to_bg_state;
+        numerator = fg_to_bg_state;
       if (transition == 2)
-	numerator = bg_to_fg_state;
+        numerator = bg_to_fg_state;
       if (transition == 3)
-	numerator = bg_to_bg_state;
+        numerator = bg_to_bg_state;
       scores[i] = exp(numerator - denom);
     }
   }
@@ -712,43 +713,43 @@ TwoStateScaleHMM::TransitionPosteriors(const vector<double> &values,
 double
 TwoStateScaleHMM::PosteriorDecoding(const vector<double> &values,
                                const std::vector<double> &scales,
-			       const vector<size_t> &reset_points,
-			       const vector<double> &start_trans,
-			       const vector<vector<double> > &trans, 
-			       const vector<double> &end_trans,
-			       const Distro &fg_distro,
-			       const Distro &bg_distro,
-			       vector<bool> &classes,
-			       vector<double> &llr_scores) const {
-  
+                               const vector<size_t> &reset_points,
+                               const vector<double> &start_trans,
+                               const vector<vector<double> > &trans,
+                               const vector<double> &end_trans,
+                               const Distro &fg_distro,
+                               const Distro &bg_distro,
+                               vector<bool> &classes,
+                               vector<double> &llr_scores) const {
+
   assert(start_trans.size() >= 2);
   assert(end_trans.size() >= 2);
   assert(trans.size() >= 2);
   for (size_t i = 0; i < trans.size(); ++i)
     assert(trans[i].size() >= 2);
-  
+
   return PosteriorDecoding(values, scales, reset_points,
-			   start_trans[0], start_trans[1],
-			   trans[0][0], trans[0][1], end_trans[0],
-			   trans[1][0], trans[1][1], end_trans[1],
-			   fg_distro, bg_distro, classes, llr_scores);
+                           start_trans[0], start_trans[1],
+                           trans[0][0], trans[0][1], end_trans[0],
+                           trans[1][0], trans[1][1], end_trans[1],
+                           fg_distro, bg_distro, classes, llr_scores);
 }
 
 
 double
 TwoStateScaleHMM::PosteriorDecoding(const vector<double> &values,
                                const std::vector<double> &scales,
-			       const vector<size_t> &reset_points,
-			       double p_sf, double p_sb,
-			       double p_ff, double p_fb, double p_ft,
-			       double p_bf, double p_bb, double p_bt,
-			       const Distro &fg_distro,
-			       const Distro &bg_distro,
-			       vector<bool> &classes,
-			       vector<double> &llr_scores) const {
-  
+                               const vector<size_t> &reset_points,
+                               double p_sf, double p_sb,
+                               double p_ff, double p_fb, double p_ft,
+                               double p_bf, double p_bb, double p_bt,
+                               const Distro &fg_distro,
+                               const Distro &bg_distro,
+                               vector<bool> &classes,
+                               vector<double> &llr_scores) const {
+
   double total_score = 0;
-  
+
   const double lp_sf = log(p_sf);
   const double lp_sb = log(p_sb);
   const double lp_ff = log(p_ff);
@@ -757,40 +758,40 @@ TwoStateScaleHMM::PosteriorDecoding(const vector<double> &values,
   const double lp_bf = log(p_bf);
   const double lp_bb = log(p_bb);
   const double lp_bt = log(p_bt);
-  
-  assert(finite(lp_sf) && finite(lp_sb) && 
-	 finite(lp_ff) && finite(lp_fb) && finite(lp_ft) && 
-	 finite(lp_bf) && finite(lp_bb) && finite(lp_bt));
+
+  assert(isfinite(lp_sf) && isfinite(lp_sb) &&
+         isfinite(lp_ff) && isfinite(lp_fb) && isfinite(lp_ft) &&
+         isfinite(lp_bf) && isfinite(lp_bb) && isfinite(lp_bt));
 
   vector<pair<double, double> > forward(values.size(), pair<double, double>(0, 0));
   vector<pair<double, double> > backward(values.size(), pair<double, double>(0, 0));
 
   for (size_t i = 0; i < reset_points.size() - 1; ++i) {
       const double score = forward_algorithm(values, scales,
-					   reset_points[i],
-					   reset_points[i + 1],
-					   lp_sf, lp_sb,
-					   lp_ff, lp_fb, lp_ft,
-					   lp_bf, lp_bb, lp_bt,
-					   fg_distro, bg_distro, forward);
-    
-    const double backward_score = 
+                                           reset_points[i],
+                                           reset_points[i + 1],
+                                           lp_sf, lp_sb,
+                                           lp_ff, lp_fb, lp_ft,
+                                           lp_bf, lp_bb, lp_bt,
+                                           fg_distro, bg_distro, forward);
+
+    const double backward_score =
         backward_algorithm(values, scales,
-			 reset_points[i],
-			 reset_points[i + 1],
-			 lp_sf, lp_sb,
-			 lp_ff, lp_fb, lp_ft,
-			 lp_bf, lp_bb, lp_bt,
-			 fg_distro, bg_distro, backward);
-    
+                         reset_points[i],
+                         reset_points[i + 1],
+                         lp_sf, lp_sb,
+                         lp_ff, lp_fb, lp_ft,
+                         lp_bf, lp_bb, lp_bt,
+                         fg_distro, bg_distro, backward);
+
     if (DEBUG && (fabs(score - backward_score)/
-		  max(score, backward_score)) > 1e-10)
+                  max(score, backward_score)) > 1e-10)
       cerr << "fabs(score - backward_score)/"
-	   << "max(score, backward_score) > 1e-10" << endl;
+           << "max(score, backward_score) > 1e-10" << endl;
 
     total_score += score;
   }
-  
+
   classes.resize(values.size());
   llr_scores.resize(values.size());
   for (size_t i = 0; i < values.size(); ++i) {
@@ -799,9 +800,9 @@ TwoStateScaleHMM::PosteriorDecoding(const vector<double> &values,
     const double denom = log_sum_log(fg_state, bg_state);
     classes[i] = static_cast<bool>(fg_state > bg_state);
     llr_scores[i] =
-        classes[i] ? exp(fg_state - denom) : exp(bg_state - denom); 
+        classes[i] ? exp(fg_state - denom) : exp(bg_state - denom);
   }
-  
+
   return total_score;
 }
 
@@ -817,25 +818,25 @@ TwoStateScaleHMM::PosteriorDecoding(const vector<double> &values,
 double
 TwoStateScaleHMM::ViterbiDecoding(const vector<double> &values,
                              const std::vector<double> &scales,
-			     const vector<size_t> &reset_points,
-			     const vector<double> &start_trans,
-			     const vector<vector<double> > &trans, 
-			     const vector<double> &end_trans,
-			     const Distro &fg_distro,
-			     const Distro &bg_distro,
-			     vector<bool> &classes) const {
-  
+                             const vector<size_t> &reset_points,
+                             const vector<double> &start_trans,
+                             const vector<vector<double> > &trans,
+                             const vector<double> &end_trans,
+                             const Distro &fg_distro,
+                             const Distro &bg_distro,
+                             vector<bool> &classes) const {
+
   assert(start_trans.size() >= 2);
   assert(end_trans.size() >= 2);
   assert(trans.size() >= 2);
   for (size_t i = 0; i < trans.size(); ++i)
     assert(trans[i].size() >= 2);
-  
+
   return ViterbiDecoding(values, scales, reset_points,
-			 start_trans[0], start_trans[1],
-			 trans[0][0], trans[0][1], end_trans[0],
-			 trans[1][0], trans[1][1], end_trans[1],
-			 fg_distro, bg_distro, classes);
+                         start_trans[0], start_trans[1],
+                         trans[0][0], trans[0][1], end_trans[0],
+                         trans[1][0], trans[1][1], end_trans[1],
+                         fg_distro, bg_distro, classes);
 }
 
 
@@ -843,14 +844,14 @@ TwoStateScaleHMM::ViterbiDecoding(const vector<double> &values,
 double
 TwoStateScaleHMM::ViterbiDecoding(const vector<double> &values,
                              const std::vector<double> &scales,
-			     const vector<size_t> &reset_points,
-			     double p_sf, double p_sb,
-			     double p_ff, double p_fb, double p_ft,
-			     double p_bf, double p_bb, double p_bt,
-			     const Distro &fg_distro,
-			     const Distro &bg_distro,
-			     vector<bool> &ml_classes) const {
-  
+                             const vector<size_t> &reset_points,
+                             double p_sf, double p_sb,
+                             double p_ff, double p_fb, double p_ft,
+                             double p_bf, double p_bb, double p_bt,
+                             const Distro &fg_distro,
+                             const Distro &bg_distro,
+                             vector<bool> &ml_classes) const {
+
   const double lp_sf = log(p_sf);
   const double lp_sb = log(p_sb);
   const double lp_ff = log(p_ff);
@@ -859,24 +860,24 @@ TwoStateScaleHMM::ViterbiDecoding(const vector<double> &values,
   const double lp_bf = log(p_bf);
   const double lp_bb = log(p_bb);
   const double lp_bt = log(p_bt);
-  
+
   // ml_classes = vector<bool>(values.size());
   double total = 0;
   for (size_t i = 0; i < reset_points.size() - 1; ++i) {
 
       const size_t start = reset_points[i];
       const size_t lim = reset_points[i + 1] - start;
-    
+
       vector<pair<double, double> > v(lim, pair<double, double>(0, 0));
       vector<pair<size_t, size_t> > trace(lim, pair<size_t, size_t>(0, 0));
-    
+
       v.front().first =
           lp_sf + fg_distro.log_likelihood(values[start], scales[start]);
       v.front().second =
           lp_sb + bg_distro.log_likelihood(values[start], scales[start]);
 
       for (size_t j = 1; j < lim; ++j) {
-      
+
           const double ff = v[j - 1].first + lp_ff;
           const double bf = v[j - 1].second + lp_bf;
           const double fg_log_emmit =
@@ -889,10 +890,10 @@ TwoStateScaleHMM::ViterbiDecoding(const vector<double> &values,
               v[j].first = fg_log_emmit + bf;
               trace[j].first = 1;
           }
-          
+
           const double fb = v[j - 1].first + lp_fb;
           const double bb = v[j - 1].second + lp_bb;
-          const double bg_log_emmit = 
+          const double bg_log_emmit =
               bg_distro.log_likelihood(values[start + j], scales[start + j]);
           if (fb > bb) {
               v[j].second = bg_log_emmit + fb;
@@ -905,9 +906,9 @@ TwoStateScaleHMM::ViterbiDecoding(const vector<double> &values,
       }
       v.back().first += lp_ft;
       v.back().second += lp_bt;
-    
+
       vector<bool> inner_ml_classes;
-    
+
       // do the traceback
       size_t prev = 0;
       if (v.back().first > v.back().second) {
@@ -918,7 +919,7 @@ TwoStateScaleHMM::ViterbiDecoding(const vector<double> &values,
           inner_ml_classes.push_back(false);
           prev = trace.back().second;
       }
-    
+
       for (size_t j = trace.size() - 1; j > 0; --j) {
           const size_t k = j - 1;
           if (prev == 0) {
@@ -932,11 +933,11 @@ TwoStateScaleHMM::ViterbiDecoding(const vector<double> &values,
       }
 
       reverse(inner_ml_classes.begin(), inner_ml_classes.end());
-      ml_classes.insert(ml_classes.end(), inner_ml_classes.begin(), 
+      ml_classes.insert(ml_classes.end(), inner_ml_classes.begin(),
                         inner_ml_classes.end());
-    
+
       total += max(v.back().first, v.back().second);
   }
-  
+
   return total;
 }
