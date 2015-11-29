@@ -7,7 +7,8 @@
 
 \newcommand{\supth}{{\mathrm{th}}}
 
-\title{RSEG Manual}
+\title{RSEG Manual \\
+Version 0.4.9}
 \author{Qiang Song \and Andrew Smith}
 
 \begin{document}
@@ -29,7 +30,7 @@ two cell types or between two kinds of histone modifications.
 \subsection*{Download}
 
 RSEG, including pre-compiled binary files and source code, is
-available at \url{http://smithlab.cmb.usc.edu/histone/rseg/}.
+available at \url{http://smithlabresearch.org/software/rseg/}.
 
 \subsection*{System Requirement}
 
@@ -41,7 +42,7 @@ Collection (GCC) is necessary if you want to compile by yourself.
 If you compile from source code, download the source code and
 decompress it with
 \begin{verbatim}
- $ tar exfz rseg-v0.0.0.tar.gz
+ $ tar exfz rseg-0.4.9.tar.gz
 \end{verbatim}
 %
 Enter the rseg directory, run
@@ -70,7 +71,7 @@ iterations for Baum training. The last parameter is a BED file that
 contains mapped reads in sorted order. You can add -v to show more
 information.
 \begin{verbatim}
-$ rseg -c mouse-mm9-size.bed -o $PWD -i 20  -v  ES.K36.bed
+$ rseg -c mouse-mm9-size.bed -o ES.K36-domains.bed -i 20  -v  ES.K36.bed
 \end{verbatim}
 
 \paragraph{deadzone correction:}
@@ -80,7 +81,7 @@ of deadzones with -d option. Use the appropriate genome assembly and
 read length (see Section \ref{sec:deadzone} for more information about
 deadzones)
 \begin{verbatim}
-$ rseg -c mouse-mm9-size.bed -o $PWD -i 20 -d deadzone-mm9-k27.bed 
+$ rseg -c mouse-mm9-size.bed -o ES.K36-domains.bed -i 20 -d deadzone-mm9-k27.bed 
 ES.K36.bed -v
 \end{verbatim}
 
@@ -95,7 +96,7 @@ To work with a control sample, use \textit{rseg-diff} with the option
 can be used similarly with \textit{rseg}. \textit{rseg-diff} assumes that first
 input file is test sample and the second input file is control sample.
 \begin{verbatim}
-$ rseg-diff -c mouse-mm9-size.bed -o $PWD -i 20 -v -mode 2
+$ rseg-diff -c mouse-mm9-size.bed -o ES.K36-WCE-domains.bed -i 20 -v -mode 2
 -d deadzone-mm9-k27.bed ES.K36.bed ES.WCE-control.bed
 \end{verbatim}
 
@@ -104,23 +105,23 @@ To compare the histone modification pattern of two sample, use
 \textit{rseg-diff} with \textbf{-mode 3}. Most of the options above, such as bin size,
 deadzone, etc, can be used similarly with \textit{rseg}.
 \begin{verbatim}
-$ rseg-diff -c human-hg18-size.bed -o $PWD -i 20 -v -mode 3 
+$ rseg-diff -c human-hg18-size.bed -o CD133.K36-CD36-domains.bed -i 20 -v -mode 3 
 -d deadzone-hg18-k25.bed CD133.K36.bed CD36.K36.bed
 \end{verbatim}
 
 \section{File Format}
 \label{sec:file-format}
 
-RSEG works with
-\href{http://genome.ucsc.edu/FAQ/FAQformat.html#format1}{BED} used in
-UCSC Genome Browser as both input format and output format. If you use
-alternative mapping format produced from ELAND, MAQ, bowtie, etc, you
-need first to convert it to BED format. Hopefully you know how :-),
-otherwise you may would like to look at the
+RSEG works with \href{http://genome.ucsc.edu/FAQ/FAQformat.html#format1}{BED}
+used in UCSC Genome Browser as both input format and output format. RSEG can
+also take input reads file in \href{https://github.com/samtools/samtools}{SAM
+  and BAM} format If you use alternative mapping format produced from ELAND, MAQ,
+bowtie, etc, you need first to convert it to BED format. Hopefully you know how
+:-), otherwise you may would like to look at the
 \href{http://sourceforge.net/apps/mediawiki/vancouvershortr/index.php?title=ConvertToBed}
-{ConvertToBed} utility provided by
-\href{http://sourceforge.net/projects/vancouvershortr/}{Vancouver
-  Short Read Analysis Package}.
+     {ConvertToBed} utility provided by
+     \href{http://sourceforge.net/projects/vancouvershortr/}{Vancouver Short
+       Read Analysis Package}.
 
 
 \subsection{Input file format}
@@ -128,9 +129,10 @@ otherwise you may would like to look at the
 
 \paragraph{Mapped read file:} The input file containing mapped reads
 is of the format of a 6-column
-\href{http://genome.ucsc.edu/FAQ/FAQformat.html#format1}{BED}
-file. Further the reads in input file should be sorted (see
-\ref{sec:sortbed} for how to sort reads file).
+\href{http://genome.ucsc.edu/FAQ/FAQformat.html#format1}{BED} file or in the BAM
+format. The reads in input file should be sorted by chromosome name, starting
+position, ending position and strand (see \ref{sec:sortbed} for how to sort
+reads file).
 
 \paragraph{Chromosome size file:} Both \textit{rseg} and
 \textit{rseg-diff} requires an input file that specifies the size of
@@ -419,7 +421,7 @@ chr1&    3003504& 3005256& 0&       0&       0.680365&        0\\
 \subsection*{Download}
 
 RSEG, including pre-compiled binary files and source code, is
-available at \url{http://smithlab.cmb.usc.edu/histone/rseg/}.
+available at \url{http://smithlabresearch.org/software/rseg/}.
 
 \subsection*{System Requirement}
 
@@ -431,7 +433,7 @@ Compilation Collection (GCC) if you want to compile by yourself.
 If you would like to compile from source code, download the source
 code and decompress it with
 \begin{verbatim}
- $ tar exfz rseg-v0.0.0.tar.gz
+ $ tar exfz rseg-0.4.9.tar.gz
 \end{verbatim}
 %
 Enter the rseg directory, run
@@ -457,27 +459,30 @@ single test sample.
 \item[-help] Print a usage message briefly summarizing these
   command-line options and basic usage, then exit.
 \item[-v, -verbose] Print more information when the program is running
-\item[Options to format output]
-\item[-o, -output-dir] This option gives the output directory for
-  \textit{rseg}. \textit{rseg} write output files to current working
-  directory by default.
-\item[-boundary] This option enables the program to compute the
-  properties of domain boundaries and output the result
-\item[-tracks] This option enables the program to output the
-  posterior probabilities and posterior transition probabilities bin
-  by bin in two separate files
-\item[-read-counts-requested] This option enables the program to
-  output a file containing read counts for each bin.  
-\item[-name] Common prefix to file name of the output
-  files. Default value is obtained by truncating extension name from
-the input file
+\item[Options to control output]
+\item[-o, -out] This option gives the output file containing enriched domains.
+\item[-score] This option specifies the output file containing the posterior
+  probabilities in each bin
+\item[-readcount] This option specifies the output file containing read counts
+  in each bin.
+\item[-boundary] This option specifies the output file containing domain
+  boundaries and their properties
+\item[-boundary-score] This option specifies the output file containing the
+  posterior transition probabilities at each bin
+\item[-param-out] This options specifies the output file containing model
+  parameters after training. This file can be used later for reviewing or
+  initialize other runs
 \item[Required input files and options]
 \item[input file] This file contains mapped reads from a
   ChIP-seq experiment and should be sorted.
 \item[-c, -chrom] A BED file specifies the size of chromosomes for
   analysis
-\item[-d, -deadzone-file] This options specifies the name of deadzone
+\item[-d, -deadzones] This options specifies the name of deadzone
   file
+\item[-B, -bam] If given, this option indicates that the input read file in BAM
+  format
+\item[-param-in] This options specifies the input file containing initial model
+  parameters (see -param-out option).
 \item[Options to fine tune the method]
 \item[-i, -iteration] The maximum number of iterations for HMM
   training
@@ -485,7 +490,7 @@ the input file
   the program. Larger value speeds up the computation but may reduce
   the resolution of the domains. The default value is computed based
   on total read counts and the effective genome size.
-\item[-bin-size-step] Intial bin size when reading in raw reads
+\item[-bin-step] Intial bin size when reading in raw reads
   (default 50bp). The bigger this value, the less memory usage
 \item[-Waterman] If the -bin-size option is not specified, use
   Waterman's asymptotic formula to select bin size
@@ -498,11 +503,13 @@ the input file
   size selection is smooth. By default it is true. However when
   analyzing more localized marks, you may want to use option to change
   the default settings
-\item[-max-deadzone-prop] Maximum deadzone proportion allowed for
+\item[-max-dead] Maximum deadzone proportion allowed for
   retained bins
-\item[-not-remove-jackpot] Do not remove duplicate reads
+\item[-duplicates] Keep duplicate reads
+\item[-fragment\_length] An interger to indicate fragmetn length. If given, RSEG
+  extends reads to the given length (default not to extend)
 \item[-s, -domain-size] Expected size of domain (Default 20000) 
-\item[-S, -desert-size] This option gives an integer value so that if
+\item[-S, -desert] This option gives an integer value so that if
   the size of a deadzone is larger than this value, the deadzone is
   ignored from subsequent analysis
 \item[-F, -fg] The emission distribution used in the program to model
@@ -517,8 +524,8 @@ the input file
 \item[-posterior-cutoff] Posterior threshold for signigicant
   bins. Possible values range is [0.5, 1.0). The large this value is,
   the more significant the identified domains are
-\item[-undef-region-cutoff] The minimum size of an undetermined region
-\item[-cdf-cutoff] Possible values is (0, 1.0). The large this value
+\item[-undefined] The minimum size of an undetermined region
+\item[-cutoff] Possible values is (0, 1.0). The large this value
   is, the more significant the identified domains are. This value is
   the minimum value that accumulative probability that a random
   varible from the foreground distribution if smaller than the mean
@@ -539,26 +546,32 @@ cell types with the same histone modifcation.
 \item[-help] Print a usage message briefly summarizing these
   command-line options and basic usage, then exit.
 \item[-v, -verbose] Print more information when the program is running
-\item[Options to format output]
-\item[-o, -output-dir] This option gives the output directory for
-  \textit{rseg}. \textit{rseg} write output files to current working
-  directory by default.
-\item[-boundary] This option enables the program to compute the
-  properties of domain boundaries and output the result
-\item[-tracks] This option enables the program to output the
-  posterior probabilities and posterior transition probabilities bin
-  by bin in two separate files
-\item[-read-counts-requested] This option enables the program to
-  output a file containing read counts for each bin.  
-\item[-name] Common prefix to file name of the output
-  files. Default value is obtained by truncating extension name from
-the input file
+\item[Options to control output]
+\item[-o, -out] This option gives the output file containing enriched domains
+  (-mode 2) or differential domains (-mode 3).
+\item[-score] This option specifies the output file containing the posterior
+  probabilities in each bin
+\item[-readcount] This option specifies the output file containing read counts
+  in each bin.
+\item[-boundary] This option specifies the output file containing domain
+  boundaries and their properties
+\item[-boundary-score] This option specifies the output file containing the
+  posterior transition probabilities at each bin
+\item[-param-out] This options specifies the output file containing model
+  parameters after training. This file can be used later for reviewing or
+  initialize other runs
 \item[Required input files and options]
 \item[input files] \textit{rseg-diff} requires two input files. In
   Mode 2, these two files are a input file and a control file. In Mode
-  3, this two files are from two samples  
+  3, this two files are from two samples
 \item[-c, -chrom] A BED file specifies the size of chromosomes for
   analysis
+\item[-d, -deadzones] This options specifies the name of deadzone
+  file
+\item[-B, -bam] If given, this option indicates that the input read file in BAM
+  format
+\item[-param-in] This options specifies the input file containing initial model
+  parameters (see -param-out option).
 \item[Options to fine tune the method]
 \item[-m, -mode] This option specifies the mode the program is used
   for. Possible values are \textbf{2} and \textbf{3}. Mode 2 is used
@@ -570,7 +583,7 @@ the input file
   the program. Larger value speeds up the computation but may reduce
   the resolution of the domains. The default value is computed based
   on total read counts and the effective genome size.
-\item[-bin-size-step] Intial bin size when reading in raw reads
+\item[-bin-step] Intial bin size when reading in raw reads
   (default 50bp). The bigger this value, the less memory usage
 \item[-Waterman] If the -bin-size option is not specified, use
   Waterman's asymptotic formula to select bin size
@@ -583,11 +596,12 @@ the input file
   size selection is smooth. By default it is true. However when
   analyzing more localized marks, you may want to use option to change
   the default settings
-\item[-max-deadzone-prop] Maximum deadzone proportion allowed for
-  retained bins
-\item[-not-remove-jackpot] Do not remove duplicate reads
+\item[-max-dead] Maximum deadzone proportion allowed for retained bins
+\item[-duplicates] Keep duplicate reads
+ \item[-fragment\_length] An interger to indicate fragmetn length. If given,
+   RSEG extends reads to the given length (default not to extend)
 \item[-s, -domain-size] Expected size of domain (Default 20000) 
-\item[-S, -desert-size] This option gives an integer value so that if
+\item[-S, -desert] This option gives an integer value so that if
   the size of a deadzone is larger than this value, the deadzone is
   ignored from subsequent analysis
 \item[-F, -fg] The emission distribution used in the program to model
@@ -596,19 +610,22 @@ the input file
   \textbf{gauss} (Gaussian distribution). The default value is
   \textbf{nbdiff}.The other two distributions may be less accurate but
   faster.
-\item[-B, -bg] Same as \textbf{-F, -fg} 
+\item[-B, -bg] Same as \textbf{-F, -fg}
+\item[-training-size] Max number of data points (bins) for training (default:
+  all). Model training is time consuming when running Mode 3. This option allows
+  you to specify an integer to control how many bins are used for model training
 \item[-P, -posterior] This option enables the program use posterior
   decoding instead of Viterbi decoding. The program use posterior
   decoding by default
 \item[-posterior-cutoff] Posterior threshold for signigicant
   bins. Possible values range is [0.5, 1.0). The large this value is,
   the more significant the identified domains are
-\item[-cdf-cutoff] Possible values is (0, 1.0). The large this value
+\item[-cutoff] Possible values is (0, 1.0). The large this value
   is, the more significant the identified domains are. This value is
   the minimum value that accumulative probability that a random
   varible from the foreground distribution if smaller than the mean
   read count for.
-\item[-undef-region-cutoff] The minimum size of an undetermined region
+\item[-undefined] The minimum size of an undetermined region
 \end{description}
 
 
@@ -625,7 +642,7 @@ analyzing epigenomic domains.
 done with standard UNIX \textit{sort} tool as following:
 \begin{verbatim}
 $ export LC_ALL=C
-$ sort -k1,1 -k3,3n -k2,2n -k6,6 -o sorted.bed input.bed
+$ sort -k1,1 -k2,2n -k3,3n -k6,6 -o sorted.bed input.bed
 \end{verbatim}
 Note that we need to set the locale of the shell environment to the C
 programming language locale. 
