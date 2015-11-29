@@ -63,13 +63,12 @@ Here are some examples using RSEG. For complete usage, type \textbf{rseg
 \label{sec:use-rseg}
 
 \paragraph{Basic usage:} 
-To find the functinoal domains for certain histone modification
-markers without control sample, use the program \textit{rseg}. Use -o the
-directory where the output is writen to; use -c to specify the file
-listing the size of chromosomes; user -i to specif number of
-iterations for Baum training. The last parameter is a BED file that
-contains mapped reads in sorted order. You can add -v to show more
-information.
+To find the functinoal domains for certain histone modification markers without
+control sample, use the program \textit{rseg}. Use -o to specify the output file
+with enriched domains; use -c to specify the file listing the size of
+chromosomes; user -i to specif number of iterations for Baum training. The last
+parameter is a BED file that contains mapped reads in sorted order. You can add
+-v to show more information.
 \begin{verbatim}
 $ rseg -c mouse-mm9-size.bed -o ES.K36-domains.bed -i 20  -v  ES.K36.bed
 \end{verbatim}
@@ -83,6 +82,23 @@ deadzones)
 \begin{verbatim}
 $ rseg -c mouse-mm9-size.bed -o ES.K36-domains.bed -i 20 -d deadzone-mm9-k27.bed 
 ES.K36.bed -v
+\end{verbatim}
+
+\paragraph{Request additional output:}
+The default output of RSEG is the domain output file. You can also request
+additional output files, such as read counts in bins and postterior
+probabilities file, by specifying additional output options. The example below
+shows how to request additional output files. For details, please see Section
+\ref{sec:usage-detail}.
+\begin{verbatim}
+$ rseg -c mouse-mm9-size.bed  -i 20 -v \
+    -d deadzone-mm9-k27.bed \
+    -o ES.K36-domains.bed \
+    -score ES.K36-scores.wig \
+    -readcount ES.K36-counts.bed \
+    -boundary ES.K36-boundaries.bed \
+    -boundary-score ES.K36-boundary-scores.wig \
+    ES.K36.bed
 \end{verbatim}
 
 
