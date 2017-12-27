@@ -431,7 +431,7 @@ main(int argc, const char **argv) {
     else
     {
       if (VERBOSE)
-        cout << "[ESTIMATIN PARAMETERS]" << endl;
+        cout << "[ESTIMATING PARAMETERS]" << endl;
     
 
       distros.push_back(Distro(fg_name));
