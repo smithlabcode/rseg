@@ -24,7 +24,7 @@
 
 #include <string>
 #include "GenomicRegion.hpp"
-#include "sam.h"
+#include <htslib/sam.h>
 
 class BAMFile
 {
@@ -41,20 +41,21 @@ public:
     void
     close();
 
-    bool 
+    bool
     good() const {return GOOD;}
 
-    friend BAMFile& 
+    friend BAMFile&
     operator>>(BAMFile& in, SimpleGenomicRegion& region);
 
-    friend BAMFile& 
+    friend BAMFile&
     operator>>(BAMFile& in, GenomicRegion& region);
 
 private:
     std::string filename;
     std::string mode;
 
-    samfile_t*  file_handler;
+    htsFile*  file_handler;
+    bam_hdr_t *hdr;
     bool GOOD;
 };
 

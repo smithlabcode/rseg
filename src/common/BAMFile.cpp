@@ -24,61 +24,67 @@
 
 #include "GenomicRegion.hpp"
 #include "BAMFile.hpp"
-#include "sam.h"
+#include <htslib/sam.h>
 
 using std::string;
 using std::cerr;
 using std::endl;
 
 BAMFile::BAMFile()
-    : filename(""), mode(""), file_handler(NULL), GOOD(false) 
-{
+    : filename(""), mode(""), file_handler(NULL), hdr(NULL), GOOD(false) {
 }
 
 BAMFile::BAMFile(const std::string &f,
                  const std::string &m)
-    : filename(f), mode(m)
-{
+    : filename(f), mode(m) {
     if (mode.empty())
     {
         const string ext_name = filename.substr(filename.find_last_of('.'));
         mode = ext_name == ".bam" ? "rb" : "r";
     }
-    
-    if ((file_handler = samopen(filename.c_str(), mode.c_str(), NULL))
+
+    if ((file_handler = hts_open(filename.c_str(), mode.c_str()))
         == NULL)
     {
         cerr << "Fail to open SAM/BAM file " << filename << endl;
         exit(-1);
     }
+    if (!(hdr = sam_hdr_read(file_handler))) {
+      cerr << "Failed to read SAM/BAM header on file " << filename << endl;
+      exit(-1);
+    }
+
     GOOD = true;
 }
 
-BAMFile::~BAMFile()
-{
+BAMFile::~BAMFile() {
     close();
 }
 
 void
 BAMFile::open(const std::string &f,
-              const std::string &m)
-{
+              const std::string &m) {
     filename = f;
     mode = m;
-    
+
     if (mode.empty())
     {
         const string ext_name = filename.substr(filename.find_last_of('.'));
         mode = ext_name == ".bam" ? "rb" : "r";
     }
 
-    if ((file_handler = samopen(filename.c_str(), mode.c_str(), NULL))
+    if ((file_handler = hts_open(filename.c_str(), mode.c_str()))
         == NULL)
     {
         cerr << "Fail to open SAM/BAM file " << filename << endl;
         GOOD = false;
         exit(-1);
     }
+    if (!(hdr = sam_hdr_read(file_handler))) {
+      cerr << "Failed to read SAM/BAM header on file " << filename << endl;
+      exit(-1);
+    }
+
     GOOD = true;
 }
 
@@ -87,24 +93,28 @@ BAMFile::close()
 {
     if (file_handler)
     {
-        samclose(file_handler);
+        hts_close(file_handler);
         file_handler = NULL;
         filename = "";
         mode = "";
         GOOD = false;
     }
+    if (hdr)
+    {
+        bam_hdr_destroy(hdr);
+        hdr = NULL;
+    }
 }
-
 
 BAMFile&
 operator>>(BAMFile& in, SimpleGenomicRegion& region)
 {
     bam1_t * algn_p = bam_init1();
 
-    if (samread(in.file_handler, algn_p) >= 0)
+    if (sam_read1(in.file_handler, in.hdr, algn_p) >= 0)
     {
         const bam1_core_t *c = &algn_p->core;
-        uint32_t *cigar = bam1_cigar(algn_p);
+        uint32_t *cigar = bam_get_cigar(algn_p);
         size_t len = 0;
         for (size_t i = 0; i < c->n_cigar; ++i)
         {
@@ -112,28 +122,27 @@ operator>>(BAMFile& in, SimpleGenomicRegion& region)
             if (op == BAM_CMATCH || op == BAM_CDEL || op == BAM_CREF_SKIP)
                 len += cigar[i]>>4;
         }
-        
-        region.set_chrom(in.file_handler->header->target_name[c->tid]);
+
+        region.set_chrom(in.hdr->target_name[c->tid]);
         region.set_start(c->pos);
         region.set_end(c->pos + len);
     }
     else
         in.GOOD = false;
-    
+
     bam_destroy1(algn_p);
-    
+
     return in;
 }
 
-BAMFile& 
+BAMFile&
 operator>>(BAMFile& in, GenomicRegion& region)
 {
     bam1_t * algn_p = bam_init1();
 
-    if (samread(in.file_handler, algn_p) >= 0)
-    {
+    if (sam_read1(in.file_handler, in.hdr, algn_p) >= 0) {
         const bam1_core_t *c = &algn_p->core;
-        uint32_t *cigar = bam1_cigar(algn_p);
+        uint32_t *cigar = bam_get_cigar(algn_p);
         size_t len = 0;
         for (size_t i = 0; i < c->n_cigar; ++i)
         {
@@ -142,17 +151,16 @@ operator>>(BAMFile& in, GenomicRegion& region)
                 len += cigar[i]>>4;
         }
 
-        region.set_chrom(in.file_handler->header->target_name[c->tid]);
+        region.set_chrom(in.hdr->target_name[c->tid]);
         region.set_start(c->pos);
         region.set_end(c->pos + len);
-        region.set_name(bam1_qname(algn_p));
-        region.set_score(c->qual);                       
-        region.set_strand(c->flag & BAM_FREVERSE ? '-' : '+'); 
+        region.set_name(bam_get_qname(algn_p));
+        region.set_score(c->qual);
+        region.set_strand(c->flag & BAM_FREVERSE ? '-' : '+');
     }
     else
         in.GOOD = false;
-    
+
     bam_destroy1(algn_p);
-    
     return in;
 }
