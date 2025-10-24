@@ -1,0 +1,3 @@
+[submodule "src/bamxx"]
+	path = src/bamxx
+	url = git@github.com:smithlabcode/bamxx
