@@ -23,12 +23,12 @@
 #define TWO_STATE_RESOLVE_MIXTURE_HPP
 
 #include "Distro.hpp"
+
 void
-TwoStateResolveMixture(
-    const std::vector<double> &values,
-    const std::vector<double> &scales,
-    const size_t max_iterations, 
-    const double tolerance, int VERBOSE,
-    Distro &fg_distro, Distro &bg_distro, double &mixing);
+TwoStateResolveMixture(const std::vector<double> &values,
+                       const std::vector<double> &scales,
+                       const size_t max_iterations, const double tolerance,
+                       int VERBOSE, Distro &fg_distro, Distro &bg_distro,
+                       double &mixing);
 
 #endif
