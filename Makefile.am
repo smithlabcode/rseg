@@ -28,7 +28,6 @@ EXTRA_DIST = \
 
 noinst_LIBRARIES = librseg.a
 librseg_a_SOURCES = \
-	src/common/BAMFile.cpp \
 	src/common/Distro.cpp \
 	src/common/EvaluateBoundaries.cpp \
 	src/common/LoadReadsByRegion.cpp \
@@ -47,48 +46,30 @@ librseg_a_SOURCES = \
 	src/common/TwoStateScaleSplitHMM.cpp \
 	src/common/TwoStateScaleSplitResolveMixture.cpp
 
-# librseg_a_SOURCES += \
-# 	src/bamxx/bamxx.hpp \
-#         src/common/rseg_gaussinv.hpp \
-# 	src/common/bam_record_utils.hpp \
-# 	src/common/counts_header.hpp \
-# 	src/common/xcounts_utils.hpp \
-#         src/common/BetaBin.hpp \
-#         src/common/EmissionDistribution.hpp \
-#         src/common/Epiread.hpp \
-#         src/common/EpireadStats.hpp \
-#         src/common/LevelsCounter.hpp \
-#         src/common/MSite.hpp \
-#         src/common/Smoothing.hpp \
-#         src/common/ThreeStateHMM.hpp \
-#         src/common/TwoStateHMM.hpp \
-#         src/common/TwoStateHMM_PMD.hpp \
-#         src/common/bsutils.hpp \
-#         src/common/numerical_utils.hpp \
-#         src/common/rseg_utils.hpp \
-#         src/common/dnmt_error.hpp
-
-# ADS: additional radmeth sources to help isolate the parts using GSL for
-# optimization
 librseg_a_SOURCES += \
-        src/radmeth/radmeth_optimize_series.hpp \
-        src/radmeth/radmeth_optimize_gamma.hpp \
-        src/radmeth/radmeth_optimize_params.hpp \
-        src/radmeth/radmeth_model.hpp \
-        src/radmeth/radmeth_lgamma.hpp \
-        src/radmeth/radmeth_utils.hpp \
-        src/radmeth/radmeth_design.hpp
+	src/common/bam_record_utils.hpp \
+	src/common/Distro.hpp \
+	src/common/EvaluateBoundaries.hpp \
+	src/common/LoadReadsByRegion.hpp \
+	src/common/ModelParams.hpp \
+	src/common/numerical_utils.hpp \
+	src/common/ReadCounts.hpp \
+	src/common/rseg_utils.hpp \
+	src/common/SelectBinSize.hpp \
+	src/common/Smoothing.hpp \
+	src/common/SortGenomicRegion.hpp \
+	src/common/SplitDistro.hpp \
+	src/common/ThreeStateScaleSplitHMM.hpp \
+	src/common/ThreeStateScaleSplitResolveMixture.hpp \
+	src/common/TwoStateScaleHMM.hpp \
+	src/common/TwoStateScaleResolveMixture.hpp \
+	src/common/TwoStateScaleSplitHMM.hpp \
+	src/common/TwoStateScaleSplitResolveMixture.hpp
 
 LDADD = librseg.a src/smithlab_cpp/libsmithlab_cpp.a
 
-bin_PROGRAMS = rseg
+bin_PROGRAMS = rseg rseg-diff deadzones
 
 rseg_SOURCES = src/rseg/rseg.cpp
-
-## ADS: these are the files output by the test scripts. They can be
-## identified by doing:
-##
-## grep "^outfile" test_scripts/*.test
-##
-# CLEANFILES = \
-#     tests/tests.testout
+rseg_diff_SOURCES = src/rseg/rseg-diff.cpp
+deadzones_SOURCES = src/rseg/deadzones.cpp
