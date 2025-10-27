@@ -22,18 +22,16 @@
 #define READ_COUNTS_HPP
 
 #include <vector>
-#include "GenomicRegion.hpp"
 
+struct SimpleGenomicRegion;
 
 void
 AdjustBinSize(const std::vector<double> &old_read_bins,
               const std::vector<double> &old_nondead_scales,
               const std::vector<size_t> &old_reset_points,
-              const size_t old_bin_size,
-              std::vector<double>  &read_bins,
-              std::vector<double>  &nondead_scales,
-              std::vector<size_t> &reset_points,
-              const size_t bin_size);
+              const size_t old_bin_size, std::vector<double> &read_bins,
+              std::vector<double> &nondead_scales,
+              std::vector<size_t> &reset_points, const size_t bin_size);
 
 void
 GetCorrectedReadCounts(const std::vector<double> &read_bins,
@@ -45,26 +43,22 @@ void
 AdjustBinSize(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
               std::vector<double> &old_read_bins,
               std::vector<double> &old_nondead_scales,
-              std::vector<size_t> &old_reset_points,
-              const size_t old_bin_size,
+              std::vector<size_t> &old_reset_points, const size_t old_bin_size,
               const size_t bin_size);
 
 void
 RemoveDeserts(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
               std::vector<double> &old_read_bins,
               std::vector<double> &old_nondead_scales,
-              std::vector<size_t> &old_reset_points,
-              const size_t bin_size,
-              const size_t desert_size,
-              const double max_dead_proportion);
+              std::vector<size_t> &old_reset_points, const size_t bin_size,
+              const size_t desert_size, const double max_dead_proportion);
 
 void
 AdjustBinSize(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
               std::vector<double> &old_read_bins_a,
               std::vector<double> &old_read_bins_b,
               std::vector<double> &old_nondead_scales,
-              std::vector<size_t> &old_reset_points,
-              const size_t old_bin_size,
+              std::vector<size_t> &old_reset_points, const size_t old_bin_size,
               const size_t bin_size);
 
 void
@@ -72,8 +66,6 @@ RemoveDeserts(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
               std::vector<double> &old_read_bins_a,
               std::vector<double> &old_read_bins_b,
               std::vector<double> &old_nondead_scales,
-              std::vector<size_t> &old_reset_points,
-              const size_t bin_size,
-              const size_t desert_size,
-              const double max_dead_proportion);
+              std::vector<size_t> &old_reset_points, const size_t bin_size,
+              const size_t desert_size, const double max_dead_proportion);
 #endif
