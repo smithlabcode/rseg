@@ -22,20 +22,20 @@
 #ifndef TWO_STATE_SCALE_SPLIT_RESOLVE_MIXTURE_HPP
 #define TWO_STATE_SCALE_SPLIT_RESOLVE_MIXTURE_HPP
 
-#include "smithlab_utils.hpp"
-#include "SplitDistro.hpp"
+#include <cstdlib>
+#include <vector>
 
+struct SplitDistro;
+
+// clang-format off
 void
 TwoStateSplitResolveMixture(const std::vector<double> &values,
-			    const std::vector<double> &vals_a,
-			    const std::vector<double> &vals_b,
-                const std::vector<double> &scales,
-			    const size_t max_iterations,
-			    const double tolerance,
-			    int VERBOSE,
-			    SplitDistro &fg_distro,
-			    SplitDistro &bg_distro,
-			    double &mixing);
+                            const std::vector<double> &vals_a,
+                            const std::vector<double> &vals_b,
+                            const std::vector<double> &scales,
+                            const std::size_t max_iterations, const double tolerance,
+                            const bool VERBOSE, SplitDistro &fg_distro,
+                            SplitDistro &bg_distro, double &mixing);
+// clang-format on
 
-
-#endif
+#endif  // TWO_STATE_SCALE_SPLIT_RESOLVE_MIXTURE_HPP
