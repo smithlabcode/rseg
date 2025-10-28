@@ -636,8 +636,7 @@ NegBinomDiffDistro::operator=(const NegBinomDiffDistro &rhs) {
 }
 
 static inline double
-score_first_term(const vector<double> &v_hist, const double mu,
-                 const double alpha) {
+score_first_term(const vector<double> &v_hist, const double alpha) {
   double sum = 0;
   const size_t lim = v_hist.size();
   for (size_t i = 0; i < lim; ++i)
@@ -654,7 +653,7 @@ static inline double
 alpha_score_function(const vector<double> &vals_hist, const double mu,
                      const double alpha, const double vals_count) {
   const double one_plus_alpha_mu = 1 + alpha * mu;
-  return (score_first_term(vals_hist, mu, alpha) / vals_count +
+  return (score_first_term(vals_hist, alpha) / vals_count +
           (log(one_plus_alpha_mu) / alpha - mu) / alpha);
 }
 
@@ -976,8 +975,7 @@ NegBinomDiffDistro::hq_estimate_params_ml(const std::vector<double> &vals_a,
 }
 
 static inline double
-score_fun_first_term(const vector<double> &vals_hist, const double mu,
-                     const double alpha) {
+score_fun_first_term(const vector<double> &vals_hist, const double alpha) {
   double sum = 0;
   for (size_t i = 0; i < vals_hist.size(); ++i)
     if (vals_hist[i] > 0) {
@@ -995,7 +993,7 @@ llh_derivative_rt_alpha(const vector<double> &vals,
                         const vector<double> &probs,
                         const vector<double> &vals_hist, const double mu,
                         const double alpha) {
-  const double first_term = score_fun_first_term(vals_hist, mu, alpha);
+  const double first_term = score_fun_first_term(vals_hist, alpha);
 
   const double mu_times_alpha = mu * alpha;
   const double alpha_inverse = 1 / alpha;
