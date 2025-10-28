@@ -1,18 +1,18 @@
-dnl This file is part of dnmtools
+dnl This file is part of rseg
 dnl
-dnl Copyright (C) 2022-2025: Andrew D. Smith
+dnl Copyright (C) 2025: Andrew D. Smith
 dnl
 dnl Authors: Andrew D. Smith
 dnl
-dnl This is free software: you can redistribute it and/or modify it
-dnl under the terms of the GNU General Public License as published by
-dnl the Free Software Foundation, either version 3 of the License, or
-dnl (at your option) any later version.
+dnl This is free software: you can redistribute it and/or modify it under the
+dnl terms of the GNU General Public License as published by the Free Software
+dnl Foundation, either version 3 of the License, or (at your option) any later
+dnl version.
 dnl
-dnl This software is distributed in the hope that it will be useful,
-dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
-dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-dnl General Public License for more details.
+dnl This software is distributed in the hope that it will be useful, but
+dnl WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+dnl or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+dnl for more details.
 
 AC_INIT([rseg], [2.0.0], [andrewds@usc.edu],
         [rseg], [https://github.com/smithlabcode/rseg])
@@ -30,7 +30,7 @@ AS_IF([test "x$CXXFLAGS_set" != "xset"], [
 ])
 AC_MSG_NOTICE([CXXFLAGS is $CXXFLAGS])
 
-AX_CXX_COMPILE_STDCXX_17([noext], [mandatory])
+AX_CXX_COMPILE_STDCXX(23, [noext], [mandatory])
 AC_PROG_RANLIB
 
 dnl recursively configure smithlab_cpp
