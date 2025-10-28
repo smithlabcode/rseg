@@ -21,6 +21,8 @@
 
 #include "Smoothing.hpp"
 
+#include "smithlab_utils.hpp"
+
 #include <algorithm>
 #include <functional>
 #include <iostream>
@@ -28,23 +30,17 @@
 #include <stdexcept>
 #include <vector>
 
-#include "smithlab_utils.hpp"
-
-using std::bind2nd;
-using std::divides;
-using std::transform;
-using std::vector;
-
-static double
+[[nodiscard]] static double
 Epanechnikov_kernel(double i, double j, double bandwidth) {
   const double u = (j - i) / bandwidth;
   return 0.75 * (1.0 - u * u);
 }
 
 void
-KernelSmoothing(const double bandwidth, const vector<double> &x_vals,
-                const vector<double> &y_vals, const vector<double> &x_target,
-                vector<double> &y_target) {
+KernelSmoothing(const double bandwidth, const std::vector<double> &x_vals,
+                const std::vector<double> &y_vals,
+                const std::vector<double> &x_target,
+                std::vector<double> &y_target) {
   assert(x_vals.size() == y_vals.size());
 
   // allocate the space for the new y vals
@@ -72,13 +68,13 @@ KernelSmoothing(const double bandwidth, const vector<double> &x_vals,
     const size_t lim = x_end - x_start;
 
     // calculate the weights
-    vector<double> weights(lim);
+    std::vector<double> weights(lim);
     for (size_t j = 0; j < lim; ++j)
       weights[j] =
         Epanechnikov_kernel(x_target[i], x_vals[x_start + j], bandwidth);
-    const double weight_sum = accumulate(weights.begin(), weights.end(), 0.0);
-    transform(weights.begin(), weights.end(), weights.begin(),
-              bind2nd(divides<double>(), weight_sum));
+    const double weight_sum = accumulate(cbegin(weights), cend(weights), 0.0);
+    transform(cbegin(weights), cend(weights), begin(weights),
+              [&](const auto x) { return x / weight_sum; });
 
     // apply the weights
     y_target[i] = 0;
@@ -88,8 +84,8 @@ KernelSmoothing(const double bandwidth, const vector<double> &x_vals,
 }
 
 void
-KernelSmoothing(const double bandwidth, const vector<double> &y_vals,
-                vector<double> &y_target) {
+KernelSmoothing(const double bandwidth, const std::vector<double> &y_vals,
+                std::vector<double> &y_target) {
 
   // allocate the space for the new y vals
   y_target.resize(y_vals.size(), 0);
@@ -116,13 +112,13 @@ KernelSmoothing(const double bandwidth, const vector<double> &y_vals,
     const size_t lim = x_end - x_start;
 
     // calculate the weights
-    vector<double> weights(lim);
+    std::vector<double> weights(lim);
     for (size_t j = 0; j < lim; ++j)
       weights[j] = Epanechnikov_kernel(i, x_start + j, bandwidth);
 
-    const double weight_sum = accumulate(weights.begin(), weights.end(), 0.0);
-    transform(weights.begin(), weights.end(), weights.begin(),
-              bind2nd(divides<double>(), weight_sum));
+    const double weight_sum = accumulate(cbegin(weights), cend(weights), 0.0);
+    transform(cbegin(weights), cend(weights), begin(weights),
+              [&](const auto x) { return x / weight_sum; });
 
     // apply the weights
     y_target[i] = 0;
