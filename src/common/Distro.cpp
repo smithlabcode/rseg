@@ -510,8 +510,7 @@ NegBinomDistro::operator=(const NegBinomDistro &rhs) {
 }
 
 static inline double
-score_fun_first_term(const std::vector<double> &vals_hist, const double mu,
-                     const double alpha) {
+score_fun_first_term(const std::vector<double> &vals_hist, const double alpha) {
   double sum = 0;
   for (std::size_t i = 0; i < std::size(vals_hist); ++i)
     if (vals_hist[i] > 0) {
@@ -527,7 +526,7 @@ static inline double
 alpha_score_function(const std::vector<double> &vals_hist, const double mu,
                      const double alpha, const double vals_count) {
   const double one_plus_alpha_mu = 1 + alpha * mu;
-  return (score_fun_first_term(vals_hist, mu, alpha) / vals_count +
+  return (score_fun_first_term(vals_hist, alpha) / vals_count +
           (log(one_plus_alpha_mu) / alpha - mu) / alpha);
 }
 
@@ -653,7 +652,7 @@ llh_derivative_rt_alpha(const std::vector<double> &vals,
                         const std::vector<double> &probs,
                         const std::vector<double> &vals_hist, const double mu,
                         const double alpha) {
-  const double first_term = score_fun_first_term(vals_hist, mu, alpha);
+  const double first_term = score_fun_first_term(vals_hist, alpha);
 
   const double mu_times_alpha = mu * alpha;
   const double alpha_inverse = 1 / alpha;
