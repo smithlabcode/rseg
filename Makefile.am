@@ -20,7 +20,7 @@ SUBDIRS := src/smithlab_cpp
 install installdirs: SUBDIRS := $(filter-out src/smithlab_cpp, $(SUBDIRS))
 AM_CPPFLAGS = -I $(top_srcdir)/src/common -I $(top_srcdir)/src/smithlab_cpp -I $(top_srcdir)/src/bamxx
 
-AM_CXXFLAGS = -Wall -Wextra -Wpedantic -Wno-unknown-attributes
+AM_CXXFLAGS = -Wall -Wextra -Wpedantic
 
 EXTRA_DIST = \
              README.md \
@@ -32,7 +32,6 @@ librseg_a_SOURCES = \
 	src/common/EvaluateBoundaries.cpp \
 	src/common/LoadReadsByRegion.cpp \
 	src/common/ModelParams.cpp \
-	src/common/numerical_utils.cpp \
 	src/common/ReadCounts.cpp \
 	src/common/rseg_utils.cpp \
 	src/common/SelectBinSize.cpp \
@@ -52,7 +51,7 @@ librseg_a_SOURCES += \
 	src/common/EvaluateBoundaries.hpp \
 	src/common/LoadReadsByRegion.hpp \
 	src/common/ModelParams.hpp \
-	src/common/numerical_utils.hpp \
+	src/common/log_sum_log.hpp \
 	src/common/ReadCounts.hpp \
 	src/common/rseg_utils.hpp \
 	src/common/SelectBinSize.hpp \
