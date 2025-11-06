@@ -20,7 +20,7 @@
  */
 
 #include "ThreeStateScaleSplitResolveMixture.hpp"
-#include "numerical_utils.hpp"
+#include "log_sum_log.hpp"
 
 #include <cmath>
 #include <iomanip>
@@ -138,7 +138,7 @@ expectation_step(const std::vector<double> &values,
 
 static void
 maximization_step(
-  const std::vector<double> &values, const std::vector<double> &vals_a,
+  /*const std::vector<double> &values, */ const std::vector<double> &vals_a,
   const std::vector<double> &vals_b, const std::vector<double> &scales,
   const std::vector<double> &fg_probs, const std::vector<double> &mid_probs,
   const std::vector<double> &bg_probs, std::vector<double> &mixing,
@@ -197,7 +197,7 @@ ThreeStateScaleSplitResolveMixture(
     const double score =
       expectation_step(values, scales, mixing, fg_distro, mid_distro, bg_distro,
                        fg_probs, mid_probs, bg_probs);
-    maximization_step(values, vals_a, vals_b, scales, fg_probs, mid_probs,
+    maximization_step(/*values, */ vals_a, vals_b, scales, fg_probs, mid_probs,
                       bg_probs, mixing, fg_distro, mid_distro, bg_distro);
     if (VERBOSE) {
       std::cout << std::setw(10) << std::setprecision(4)
