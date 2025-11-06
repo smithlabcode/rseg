@@ -67,28 +67,24 @@ report_final_values(const std::vector<SplitDistro> &distros,
                     const std::vector<std::vector<double>> &trans);
 
 void
-chk_and_mk_dirs(const std::string &path);
-
-void
 write_read_counts_by_bin(
   const std::vector<std::vector<SimpleGenomicRegion>> &bin_boundaries,
   const std::vector<double> &read_bins, const std::vector<double> &scales,
-  const std::vector<bool> &classes, const std::string &file_name,
-  const bool VERBOSE = false);
+  const std::vector<bool> &classes, const std::string &file_name);
 
 void
 write_read_counts_by_bin(
   const std::vector<std::vector<SimpleGenomicRegion>> &bin_boundaries,
   const std::vector<double> &read_bins, const std::vector<double> &read_bins_a,
   const std::vector<double> &read_bins_b, const std::vector<bool> &classes,
-  const std::string &file_name, const bool VERBOSE = false);
+  const std::string &file_name);
 
 void
 write_read_counts_by_bin(
   const std::vector<std::vector<SimpleGenomicRegion>> &bin_boundaries,
   const std::vector<double> &read_bins, const std::vector<double> &read_bins_a,
   const std::vector<double> &read_bins_b, const std::vector<size_t> &classes,
-  const std::string &file_name, const bool VERBOSE = false);
+  const std::string &file_name);
 
 std::string
 strip_path_and_bed_suffix(const std::string &full_path);
