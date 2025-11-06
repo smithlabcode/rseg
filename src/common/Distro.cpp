@@ -20,9 +20,8 @@
  */
 
 #include "Distro.hpp"
+#include "lgamma.hpp"
 #include "smithlab_utils.hpp"
-
-#include <gsl/gsl_sf_gamma.h>
 
 #include <algorithm>
 #include <cmath>
@@ -34,39 +33,22 @@
 #include <sstream>
 #include <stdexcept>
 
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
 // DISTRO__
 
 double
 Distro_::log_sum_log_vec(const std::vector<double> &vals, std::size_t limit) {
-  const std::vector<double>::const_iterator x =
-    max_element(vals.begin(), vals.begin() + limit);
+  const auto x = std::max_element(std::cbegin(vals), std::cend(vals) + limit);
   const double max_val = *x;
-  const std::size_t max_idx = x - vals.begin();
+  const std::size_t max_idx = x - std::cbegin(vals);
   double sum = 1.0;
-  for (std::size_t i = 0; i < limit; ++i) {
+  for (auto i = 0u; i < limit; ++i) {
     if (i != max_idx) {
-      sum += exp(vals[i] - max_val);
-#ifdef DEBUG
+      sum += std::exp(vals[i] - max_val);
       assert(std::isfinite(sum));
-#endif
     }
   }
-  return max_val + log(sum);
+  return max_val + std::log(sum);
 }
-
-// Distro_::Distro_(const Distro_ &other) :
-//   params(other.params),
-//   workspace_vals(other.workspace_vals),
-//   workspace_probs(other.workspace_probs) {
-//   rng = gsl_rng_clone(other.rng);
-// }
 
 Distro_::Distro_() {}
 
@@ -89,13 +71,13 @@ Distro_::log_likelihood(std::vector<double>::const_iterator a,
                         std::vector<double>::const_iterator b) const {
   double l = 0;
   for (; a < b; ++a)
-    l += this->log_likelihood(*a);
+    l += log_likelihood(*a);
   return l;
 }
 
 double
 Distro_::operator()(const double val) const {
-  return exp(log_likelihood(val));
+  return std::exp(log_likelihood(val));
 }
 
 double
@@ -103,7 +85,7 @@ Distro_::operator()(const std::vector<double> &vals) const {
   const std::size_t lim = std::size(vals);
   double l = 1;
   for (std::size_t i = 0; i < lim; ++i)
-    l *= this->operator()(vals[i]);
+    l *= operator()(vals[i]);
   return l;
 }
 
@@ -112,7 +94,7 @@ Distro_::log_likelihood(const std::vector<double> &vals) const {
   double l = 0;
   const std::size_t lim = std::size(vals);
   for (std::size_t i = 0; i < lim; ++i)
-    l += this->log_likelihood(vals[i]);
+    l += log_likelihood(vals[i]);
   return l;
 }
 
@@ -122,7 +104,7 @@ Distro_::log_likelihood(const std::vector<double> &vals,
   double l = 0;
   const std::size_t lim = std::size(vals);
   for (std::size_t i = 0; i < lim; ++i)
-    l += this->log_likelihood(vals[i], scales[i]);
+    l += log_likelihood(vals[i], scales[i]);
   return l;
 }
 
@@ -257,8 +239,8 @@ Distro::log_sum_log_vec(const std::vector<double> &vals, std::size_t limit) {
 Distro_ *
 distro_factory(std::string name, std::string params) {
   Distro_ *distro;
-  if (name == "exp")
-    distro = new ExpDistro();
+  if (name == "std::exp")
+    distro = new Std::ExpDistro();
   else if (name == "pois")
     distro = new PoisDistro();
   else if (name == "nbd")
@@ -291,8 +273,8 @@ distro_factory(std::string name_arg) {
   const std::string name = name_split.front();
 
   Distro_ *distro;
-  if (name == "exp")
-    distro = new ExpDistro();
+  if (name == "std::exp")
+    distro = new Std::ExpDistro();
   else if (name == "pois")
     distro = new PoisDistro();
   else if (name == "nbd")
@@ -322,36 +304,37 @@ distro_factory(std::string name_arg) {
 ////////////////////////////////////////////////////////////////////////
 
 double
-ExpDistro::log_likelihood(const double val) const {
-  return -log(params[0]) - val / params[0];
+Std::ExpDistro::log_likelihood(const double val) const {
+  return -std::log(params[0]) - val / params[0];
 }
 
 double
-ExpDistro::log_likelihood(const double &val, const double &scale) const {
+Std::ExpDistro::log_likelihood(const double &val, const double &scale) const {
   //// TEST NEEDED
-  return -log(params[0] * scale) - val / params[0] / scale;
+  return -std::log(params[0] * scale) - val / params[0] / scale;
 }
 
-ExpDistro::ExpDistro(const ExpDistro &rhs) : Distro_(rhs.params) {}
+Std::ExpDistro::Std::ExpDistro(const Std::ExpDistro &rhs) :
+  Distro_(rhs.params) {}
 
-ExpDistro &
-ExpDistro::operator=(const ExpDistro &rhs) {
+Std::ExpDistro &
+Std::ExpDistro::operator=(const Std::ExpDistro &rhs) {
   if (this != &rhs) {
-    this->Distro_::params = rhs.Distro_::params;
+    Distro_::params = rhs.Distro_::params;
   }
   return *this;
 }
 
 void
-ExpDistro::estimate_params_ml(const std::vector<double> &vals) {
+Std::ExpDistro::estimate_params_ml(const std::vector<double> &vals) {
   params.front() =
     std::accumulate(vals.begin(), vals.end(), 0.0) / std::size(vals);
 }
 
 void
-ExpDistro::estimate_params_ml(const std::vector<double> &vals,
-                              const std::vector<double> &scales,
-                              const std::vector<double> &probs) {
+Std::ExpDistro::estimate_params_ml(const std::vector<double> &vals,
+                                   const std::vector<double> &scales,
+                                   const std::vector<double> &probs) {
   std::vector<double> values(vals.begin(), vals.end());
   for (std::size_t i = 0; i < std::size(values); ++i)
     values[i] /= scales[i];
@@ -362,19 +345,19 @@ ExpDistro::estimate_params_ml(const std::vector<double> &vals,
 }
 
 void
-ExpDistro::estimate_params_ml(const std::vector<double> &vals,
-                              const std::vector<double> &probs) {
+Std::ExpDistro::estimate_params_ml(const std::vector<double> &vals,
+                                   const std::vector<double> &probs) {
   const std::size_t lim = std::size(vals);
   if (std::size(workspace_vals) < lim) {
     workspace_vals.resize(lim);
     workspace_probs.resize(lim);
   }
   for (std::size_t i = 0; i < lim; ++i) {
-    workspace_probs[i] = log(probs[i]);
-    workspace_vals[i] = log(vals[i]) + log(probs[i]);
+    workspace_probs[i] = std::log(probs[i]);
+    workspace_vals[i] = std::log(vals[i]) + std::log(probs[i]);
   }
-  const double prob_sum = exp(log_sum_log_vec(workspace_probs, lim));
-  params.front() = exp(log_sum_log_vec(workspace_vals, lim)) / prob_sum;
+  const double prob_sum = std::exp(log_sum_log_vec(workspace_probs, lim));
+  params.front() = std::exp(log_sum_log_vec(workspace_vals, lim)) / prob_sum;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -382,15 +365,13 @@ ExpDistro::estimate_params_ml(const std::vector<double> &vals,
 
 double
 PoisDistro::log_likelihood(const double val) const {
-  return -params.front() + val * log(params.front()) -
-         gsl_sf_lnfact(static_cast<std::size_t>(val));
+  return -params.front() + val * std::log(params.front()) - lfact(val);
 }
 
 double
 PoisDistro::log_likelihood(const double &val, const double &scale) const {
   const double lambda = params[0] * scale;
-  return -lambda + val * log(lambda) -
-         gsl_sf_lnfact(static_cast<std::size_t>(val));
+  return -lambda + val * std::log(lambda) - lfact(val);
 }
 
 PoisDistro::PoisDistro(const PoisDistro &rhs) : Distro_(rhs.params) {}
@@ -398,7 +379,7 @@ PoisDistro::PoisDistro(const PoisDistro &rhs) : Distro_(rhs.params) {}
 PoisDistro &
 PoisDistro::operator=(const PoisDistro &rhs) {
   if (this != &rhs) {
-    this->Distro_::params = rhs.Distro_::params;
+    Distro_::params = rhs.Distro_::params;
   }
   return *this;
 }
@@ -418,11 +399,11 @@ PoisDistro::estimate_params_ml(const std::vector<double> &vals,
     workspace_probs.resize(lim);
   }
   for (std::size_t i = 0; i < lim; ++i) {
-    workspace_probs[i] = log(probs[i]);
-    workspace_vals[i] = log(vals[i]) + log(probs[i]);
+    workspace_probs[i] = std::log(probs[i]);
+    workspace_vals[i] = std::log(vals[i]) + std::log(probs[i]);
   }
-  const double prob_sum = exp(log_sum_log_vec(workspace_probs, lim));
-  params.front() = exp(log_sum_log_vec(workspace_vals, lim)) / prob_sum;
+  const double prob_sum = std::exp(log_sum_log_vec(workspace_probs, lim));
+  params.front() = std::exp(log_sum_log_vec(workspace_vals, lim)) / prob_sum;
 }
 
 void
@@ -435,11 +416,11 @@ PoisDistro::estimate_params_ml(const std::vector<double> &vals,
     workspace_probs.resize(lim);
   }
   for (std::size_t i = 0; i < lim; ++i) {
-    workspace_probs[i] = log(probs[i]) + log(scales[i]);
-    workspace_vals[i] = log(vals[i]) + log(probs[i]);
+    workspace_probs[i] = std::log(probs[i]) + std::log(scales[i]);
+    workspace_vals[i] = std::log(vals[i]) + std::log(probs[i]);
   }
-  const double prob_sum = exp(log_sum_log_vec(workspace_probs, lim));
-  params.front() = exp(log_sum_log_vec(workspace_vals, lim)) / prob_sum;
+  const double prob_sum = std::exp(log_sum_log_vec(workspace_probs, lim));
+  params.front() = std::exp(log_sum_log_vec(workspace_vals, lim)) / prob_sum;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -456,8 +437,8 @@ NegBinomDistro::set_helpers() {
   n_helper = 1 / params[1];
   p_helper = n_helper / (n_helper + params[0]);
   n_log_p_minus_lngamma_n_helper =
-    n_helper * log(p_helper) - gsl_sf_lngamma(n_helper);
-  log_q_helper = log(1 - p_helper);
+    n_helper * std::log(p_helper) - lgamma(n_helper);
+  log_q_helper = std::log(1 - p_helper);
   // TODO: should check that these are valid!!!
 }
 
@@ -469,8 +450,7 @@ NegBinomDistro::set_params(const std::vector<double> &p) {
 
 double
 NegBinomDistro::log_likelihood(const double val) const {
-  const double P = (gsl_sf_lngamma(val + n_helper) -
-                    gsl_sf_lnfact(static_cast<std::size_t>(val))) +
+  const double P = (lgamma(val + n_helper) - lfact(val)) +
                    n_log_p_minus_lngamma_n_helper + val * log_q_helper;
   if (!std::isfinite(P))
     return -40;
@@ -483,11 +463,10 @@ NegBinomDistro::log_likelihood(const double &val, const double &scale) const {
   // alpha is not scaled
   const double scaled_p_helper = n_helper / (n_helper + params[0] * scale);
   const double scaled_n_log_p_minus_lngamma_n_helper =
-    n_helper * log(scaled_p_helper) - gsl_sf_lngamma(n_helper);
-  const double scaled_log_q_helper = log(1 - scaled_p_helper);
+    n_helper * std::log(scaled_p_helper) - lgamma(n_helper);
+  const double scaled_log_q_helper = std::log(1 - scaled_p_helper);
 
-  const double P = (gsl_sf_lngamma(val + n_helper) -
-                    gsl_sf_lnfact(static_cast<std::size_t>(val))) +
+  const double P = (lgamma(val + n_helper) - lfact(val)) +
                    scaled_n_log_p_minus_lngamma_n_helper +
                    val * scaled_log_q_helper;
   if (!std::isfinite(P))
@@ -503,7 +482,7 @@ NegBinomDistro::NegBinomDistro(const NegBinomDistro &rhs) :
 NegBinomDistro &
 NegBinomDistro::operator=(const NegBinomDistro &rhs) {
   if (this != &rhs) {
-    this->Distro_::params = rhs.Distro_::params;
+    Distro_::params = rhs.Distro_::params;
     set_helpers();
   }
   return *this;
@@ -527,7 +506,7 @@ alpha_score_function(const std::vector<double> &vals_hist, const double mu,
                      const double alpha, const double vals_count) {
   const double one_plus_alpha_mu = 1 + alpha * mu;
   return (score_fun_first_term(vals_hist, alpha) / vals_count +
-          (log(one_plus_alpha_mu) / alpha - mu) / alpha);
+          (std::log(one_plus_alpha_mu) / alpha - mu) / alpha);
 }
 
 void
@@ -569,15 +548,19 @@ NegBinomDistro::estimate_params_ml(const std::vector<double> &vals) {
   set_helpers();
   //   const std::size_t lim = vals.size();
 
-  //   // This is the mu
-  //   params.front() = std::accumulate(vals.begin(), vals.begin() + lim,
-  //   0.0)/lim; const double mu = params.front(); const double var =
-  //   gsl_stats_variance_m(&vals.front(), 1, vals.size(), mu); const double r =
-  //   (mu*mu)/(var - mu);
-  //   // const double p = r/(r + params[0]);
-  //   params[1] = max(0.01, 1/r);
+  // This is the mu
 
-  //   set_helpers();
+  // clang-format off
+
+  // params.front() = std::accumulate(vals.begin(), vals.begin() + lim, 0.0) / lim;
+  // const double mu = params.front();
+  // const double var = gsl_stats_variance_m(&vals.front(), 1, vals.size(), mu);
+  // const double r = (mu * mu) / (var - mu);
+  // // const double p = r/(r + params[0]);
+  // params[1] = max(0.01, 1 / r);
+  // set_helpers();
+
+  // clang-format on
 }
 
 void
@@ -589,13 +572,13 @@ NegBinomDistro::estimate_params_ml(const std::vector<double> &vals,
   //     workspace_probs.resize(lim);
   //   }
   //   for (std::size_t i = 0; i < lim; ++i) {
-  //     workspace_probs[i] = log(probs[i]);
-  //     workspace_vals[i] = log(vals[i]) + log(probs[i]);
+  //     workspace_probs[i] = std::log(probs[i]);
+  //     workspace_vals[i] = std::log(vals[i]) + std::log(probs[i]);
   //   }
-  //   const double vals_count = exp(log_sum_log_vec(workspace_probs, lim));
-  //   const double mu = exp(log_sum_log_vec(workspace_vals, lim))/vals_count;
-  //   const double var = gsl_stats_wvariance_m(&vals.front(), 1,
-  //   &probs.front(), 1,
+  //   const double vals_count = std::exp(log_sum_log_vec(workspace_probs,
+  //   lim)); const double mu = std::exp(log_sum_log_vec(workspace_vals,
+  //   lim))/vals_count; const double var = gsl_stats_wvariance_m(&vals.front(),
+  //   1, &probs.front(), 1,
   //                                       vals.size(), mu);
   //   const double r = (mu*mu)/(var - mu);
   //   // const double p = r/(r + params[0]);
@@ -608,12 +591,13 @@ NegBinomDistro::estimate_params_ml(const std::vector<double> &vals,
     workspace_probs.resize(lim);
   }
   for (std::size_t i = 0; i < lim; ++i) {
-    workspace_probs[i] = log(probs[i]);                // - centering_value;
-    workspace_vals[i] = log(vals[i]) + log(probs[i]);  // - centering_value;
+    workspace_probs[i] = std::log(probs[i]);  // - centering_value;
+    workspace_vals[i] =
+      std::log(vals[i]) + std::log(probs[i]);  // - centering_value;
   }
 
-  const double vals_count = exp(log_sum_log_vec(workspace_probs, lim));
-  params.front() = exp(log_sum_log_vec(workspace_vals, lim)) / vals_count;
+  const double vals_count = std::exp(log_sum_log_vec(workspace_probs, lim));
+  params.front() = std::exp(log_sum_log_vec(workspace_vals, lim)) / vals_count;
 
   // Now for the alpha
   const double max_value = *std::max_element(vals.begin(), vals.begin() + lim);
@@ -662,7 +646,7 @@ llh_derivative_rt_alpha(const std::vector<double> &vals,
   for (std::size_t i = 0; i < std::size(vals); ++i) {
     const double one_plus_extra = 1 + scales[i] * mu_times_alpha;
     second_term +=
-      probs[i] * (alpha_square_inverse * log(one_plus_extra) -
+      probs[i] * (alpha_square_inverse * std::log(one_plus_extra) -
                   scales[i] * mu * (alpha_inverse + vals[i]) / one_plus_extra);
   }
 
@@ -679,13 +663,13 @@ NegBinomDistro::estimate_params_ml(const std::vector<double> &vals,
     workspace_probs.resize(lim);
   }
   for (std::size_t i = 0; i < lim; ++i) {
-    workspace_probs[i] = log(probs[i]) + log(scales[i]);
-    workspace_vals[i] = log(vals[i]) + log(probs[i]);
+    workspace_probs[i] = std::log(probs[i]) + std::log(scales[i]);
+    workspace_vals[i] = std::log(vals[i]) + std::log(probs[i]);
   }
 
   // this is mu
-  const double mu = exp(log_sum_log_vec(workspace_vals, lim)) /
-                    exp(log_sum_log_vec(workspace_probs, lim));
+  const double mu = std::exp(log_sum_log_vec(workspace_vals, lim)) /
+                    std::exp(log_sum_log_vec(workspace_probs, lim));
 
   // Now for the alpha
   const double max_value = *std::max_element(vals.begin(), vals.end());
