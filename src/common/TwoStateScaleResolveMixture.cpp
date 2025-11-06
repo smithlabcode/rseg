@@ -20,7 +20,7 @@
  */
 
 #include "TwoStateScaleResolveMixture.hpp"
-#include "numerical_utils.hpp"
+#include "log_sum_log.hpp"
 
 #include <algorithm>
 #include <cassert>
