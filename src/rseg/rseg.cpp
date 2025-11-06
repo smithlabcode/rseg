@@ -18,6 +18,11 @@
  * 02110-1301 USA
  */
 
+static constexpr auto about = R"(rseg
+
+Segment the genome according to mapped read density.
+)";
+
 #include "Distro.hpp"
 #include "EvaluateBoundaries.hpp"
 #include "LoadReadsByRegion.hpp"
@@ -28,10 +33,9 @@
 #include "TwoStateScaleResolveMixture.hpp"
 #include "rseg_utils.hpp"
 
+#include "CLI11.hpp"
+
 #include "GenomicRegion.hpp"
-#include "OptionParser.hpp"
-#include "smithlab_os.hpp"
-#include "smithlab_utils.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -39,6 +43,7 @@
 #include <iostream>
 #include <iterator>
 #include <numeric>
+#include <print>
 #include <random>
 
 // Determines how many iterations are used during the initialization
@@ -55,46 +60,45 @@ output_boundaries(
   const std::vector<std::vector<double>> &trans,
   const std::vector<double> &end_trans, const std::string &boundary_file,
   const std::string &boundary_score_file, const bool VERBOSE,
-  const bool Both_Domain_Ends = true) {
-
-  static const double FDR = 0.05;
+  const bool both_domain_ends) {
+  static constexpr auto FDR = 0.05;
 
   const Distro &fg_distro = distros.front();
   const Distro &bg_distro = distros.back();
-  std::vector<double> f_to_f_scores, f_to_b_scores, b_to_f_scores,
-    b_to_b_scores;
-  hmm.TransitionPosteriors(
+
+  const auto f_to_f_scores = hmm.TransitionPosteriors(
     tmp_read_bins, scales, reset_points, start_trans, trans, end_trans,
-    fg_distro, bg_distro, TwoStateScaleHMM::FG_TO_FG_TRANSITION, f_to_f_scores);
-  hmm.TransitionPosteriors(
+    fg_distro, bg_distro, TwoStateScaleHMM::FG_TO_FG_TRANSITION);
+  const auto f_to_b_scores = hmm.TransitionPosteriors(
     tmp_read_bins, scales, reset_points, start_trans, trans, end_trans,
-    fg_distro, bg_distro, TwoStateScaleHMM::FG_TO_BG_TRANSITION, f_to_b_scores);
-  hmm.TransitionPosteriors(
+    fg_distro, bg_distro, TwoStateScaleHMM::FG_TO_BG_TRANSITION);
+  const auto b_to_f_scores = hmm.TransitionPosteriors(
     tmp_read_bins, scales, reset_points, start_trans, trans, end_trans,
-    fg_distro, bg_distro, TwoStateScaleHMM::BG_TO_FG_TRANSITION, b_to_f_scores);
-  hmm.TransitionPosteriors(
+    fg_distro, bg_distro, TwoStateScaleHMM::BG_TO_FG_TRANSITION);
+  const auto b_to_b_scores = hmm.TransitionPosteriors(
     tmp_read_bins, scales, reset_points, start_trans, trans, end_trans,
-    fg_distro, bg_distro, TwoStateScaleHMM::BG_TO_BG_TRANSITION, b_to_b_scores);
+    fg_distro, bg_distro, TwoStateScaleHMM::BG_TO_BG_TRANSITION);
 
   std::vector<double> tmp_boundary_scores(std::size(f_to_b_scores));
-  std::vector<int> transitions;
-  for (std::size_t i = 0; i < std::size(tmp_classes); ++i)
-    if (i == 0 || tmp_classes[i] != tmp_classes[i - 1])
+  std::vector<std::uint32_t> transitions(1, 0);
+  for (auto i = 1u; i < std::size(tmp_classes); ++i)
+    if (tmp_classes[i] != tmp_classes[i - 1])
       transitions.push_back(i);
-
   transitions.push_back(std::size(tmp_classes));
-  std::size_t j = 0;
-  for (int i = 0; static_cast<std::size_t>(i) < std::size(f_to_b_scores); ++i) {
-    if (abs(i - transitions[j]) > abs(i - transitions[j + 1]))
+
+  // ADS: check that number of transitions is never more than number of bins
+  auto j = 0u;
+  for (auto i = 0u; i < std::size(f_to_b_scores); ++i) {
+    if (i > (transitions[j] + transitions[j + 1]) / 2u)
       ++j;
     tmp_boundary_scores[i] =
-      (tmp_classes[transitions[j]]) ? b_to_f_scores[i] : f_to_b_scores[i];
+      tmp_classes[transitions[j]] ? b_to_f_scores[i] : f_to_b_scores[i];
   }
 
   std::vector<std::vector<double>> boundary_scores;
   expand_bins(tmp_boundary_scores, reset_points, boundary_scores);
 
-  //// generate control sample
+  // generate control sample
   std::random_device rd{};
   std::mt19937 g{rd()};
 
@@ -103,15 +107,13 @@ output_boundaries(
     std::shuffle(std::begin(read_counts_control) + reset_points[i],
                  std::begin(read_counts_control) + reset_points[i + 1], g);
 
-  std::vector<double> b_to_f_scores_control, f_to_b_scores_control;
-  hmm.TransitionPosteriors(read_counts_control, scales, reset_points,
-                           start_trans, trans, end_trans, fg_distro, bg_distro,
-                           TwoStateScaleHMM::BG_TO_FG_TRANSITION,
-                           b_to_f_scores_control);
-  hmm.TransitionPosteriors(read_counts_control, scales, reset_points,
-                           start_trans, trans, end_trans, fg_distro, bg_distro,
-                           TwoStateScaleHMM::FG_TO_BG_TRANSITION,
-                           f_to_b_scores_control);
+  const auto b_to_f_scores_control = hmm.TransitionPosteriors(
+    read_counts_control, scales, reset_points, start_trans, trans, end_trans,
+    fg_distro, bg_distro, TwoStateScaleHMM::BG_TO_FG_TRANSITION);
+
+  const auto f_to_b_scores_control = hmm.TransitionPosteriors(
+    read_counts_control, scales, reset_points, start_trans, trans, end_trans,
+    fg_distro, bg_distro, TwoStateScaleHMM::FG_TO_BG_TRANSITION);
 
   std::vector<double> boundary_scores_control(std::size(f_to_b_scores_control),
                                               0);
@@ -122,24 +124,28 @@ output_boundaries(
 
   std::sort(std::begin(boundary_scores_control),
             std::end(boundary_scores_control));
-  const std::size_t bc_idx =
-    static_cast<std::size_t>(std::size(boundary_scores_control) * (1 - FDR));
+  const std::size_t bc_idx = std::size(boundary_scores_control) * (1.0 - FDR);
   const double cutoff = boundary_scores_control[bc_idx];
 
-  read_counts_control.clear();
-  b_to_f_scores_control.clear();
-  f_to_b_scores_control.clear();
-  boundary_scores_control.clear();
-  //// finish generating control sample
+  // read_counts_control.clear();
+  // read_counts_control.shrink_to_fit();
+  // b_to_f_scores_control.clear();
+  // b_to_f_scores_control.shrink_to_fit();
+  // f_to_b_scores_control.clear();
+  // f_to_b_scores_control.shrink_to_fit();
+  // boundary_scores_control.clear();
+  // boundary_scores_control.shrink_to_fit();
+
+  // finished generating control sample
 
   std::vector<GenomicRegion> boundaries;
   BoundEval be(1, 1);
-  if (Both_Domain_Ends)
+  if (both_domain_ends)
     be.evaluate(bin_bounds, reset_points, tmp_classes, tmp_boundary_scores,
                 f_to_f_scores, f_to_b_scores, b_to_f_scores, b_to_b_scores,
-                cutoff, Both_Domain_Ends, boundaries);
+                cutoff, both_domain_ends, boundaries);
   else
-    be.evaluate(bin_bounds, reset_points, tmp_classes, tmp_boundary_scores,
+    be.evaluate(bin_bounds, reset_points, /*tmp_classes,*/ tmp_boundary_scores,
                 f_to_f_scores, f_to_b_scores, b_to_f_scores, b_to_b_scores,
                 cutoff, boundaries);
 
@@ -148,7 +154,7 @@ output_boundaries(
     std::cout << "Boundary file: " + boundary_file << '\n';
   WriteBEDFile(boundary_file, boundaries);
 
-  if (!boundary_score_file.empty() && boundary_score_file != "None") {
+  if (!boundary_score_file.empty()) {
     if (VERBOSE)
       std::cout << "Boundary score file: " + boundary_score_file << '\n';
     write_wigfile(boundary_scores, bin_bounds, boundary_score_file);
@@ -168,14 +174,14 @@ output_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bin_bounds,
                const std::vector<double> &end_trans,
                const double posterior_cutoff,
                const std::size_t undef_region_cutoff, const double cdf_cutoff,
-               const std::string &domain_file,
+               const std::string &output_file,
                const std::string &posterior_score_file, const bool VERBOSE) {
 
   // Obtain the scores for the current domain class
   if (tmp_scores.size() == 0)
-    hmm.PosteriorScores(tmp_read_bins, tmp_scales, reset_points, start_trans,
-                        trans, end_trans, distros.front(), distros.back(),
-                        tmp_classes, tmp_scores);
+    tmp_scores = hmm.PosteriorScores(
+      tmp_read_bins, tmp_scales, reset_points, start_trans, trans, end_trans,
+      distros.front(), distros.back(), tmp_classes);
 
   std::vector<std::vector<double>> read_bins, scores, scales;
   std::vector<std::vector<bool>> classes;
@@ -191,11 +197,11 @@ output_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bin_bounds,
   // output domains
   pick_domains(bin_bounds, read_bins, scales, distros, domains, cdf_cutoff);
 
-  write_bed_file(domains, domain_file);
+  write_bed_file(domains, output_file);
   if (VERBOSE)
-    std::cout << "Domains file: " + domain_file << '\n';
+    std::cout << "Domains file: " + output_file << '\n';
 
-  if (!posterior_score_file.empty() && posterior_score_file != "None") {
+  if (!posterior_score_file.empty()) {
     std::size_t k = 0;
     for (std::size_t i = 0; i < scores.size(); ++i)
       for (std::size_t j = 0; j < scores[i].size(); ++j) {
@@ -210,6 +216,12 @@ output_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bin_bounds,
 
 int
 main(int argc, char *argv[]) {
+  static constexpr auto usage = "Usage: rseg [options]";
+  // names of emission distributions to use
+  static constexpr auto fg_name = "nbd";
+  static constexpr auto bg_name = "nbd";
+  static constexpr auto both_domain_ends{true};
+
   try {
     // file names
     std::string reads_file;
@@ -223,20 +235,15 @@ main(int argc, char *argv[]) {
 
     // flags
     bool USE_POSTERIOR = false;
-    bool REMOVE_JACKPOT = true;
+    bool REMOVE_JACKPOT{false};
     bool VERBOSE = false;
     bool BAM_FORMAT = false;
-    bool Both_Domain_Ends = true;
 
-    std::string domain_file = "/dev/stdout";
-    std::string posterior_score_file = "";
-    std::string boundary_file = "";
-    std::string boundary_score_file = "";
-    std::string read_counts_file = "";
-
-    // names of statistical distributions to use
-    std::string fg_name = "nbd";
-    std::string bg_name = "nbd";
+    std::string output_file;
+    std::string posterior_score_file;
+    std::string boundary_file;
+    std::string boundary_score_file;
+    std::string read_counts_file;
 
     std::size_t desert_size = 20000;
     std::size_t bin_size_step = 50;
@@ -250,8 +257,7 @@ main(int argc, char *argv[]) {
     double tolerance = 1e-20;
     double min_prob = 1e-20;
 
-    // the posterior theshhold above which a bin is considerd belonging to a
-    // state
+    // posterior theshhold above which a bin is considerd belonging to a state
     double posterior_cutoff = 0.95;
 
     // if an undefined region larger then this value, leave it as is
@@ -261,119 +267,66 @@ main(int argc, char *argv[]) {
 
     double max_dead_proportion = 0.5;
 
-    ////////////////////// PARSING COMMAND LINE OPTIONS
-    ////////////////////////////
-    OptionParser opt_parse(
-      strip_path(argv[0]),
-      "segment the genome according to mapped read density",
-      "<mapped-read-locations>");
-    opt_parse.add_opt("out", 'o', "domain output file", false, domain_file);
-    opt_parse.add_opt("score", '\0', "Posterior scores file", false,
-                      posterior_score_file);
-    opt_parse.add_opt("readcount", '\0', "readcounts file", false,
-                      read_counts_file);
-    opt_parse.add_opt("boundary", '\0', "domain boundary file", false,
-                      boundary_file);
-    opt_parse.add_opt("boundary-score", '\0', "boundary transition scores file",
-                      false, boundary_score_file);
-    opt_parse.add_opt("chrom", 'c', "file with chromosome sizes (BED format)",
-                      true, chroms_file);
-    opt_parse.add_opt("deadzones", 'd', "file of deadzones (BED format)", false,
-                      deads_file);
-    opt_parse.add_opt("bam", 'B', "Input reads file is BAM format", false,
-                      BAM_FORMAT);
-    opt_parse.add_opt("param-in", '\0', "Input parameters file", false,
-                      in_param_file);
-    opt_parse.add_opt("param-out", '\0', "Output parameters file", false,
-                      out_param_file);
-    opt_parse.add_opt("maxitr", 'i', "maximum iterations for training", false,
-                      max_iterations);
-    opt_parse.add_opt("bin-size", 'b', "bin size (default: based on data)",
-                      false, bin_size);
-    opt_parse.add_opt("bin-step", '\0',
-                      "minimum bin size (default: " + toa(bin_size_step) + ")",
-                      false, bin_size_step);
-    opt_parse.add_opt("duplicates", '\0', "keep duplicate reads", false,
-                      REMOVE_JACKPOT);
-    opt_parse.add_opt("fragment_length", '\0',
-                      "Extend reads to fragment length (default not to extend)",
-                      false, FRAGMENT_LEN);
-    opt_parse.add_opt("Waterman", '\0', "use Waterman's method for bin size",
-                      false, waterman);
-    opt_parse.add_opt("Hideaki", '\0', "use Hideaki's method for bin size",
-                      false, hideaki);
-    opt_parse.add_opt("Hideaki-emp", '\0',
-                      "use Hideaki's empirical method (default)", false,
-                      hideaki_emp);
-    opt_parse.add_opt("smooth", '\0',
-                      "Indicate whether the rate curve is assumed smooth",
-                      false, smooth);
-    opt_parse.add_opt("max-dead", '\0',
-                      "max deadzone proportion for retained bins", false,
-                      max_dead_proportion);
-    opt_parse.add_opt("domain-size", 's',
-                      "expected domain size "
-                      "(default: " +
-                        toa(fg_size) + ")",
-                      false, fg_size);
-    opt_parse.add_opt("desert", 'S',
-                      "desert size "
-                      "(default: " +
-                        toa(desert_size) + ")",
-                      false, desert_size);
-    opt_parse.add_opt("fg", 'F', "foreground emission distribution", false,
-                      fg_name);
-    opt_parse.add_opt("bg", 'B', "background emission distribution", false,
-                      bg_name);
-    opt_parse.add_opt("posterior", 'P',
-                      "use posterior decoding "
-                      "(default: Viterbi)",
-                      false, USE_POSTERIOR);
-    opt_parse.add_opt("posterior-cutoff", '\0', "posterior cutoff significance",
-                      false, posterior_cutoff);
-    opt_parse.add_opt("undefined", '\0', "min size of unmappable region", false,
-                      undef_region_cutoff);
-    opt_parse.add_opt("cutoff", '\0', "cutoff in cdf for identified domains",
-                      false, cdf_cutoff);
-    opt_parse.add_opt("verbose", 'v', "print more run information", false,
-                      VERBOSE);
+    CLI::App app{about};
+    argv = app.ensure_utf8(argv);
+    app.usage(usage);
 
-    std::vector<std::string> leftover_args;
-    opt_parse.parse(argc, argv, leftover_args);
+    // clang-format off
+    app.set_help_flag("-h,--help", "Print a detailed help message and exit");
+    app.add_option("-o,--out", output_file, "output file")
+      ->required();
+    app.add_option("--score", posterior_score_file, "Posterior scores file");
+    app.add_option("--readcount", read_counts_file, "readcounts file");
+    app.add_option("--boundary", boundary_file, "domain boundary file");
+    app.add_option("--boundary-score", boundary_score_file, "boundary transition scores file");
+    app.add_option("-r,--reads", reads_file, "mapped reads file (BED or BAM format)")
+      ->option_text("FILE")
+      ->check(CLI::ExistingFile);
+    app.add_option("-c,--chrom", chroms_file, "file with chromosome sizes (BED format)")
+      ->required()
+      ->option_text("FILE")
+      ->check(CLI::ExistingFile);
+    app.add_option("-d,--deadzones", deads_file, "file of deadzones (BED format)")
+      ->option_text("FILE")
+      ->check(CLI::ExistingFile);
+    app.add_flag("--bam", BAM_FORMAT, "Input reads file is BAM format");
+    app.add_option("--param-in", in_param_file, "Input parameters file")
+      ->option_text("FILE")
+      ->check(CLI::ExistingFile);
+    app.add_option("--param-out", out_param_file, "Output parameters file");
+    app.add_option("-i,--maxitr", max_iterations, "maximum iterations for training");
+    app.add_option("-b,--bin-size", bin_size, "bin size (default: based on data)");
+    app.add_option("--bin-step", bin_size_step, "minimum bin size");
+    app.add_flag("--no-jackpots", REMOVE_JACKPOT, "remove jackpot reads");
+    app.add_option("--fragment_length", FRAGMENT_LEN,
+                   "Extend reads to fragment length (default not to extend)");
+    app.add_flag("--Waterman", waterman, "use Waterman's method for bin size");
+    app.add_flag("--Hideaki", hideaki, "use Hideaki's method for bin size");
+    app.add_flag("--Hideaki-emp", hideaki_emp, "use Hideaki's empirical method (default)");
+    app.add_flag("--smooth", smooth, "Indicate whether the rate curve is assumed smooth");
+    app.add_option("--max-dead", max_dead_proportion, "max deadzone proportion for retained bins");
+    app.add_option("-s,--domain-size", fg_size, "expected domain size");
+    app.add_option("-S,--desert", desert_size, "desert size");
+    // app.add_option("-F,--fg", fg_name, "foreground emission distribution");
+    // app.add_option("-B,--bg", bg_name, "background emission distribution");
+    app.add_flag("-P,--posterior", USE_POSTERIOR, "use posterior decoding (default: Viterbi)");
+    app.add_option("--posterior-cutoff", posterior_cutoff, "posterior cutoff significance");
+    app.add_option("--undefined", undef_region_cutoff, "min size of unmappable region");
+    app.add_option("--cutoff", cdf_cutoff, "cutoff in cdf for identified domains");
+    app.add_flag("-v,--verbose", VERBOSE, "print more info");
+    // clang-format on
 
-    if (argc == 1 || opt_parse.help_requested()) {
-      std::cerr << opt_parse.help_message() << '\n';
-      return EXIT_SUCCESS;
-    }
-    if (opt_parse.about_requested()) {
-      std::cerr << opt_parse.about_message() << '\n';
-      return EXIT_SUCCESS;
-    }
-    if (opt_parse.option_missing()) {
-      std::cerr << opt_parse.option_missing_message() << '\n';
-      return EXIT_SUCCESS;
-    }
-    if (leftover_args.empty()) {
-      std::cerr << opt_parse.help_message() << '\n';
-      return EXIT_SUCCESS;
-    }
-    reads_file = leftover_args.front();
-    if (reads_file.size() == 0) {
-      std::cerr << "ERROR: input file name required" << '\n';
+    if (argc == 1) {
+      std::println("{}", app.help());
       return EXIT_FAILURE;
     }
-    if (chroms_file.size() == 0) {
-      std::cerr << "ERROR: chromsome sizes required (BED format file)" << '\n';
-      return EXIT_FAILURE;
-    }
+
+    CLI11_PARSE(app, argc, argv);
 
     if (VERBOSE)
       std::cout << "[PROCESSING] " << strip_path(reads_file) << '\n';
 
-    /***********************************
-     * STEP 1: READ IN THE DATA
-     */
-
+    // read in the data
     std::vector<SimpleGenomicRegion> bin_boundaries;
     std::vector<double> read_bins;
     std::vector<double> scales;
@@ -384,23 +337,22 @@ main(int argc, char *argv[]) {
 
     if (VERBOSE)
       std::cout << "[SELECTING BIN SIZE] ";
-    if (bin_size == 0) {
+    bin_size = [&]() {
+      if (bin_size != 0)
+        return bin_size;
       if (hideaki)
-        bin_size =
-          select_bin_size_hideaki(read_bins, scales, bin_size_step, smooth);
-      else if (waterman)
-        bin_size =
-          select_bin_size_waterman(read_bins, scales, bin_size_step, smooth);
-      else
-        bin_size = select_bin_size_hideaki_emp(
-          read_bins, scales, reset_points, bin_size_step, max_dead_proportion);
-    }
+        return select_bin_size_hideaki(read_bins, scales, bin_size_step,
+                                       smooth);
+      if (waterman)
+        return select_bin_size_waterman(read_bins, scales, bin_size_step,
+                                        smooth);
+      return select_bin_size_hideaki_emp(read_bins, scales, reset_points,
+                                         bin_size_step, max_dead_proportion);
+    }();
     if (VERBOSE)
       std::cout << "bin size =  " << bin_size << '\n';
 
-    /***********************************
-     * STEP 2: BIN THE READS
-     */
+    /// make bins of reads
     AdjustBinSize(bin_boundaries, read_bins, scales, reset_points,
                   bin_size_step, bin_size);
     RemoveDeserts(bin_boundaries, read_bins, scales, reset_points, bin_size,
@@ -413,9 +365,7 @@ main(int argc, char *argv[]) {
     std::vector<std::vector<SimpleGenomicRegion>> bin_boundaries_folded;
     expand_bins(bin_boundaries, reset_points, bin_boundaries_folded);
 
-    /***********************************
-     * STEP 3: ESTIMATE EMISSION PARAMS
-     */
+    // estimate emission params
     const TwoStateScaleHMM hmm(min_prob, tolerance, max_iterations, VERBOSE);
     std::size_t state_num = 2;
     std::vector<Distro> distros;
@@ -439,8 +389,7 @@ main(int argc, char *argv[]) {
                              tolerance, VERBOSE, distros.front(),
                              distros.back(), mixing);
 
-      set_transitions(bin_size, fg_size, mixing, VERBOSE, start_trans, trans,
-                      end_trans);
+      set_transitions(bin_size, fg_size, mixing, start_trans, trans, end_trans);
 
       hmm.BaumWelchTraining(read_bins, scales, reset_points, start_trans, trans,
                             end_trans, distros.front(), distros.back());
@@ -451,11 +400,9 @@ main(int argc, char *argv[]) {
                        distros);
 
     if (VERBOSE)
-      report_final_values(distros, start_trans, trans, end_trans);
+      report_final_values(distros, trans);
 
-    /***********************************
-     * STEP 5: DECODE THE DOMAINS
-     */
+    // decode the domains
     std::vector<bool> classes;
     std::vector<double> scores;
     if (USE_POSTERIOR)
@@ -466,26 +413,23 @@ main(int argc, char *argv[]) {
       hmm.ViterbiDecoding(read_bins, scales, reset_points, start_trans, trans,
                           end_trans, distros.front(), distros.back(), classes);
 
-    /***********************************
-     * STEP 6: WRITE THE RESULTS
-     */
+    // write the results
     // make sure the output dir is valid
     output_domains(bin_boundaries_folded, read_bins, scales, classes, scores,
                    reset_points, hmm, distros, start_trans, trans, end_trans,
                    posterior_cutoff, undef_region_cutoff, cdf_cutoff,
-                   domain_file, posterior_score_file, VERBOSE);
-    if (!boundary_file.empty() && boundary_file != "None")
+                   output_file, posterior_score_file, VERBOSE);
+    if (!boundary_file.empty())
       output_boundaries(bin_boundaries_folded, read_bins, scales, classes,
                         reset_points, hmm, distros, start_trans, trans,
                         end_trans, boundary_file, boundary_score_file, VERBOSE,
-                        Both_Domain_Ends);
+                        both_domain_ends);
 
-    if (!read_counts_file.empty() && read_counts_file != "None") {
+    if (!read_counts_file.empty())
       write_read_counts_by_bin(bin_boundaries_folded, read_bins, scales,
-                               classes, read_counts_file, VERBOSE);
-    }
+                               classes, read_counts_file);
   }
-  catch (std::runtime_error &e) {
+  catch (const std::exception &e) {
     std::cerr << e.what() << '\n';
     return EXIT_FAILURE;
   }
