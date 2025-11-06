@@ -791,7 +791,7 @@ NegBinomDiffDistro::andrew_estimate_params_ml(const vector<double> &vals_a,
 
 /////// experimental code for gradient descent method
 inline void
-my_dummy_func(const double &r) {
+my_dummy_func([[maybe_unused]] const double &r) {
   // used to make sure a tempory variable are not optimized out by compiler
   return;
 }
