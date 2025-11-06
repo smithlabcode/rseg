@@ -663,7 +663,7 @@ main(int argc, char *argv[]) {
         //   const double tolerance, const bool verbose, SplitDistro &fg_distro,
         //   SplitDistro &bg_distro, double &mixing) {
 
-        set_transitions(bin_size, fg_size, mixing, VERBOSE, start_trans, trans,
+        set_transitions(bin_size, fg_size, mixing, start_trans, trans,
                         end_trans);
 
         hmm.BaumWelchTraining(read_bins_sample, read_bins_a_sample,
@@ -681,7 +681,7 @@ main(int argc, char *argv[]) {
                          end_trans, distros);
 
       if (VERBOSE)
-        report_final_values(distros, start_trans, trans, end_trans);
+        report_final_values(distros, trans);
 
       /***********************************
        * STEP 5: DECODE THE DOMAINS
@@ -715,8 +715,8 @@ main(int argc, char *argv[]) {
 
       if (!read_counts_file.empty() && read_counts_file != "None") {
         write_read_counts_by_bin(bin_boundaries_folded, read_bins_a,
-                                 read_bins_b, scales, classes, read_counts_file,
-                                 VERBOSE);
+                                 read_bins_b, scales, classes,
+                                 read_counts_file);
       }
     }
     else if (mode == TEST_TEST_MODE) {
@@ -763,7 +763,7 @@ main(int argc, char *argv[]) {
         /***********************************
          * STEP 4: TRAIN THE HMM
          */
-        set_transitions(bin_size, fg_size, mixing, VERBOSE, start_trans, trans,
+        set_transitions(bin_size, fg_size, mixing, start_trans, trans,
                         end_trans);
 
         hmm.BaumWelchTraining(
@@ -781,7 +781,7 @@ main(int argc, char *argv[]) {
                          end_trans, distros);
 
       if (VERBOSE)
-        report_final_values(distros, start_trans, trans, end_trans);
+        report_final_values(distros, trans);
 
       /***********************************
        * STEP 5: DECODE THE DOMAINS
@@ -815,8 +815,8 @@ main(int argc, char *argv[]) {
 
       if (!read_counts_file.empty() && read_counts_file != "None") {
         write_read_counts_by_bin(bin_boundaries_folded, read_bins_a,
-                                 read_bins_b, scales, classes, read_counts_file,
-                                 VERBOSE);
+                                 read_bins_b, scales, classes,
+                                 read_counts_file);
       }
     }
     else {
