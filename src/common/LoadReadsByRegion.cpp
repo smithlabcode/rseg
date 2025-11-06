@@ -54,6 +54,36 @@ check_sorted(const std::vector<T> &regions, bool require_unique = false) {
   return true;
 }
 
+static auto
+get_nondead_scales(const std::size_t bin_size,
+                   const std::vector<SimpleGenomicRegion> &bins,
+                   const std::string &deads_file) -> std::vector<double> {
+  const std::uint32_t n_bins = std::size(bins);
+  std::vector<double> scales(n_bins, 1.0);
+  if (deads_file.empty())
+    return scales;
+
+  std::ifstream in(deads_file);
+  if (!in)
+    throw std::runtime_error("failed to open deadzones file: " + deads_file);
+
+  std::uint32_t i = 0;
+  std::string line;
+  while (getline(in, line)) {
+    SimpleGenomicRegion dead_zone(line);
+    while (i < n_bins && !bins[i].overlaps(dead_zone))
+      ++i;
+    while (i < n_bins && bins[i].overlaps(dead_zone)) {
+      const double dead = std::min(bins[i].get_end(), dead_zone.get_end()) -
+                          std::max(bins[i].get_start(), dead_zone.get_start());
+      scales[i] -= dead / bin_size;
+      ++i;
+    }
+    i = i > 0 ? i - 1 : 0;
+  }
+  return scales;
+}
+
 /*************************************************
  * This function takes the names of three files (a reads file, a
  * chromosome file, and a dead zones file [possibly empty])
@@ -132,28 +162,10 @@ LoadReadsByRegionBED(const bool VERBOSE, const std::string &chroms_file,
     ++read_bins[i];
   }
 
-  // load the dead zones
-  if (VERBOSE)
+  if (!deads_file.empty())
     std::cerr << "[LOADING_DATA] deadzones\n";
-  nondead_scales.resize(bin_boundaries.size(), 1.0);
-  in.close();
-  in.open(deads_file);
-  i = 0;
-  while (getline(in, line)) {
-    SimpleGenomicRegion gr(line);
-    while (i < static_cast<std::int64_t>(std::size(bin_boundaries)) &&
-           !bin_boundaries[i].overlaps(gr))
-      ++i;
-    while (i < static_cast<std::int64_t>(std::size(bin_boundaries)) &&
-           bin_boundaries[i].overlaps(gr)) {
-      const double dead =
-        std::min(bin_boundaries[i].get_end(), gr.get_end()) -
-        std::max(bin_boundaries[i].get_start(), gr.get_start());
-      nondead_scales[i] -= dead / bin_size;
-      ++i;
-    }
-    i = i > 0 ? i - 1 : 0;
-  }
+
+  nondead_scales = get_nondead_scales(bin_size, bin_boundaries, deads_file);
 }
 
 /*************************************************
@@ -274,28 +286,10 @@ LoadReadsByRegionBED(
     ++read_bins_b[i];
   }
 
-  // load the dead zones
-  if (VERBOSE)
-    std::cout << "[LOADING_DATA] deadzones\n";
-  nondead_scales.resize(bin_boundaries.size(), 1.0);
-  in.close();
-  in.open(deads_file);
-  i = 0;
-  while (getline(in, line)) {
-    SimpleGenomicRegion gr(line);
-    while (i < static_cast<std::int64_t>(std::size(bin_boundaries)) &&
-           !bin_boundaries[i].overlaps(gr))
-      ++i;
-    while (i < static_cast<std::int64_t>(std::size(bin_boundaries)) &&
-           bin_boundaries[i].overlaps(gr)) {
-      const double dead =
-        std::min(bin_boundaries[i].get_end(), gr.get_end()) -
-        std::max(bin_boundaries[i].get_start(), gr.get_start());
-      nondead_scales[i] -= dead / bin_size;
-      ++i;
-    }
-    i = i > 0 ? i - 1 : 0;
-  }
+  if (!deads_file.empty())
+    std::cerr << "[LOADING_DATA] deadzones\n";
+
+  nondead_scales = get_nondead_scales(bin_size, bin_boundaries, deads_file);
 }
 
 /*************************************************
