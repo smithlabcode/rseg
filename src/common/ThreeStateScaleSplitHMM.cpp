@@ -26,7 +26,7 @@
 #include <limits>
 #include <numeric>
 
-#include "numerical_utils.hpp"
+#include "log_sum_log.hpp"
 
 using std::auto_ptr;
 using std::cerr;
@@ -382,12 +382,12 @@ ThreeStateScaleSplitHMM::estimate_transitions(
   const vector<double> &vals, const std::vector<double> &scales,
   const size_t start, const size_t end, const vector<vector<double>> &f,
   const vector<vector<double>> &b, const double total,
-  [[maybe_unused]] const double lp_sf, const double lp_sm,
+  [[maybe_unused]] const double lp_sf, [[maybe_unused]] const double lp_sm,
   [[maybe_unused]] const double lp_sb, const double lp_ff, const double lp_fm,
   const double lp_fb, const double lp_mf, const double lp_mm,
   const double lp_mb, const double lp_bf, const double lp_bm,
-  const double lp_bb, [[maybe_unused]] const double lp_ft, const double lp_mt,
-  [[maybe_unused]] const double lp_bt,
+  const double lp_bb, [[maybe_unused]] const double lp_ft,
+  [[maybe_unused]] const double lp_mt, [[maybe_unused]] const double lp_bt,
 
   const SplitDistro &fg_distro, const SplitDistro &mid_distro,
   const SplitDistro &bg_distro,
