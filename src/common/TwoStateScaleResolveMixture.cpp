@@ -80,18 +80,17 @@ expectation_step(const vector<double> &values, const vector<double> &scales,
 
   const double fg_log_mixing = log(mixing);
   assert(isfinite(fg_log_mixing));
-  const double bg_log_mixing = log(1 - mixing);
+  const double bg_log_mixing = log(1.0 - mixing);
   assert(isfinite(bg_log_mixing));
 
   for (size_t i = 0; i < values.size(); ++i) {
-
     const double fg_part =
       fg_log_mixing + fg_distro.log_likelihood(values[i], scales[i]);
     assert(isfinite(fg_part));
 
     const double bg_part =
       bg_log_mixing + bg_distro.log_likelihood(values[i], scales[i]);
-    assert(isfinite(fg_part));
+    assert(isfinite(bg_part));
 
     const double denom =
       ((fg_part > bg_part) ? fg_part + log(1.0 + exp(bg_part - fg_part))
@@ -99,7 +98,9 @@ expectation_step(const vector<double> &values, const vector<double> &scales,
     assert(isfinite(denom));
 
     fg_probs[i] = exp(fg_part - denom);
+    assert(fg_probs[i] > 0.0 && fg_probs[i] < 1.0);
     bg_probs[i] = exp(bg_part - denom);
+    assert(bg_probs[i] > 0.0 && bg_probs[i] < 1.0);
 
     score += denom;
   }
@@ -117,7 +118,9 @@ maximization_step(const vector<double> &values, const vector<double> &scales,
   vector<double> log_fg_probs(fg_probs.size());
   vector<double> log_bg_probs(bg_probs.size());
   for (size_t i = 0; i < log_fg_probs.size(); ++i) {
+    assert(fg_probs[i] > 0.0);
     log_fg_probs[i] = log(fg_probs[i]);
+    assert(bg_probs[i] > 0.0);
     log_bg_probs[i] = log(bg_probs[i]);
   }
 
