@@ -352,15 +352,28 @@ main(int argc, char *argv[]) {
     if (VERBOSE)
       std::cout << "bin size =  " << bin_size << '\n';
 
+    if (!std::all_of(std::cbegin(scales), std::cend(scales),
+                     [](const auto x) { return x >= 0.0 && x <= 1.0; }))
+      throw std::runtime_error("not all scales correct");
+
     /// make bins of reads
     AdjustBinSize(bin_boundaries, read_bins, scales, reset_points,
                   bin_size_step, bin_size);
+
+    if (!std::all_of(std::cbegin(scales), std::cend(scales),
+                     [](const auto x) { return x >= 0.0 && x <= 1.0; }))
+      throw std::runtime_error("not all scales correct after adjustment");
+
     RemoveDeserts(bin_boundaries, read_bins, scales, reset_points, bin_size,
                   desert_size, max_dead_proportion);
 
     const double max_count = bin_size;
     for (std::size_t i = 0; i < read_bins.size(); ++i)
       read_bins[i] = std::min(read_bins[i], max_count);
+
+    if (!std::all_of(std::cbegin(read_bins), std::cend(read_bins),
+                     [](const auto x) { return x >= 0.0; }))
+      throw std::runtime_error("non-negative bins found");
 
     std::vector<std::vector<SimpleGenomicRegion>> bin_boundaries_folded;
     expand_bins(bin_boundaries, reset_points, bin_boundaries_folded);
