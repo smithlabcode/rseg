@@ -1,5 +1,4 @@
-/*
- * Copyright (C) 2011 University of Southern California
+/* Copyright (C) 2011 University of Southern California
  *                    Andrew D Smith and Qiang Song
  * Author: Qiang Song and Andrew D. Smith
  *
@@ -27,13 +26,10 @@ Segment the genome according to difference in mapped read density.
 #include "EvaluateBoundaries.hpp"
 #include "GenomicRegion.hpp"
 #include "LoadReadsByRegion.hpp"
-#include "OptionParser.hpp"
 
 #include "ReadCounts.hpp"
 #include "SelectBinSize.hpp"
 #include "SplitDistro.hpp"
-#include "smithlab_os.hpp"
-#include "smithlab_utils.hpp"
 
 #include "ModelParams.hpp"
 
@@ -411,8 +407,6 @@ int
 main(int argc, char *argv[]) {
   static constexpr auto usage = "Usage: rseg-diff [options]";
   // names of emission distributions to use
-  static constexpr auto fg_name = "nbdiff";
-  static constexpr auto bg_name = "nbdiff";
   static constexpr auto both_domain_ends{true};
 
   try {
@@ -443,8 +437,11 @@ main(int argc, char *argv[]) {
     const int TEST_TEST_MODE = 3;
 
     // name of emission distributions
-    std::string fg_name{fg_name};
-    std::string bg_name{bg_name};
+    std::string fg_name{"nbdiff"};
+    std::string bg_name{"nbdiff"};
+
+    std::string reads_file_a{};
+    std::string reads_file_b{};
 
     size_t desert_size = 20000;
     size_t bin_size_step = 50;
@@ -481,6 +478,47 @@ main(int argc, char *argv[]) {
     app.add_option("--readcount", read_counts_file, "readcounts file");
     app.add_option("--boundary", boundary_file, "domain boundary file");
     app.add_option("--boundary-score", boundary_score_file, "boundary transition scores file");
+    app.add_option("--reads-a", reads_file_a, "first input mapped reads file (BED or BAM format)")
+      ->option_text("FILE")
+      ->check(CLI::ExistingFile);
+    app.add_option("--reads-b", reads_file_b, "second input mapped reads file (BED or BAM format)")
+      ->option_text("FILE")
+      ->check(CLI::ExistingFile);
+    app.add_option("-c,--chrom", chroms_file, "file with chromosome sizes (BED format)")
+      ->required()
+      ->option_text("FILE")
+      ->check(CLI::ExistingFile);
+    app.add_option("-d,--deadzones", deads_file, "file of deadzones (BED format)")
+      ->option_text("FILE")
+      ->check(CLI::ExistingFile);
+    app.add_flag("--bam", BAM_FORMAT, "Input reads file is BAM format");
+    app.add_option("--param-in", in_param_file, "Input parameters file")
+      ->option_text("FILE")
+      ->check(CLI::ExistingFile);
+
+    app.add_option("--param-out", out_param_file, "Output parameters file");
+    app.add_option("-m,--mode", mode, "running mode 2:test-control; 3: test-test");
+
+    app.add_option("-i,--maxitr", max_iterations, "maximum iterations for training");
+    app.add_option("-b,--bin-size", bin_size, "bin size (default: based on data)");
+    app.add_option("--bin-step", bin_size_step, "minimum bin size");
+    app.add_flag("--no-jackpots", REMOVE_JACKPOT, "remove jackpot reads");
+    app.add_option("--fragment_length", FRAGMENT_LEN,
+                   "Extend reads to fragment length (default not to extend)");
+    app.add_flag("--Waterman", waterman, "use Waterman's method for bin size");
+    app.add_flag("--Hideaki", hideaki, "use Hideaki's method for bin size");
+    app.add_flag("--Hideaki-emp", hideaki_emp, "use Hideaki's empirical method (default)");
+    app.add_flag("--smooth", smooth, "Indicate whether the rate curve is assumed smooth");
+    app.add_option("--max-dead", max_dead_proportion, "max deadzone proportion for retained bins");
+    app.add_option("-s,--domain-size", fg_size, "expected domain size");
+    app.add_option("-S,--desert", desert_size, "desert size");
+
+    // app.add_option("-F,--fg", fg_name, "foreground emission distribution");
+    // app.add_option("-B,--bg", bg_name, "background emission distribution");
+    app.add_flag("-P,--posterior", USE_POSTERIOR, "use posterior decoding (default: Viterbi)");
+    app.add_option("--posterior-cutoff", posterior_cutoff, "posterior cutoff significance");
+    app.add_option("--undefined", undef_region_cutoff, "min size of unmappable region");
+    app.add_option("--cutoff", cdf_cutoff, "cutoff in cdf for identified domains");
     app.add_flag("-v,--verbose", VERBOSE, "print more info");
     // clang-format on
 
@@ -490,119 +528,6 @@ main(int argc, char *argv[]) {
     }
 
     CLI11_PARSE(app, argc, argv);
-
-    ////////////////////// COMMAND LINE OPTIONS /////////////////////////
-    OptionParser opt_parse(strip_path(argv[0]),
-                           "segment the genome according to differential "
-                           "mapped read density",
-                           "<mapped-read-locations-A> "
-                           "<mapped-read-locations-B>");
-    opt_parse.add_opt("out", 'o', "domain output file", false, domain_file);
-    opt_parse.add_opt("score", '\0', "Posterior scores file", false,
-                      posterior_score_file);
-    opt_parse.add_opt("readcount", '\0', "readcounts file", false,
-                      read_counts_file);
-    opt_parse.add_opt("boundary", '\0', "domain boundary file", false,
-                      boundary_file);
-    opt_parse.add_opt("boundary-score", '\0', "boundary transition scores file",
-                      false, boundary_score_file);
-    opt_parse.add_opt("chrom", 'c', "file with chromosome sizes (BED format)",
-                      true, chroms_file);
-    opt_parse.add_opt("deadzones", 'd', "file of deadzones (BED format)", false,
-                      deads_file);
-    opt_parse.add_opt("bam", 'B', "Input reads file is BAM format", false,
-                      BAM_FORMAT);
-    opt_parse.add_opt("param-in", '\0', "Input parameters file", false,
-                      in_param_file);
-    opt_parse.add_opt("param-out", '\0', "Output parameters file", false,
-                      out_param_file);
-    opt_parse.add_opt("mode", 'm', "running mode 2:test-control; 3: test-test",
-                      false, mode);
-    opt_parse.add_opt("maxitr", 'i', "maximum iterations for training", false,
-                      max_iterations);
-    opt_parse.add_opt("bin-size", 'b', "bin size (default: based on data)",
-                      false, bin_size);
-    opt_parse.add_opt("bin-step", '\0',
-                      "minimum bin size (default: " + toa(bin_size_step) + ")",
-                      false, bin_size_step);
-    opt_parse.add_opt("duplicates", '\0', "keep duplicate reads", false,
-                      REMOVE_JACKPOT);
-    opt_parse.add_opt("fragment_length", '\0',
-                      "Extend reads to fragment length (default not to extend)",
-                      false, FRAGMENT_LEN);
-    opt_parse.add_opt("Waterman", '\0', "use Waterman's method for bin size",
-                      false, waterman);
-    opt_parse.add_opt("Hideaki", '\0', "use Hideaki's method for bin size",
-                      false, hideaki);
-    opt_parse.add_opt("Hideaki-emp", '\0',
-                      "use Hideaki's empirical method (default)", false,
-                      hideaki_emp);
-    opt_parse.add_opt("smooth", '\0',
-                      "Indicate whether the rate curve is assumed smooth",
-                      false, smooth);
-    opt_parse.add_opt("max-dead", '\0',
-                      "max deadzone proportion for retained bins", false,
-                      max_dead_proportion);
-    opt_parse.add_opt("domain-size", 's',
-                      "expected domain size "
-                      "(default: " +
-                        toa(fg_size) + ")",
-                      false, fg_size);
-    opt_parse.add_opt("desert", 'S',
-                      "desert size "
-                      "(default: " +
-                        toa(desert_size) + ")",
-                      false, desert_size);
-    opt_parse.add_opt("fg", 'F', "foreground emission distribution", false,
-                      fg_name);
-    opt_parse.add_opt("bg", 'B', "background emission distribution", false,
-                      bg_name);
-    opt_parse.add_opt("training-size", '\0',
-                      "Max number of data points for training (default: all)",
-                      false, training_size);
-    opt_parse.add_opt("posterior", 'P',
-                      "use posterior decoding "
-                      "(default: Viterbi)",
-                      false, USE_POSTERIOR);
-    opt_parse.add_opt("posterior-cutoff", '\0',
-                      "Posterior threshold for signigicant bins", false,
-                      posterior_cutoff);
-    opt_parse.add_opt("undefined", '\0', "min size of unmappable region", false,
-                      undef_region_cutoff);
-    opt_parse.add_opt("cutoff", '\0', "cutoff in cdf for identified domains",
-                      false, cdf_cutoff);
-    opt_parse.add_opt("verbose", 'v', "print more run information", false,
-                      VERBOSE);
-
-    std::vector<std::string> leftover_args;
-    opt_parse.parse(argc, argv, leftover_args);
-
-    if (argc == 1 || opt_parse.help_requested()) {
-      std::cerr << opt_parse.help_message() << '\n';
-      return EXIT_SUCCESS;
-    }
-    if (opt_parse.about_requested()) {
-      std::cerr << opt_parse.about_message() << '\n';
-      return EXIT_SUCCESS;
-    }
-    if (opt_parse.option_missing()) {
-      std::cerr << opt_parse.option_missing_message() << '\n';
-      return EXIT_SUCCESS;
-    }
-    if (leftover_args.empty()) {
-      std::cerr << opt_parse.help_message() << '\n';
-      return EXIT_SUCCESS;
-    }
-
-    if (leftover_args.size() < 2) {
-      std::cerr << "Need two reads files" << '\n';
-      return EXIT_SUCCESS;
-    }
-
-    const std::string reads_file_a = leftover_args[0];
-    const std::string reads_file_b = leftover_args[1];
-
-    /**********************************************************************/
 
     /***********************************
      * STEP 1: READ IN THE DATA
