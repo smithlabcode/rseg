@@ -19,12 +19,10 @@
  * 02110-1301 USA
  */
 
-#include <algorithm>
-#include <cmath>
-#include <fstream>
-#include <numeric>
-#include <random>
-#include <utility>
+static constexpr auto about = R"(rseg-diff
+
+Segment the genome according to difference in mapped read density.
+)";
 
 #include "EvaluateBoundaries.hpp"
 #include "GenomicRegion.hpp"
@@ -46,6 +44,16 @@
 #include "ThreeStateScaleSplitResolveMixture.hpp"
 
 #include "rseg_utils.hpp"
+
+#include "CLI11.hpp"
+
+#include <algorithm>
+#include <cmath>
+#include <fstream>
+#include <numeric>
+#include <print>
+#include <random>
+#include <utility>
 
 // functions for two-state modes
 
@@ -401,9 +409,16 @@ output_domains(const std::vector<double> &tmp_read_bins,
 // end of functions for three-state modes
 int
 main(int argc, char *argv[]) {
+  static constexpr auto usage = "Usage: rseg-diff [options]";
+  // names of emission distributions to use
+  static constexpr auto fg_name = "nbdiff";
+  static constexpr auto bg_name = "nbdiff";
+  static constexpr auto both_domain_ends{true};
+
   try {
 
-    std::string deads_file, chroms_file;
+    std::string deads_file;
+    std::string chroms_file;
     std::string in_param_file;
     std::string out_param_file;
 
@@ -411,16 +426,16 @@ main(int argc, char *argv[]) {
     double fg_size = 20000;
 
     // flags
-    bool USE_POSTERIOR = false;
-    bool REMOVE_JACKPOT = true;
-    bool VERBOSE = false;
-    bool BAM_FORMAT = false;
+    bool USE_POSTERIOR{};
+    bool REMOVE_JACKPOT{true};
+    bool VERBOSE{};
+    bool BAM_FORMAT{};
 
-    std::string domain_file = "/dev/stdout";
-    std::string posterior_score_file = "";
-    std::string boundary_file = "";
-    std::string boundary_score_file = "";
-    std::string read_counts_file = "";
+    std::string domain_file;
+    std::string posterior_score_file;
+    std::string boundary_file;
+    std::string boundary_score_file;
+    std::string read_counts_file;
 
     // mode
     int mode = 2;
@@ -428,7 +443,8 @@ main(int argc, char *argv[]) {
     const int TEST_TEST_MODE = 3;
 
     // name of emission distributions
-    std::string fg_name("nbdiff"), bg_name("nbdiff");
+    std::string fg_name{fg_name};
+    std::string bg_name{bg_name};
 
     size_t desert_size = 20000;
     size_t bin_size_step = 50;
@@ -452,6 +468,28 @@ main(int argc, char *argv[]) {
     // Determines how many iterations are used during the initialization
     // phase to find good starting values for the HMM
     const size_t MAX_INITIALIZATION_ITR = 5;
+
+    CLI::App app{about};
+    argv = app.ensure_utf8(argv);
+    app.usage(usage);
+
+    // clang-format off
+    app.set_help_flag("-h,--help", "Print a detailed help message and exit");
+    app.add_option("-o,--out", domain_file, "output file")
+      ->required();
+    app.add_option("--score", posterior_score_file, "Posterior scores file");
+    app.add_option("--readcount", read_counts_file, "readcounts file");
+    app.add_option("--boundary", boundary_file, "domain boundary file");
+    app.add_option("--boundary-score", boundary_score_file, "boundary transition scores file");
+    app.add_flag("-v,--verbose", VERBOSE, "print more info");
+    // clang-format on
+
+    if (argc == 1) {
+      std::println("{}", app.help());
+      return EXIT_FAILURE;
+    }
+
+    CLI11_PARSE(app, argc, argv);
 
     ////////////////////// COMMAND LINE OPTIONS /////////////////////////
     OptionParser opt_parse(strip_path(argv[0]),
