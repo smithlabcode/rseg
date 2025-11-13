@@ -22,7 +22,7 @@
 
 #include "ReadCounts.hpp"
 
-#include "GenomicRegion.hpp"
+#include "Interval.hpp"
 
 #include <cassert>
 #include <cmath>
@@ -93,14 +93,14 @@ GetCorrectedReadCounts(const std::vector<double> &read_bins,
 }
 
 void
-AdjustBinSize(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
+AdjustBinSize(std::vector<Interval> &old_bin_boundaries,
               std::vector<double> &old_read_bins,
               std::vector<double> &old_nondead_scales,
               std::vector<std::size_t> &old_reset_points,
               const std::size_t old_bin_size, const std::size_t bin_size) {
   assert(bin_size % old_bin_size == 0);
 
-  std::vector<SimpleGenomicRegion> bin_boundaries;
+  std::vector<Interval> bin_boundaries;
   std::vector<double> read_bins;
   std::vector<double> nondead_scales;
   std::vector<std::size_t> reset_points;
@@ -115,8 +115,7 @@ AdjustBinSize(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
     while (j + n_steps <= end) {
       assert(j + n_steps - 1 < old_bin_boundaries.size());
       bin_boundaries.push_back(old_bin_boundaries[j]);
-      bin_boundaries.back().set_end(
-        old_bin_boundaries[j + n_steps - 1].get_end());
+      bin_boundaries.back().stop = old_bin_boundaries[j + n_steps - 1].stop;
 
       read_bins.push_back(std::accumulate(
         old_read_bins.begin() + j, old_read_bins.begin() + j + n_steps, 0.0));
@@ -146,13 +145,13 @@ AdjustBinSize(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
 }
 
 void
-RemoveDeserts(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
+RemoveDeserts(std::vector<Interval> &old_bin_boundaries,
               std::vector<double> &old_read_bins,
               std::vector<double> &old_nondead_scales,
               std::vector<std::size_t> &old_reset_points,
               const std::size_t bin_size, const std::size_t desert_size,
               const double max_dead_proportion) {
-  std::vector<SimpleGenomicRegion> bin_boundaries;
+  std::vector<Interval> bin_boundaries;
   std::vector<double> read_bins;
   std::vector<double> nondead_scales;
   std::vector<std::size_t> reset_points;
@@ -188,14 +187,14 @@ RemoveDeserts(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
 }
 
 void
-AdjustBinSize(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
+AdjustBinSize(std::vector<Interval> &old_bin_boundaries,
               std::vector<double> &old_read_bins_a,
               std::vector<double> &old_read_bins_b,
               std::vector<double> &old_nondead_scales,
               std::vector<std::size_t> &old_reset_points,
               const std::size_t old_bin_size, const std::size_t bin_size) {
   assert(bin_size % old_bin_size == 0);
-  std::vector<SimpleGenomicRegion> bin_boundaries;
+  std::vector<Interval> bin_boundaries;
   std::vector<double> read_bins_a;
   std::vector<double> read_bins_b;
   std::vector<double> nondead_scales;
@@ -209,8 +208,7 @@ AdjustBinSize(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
     std::size_t j = start;
     while (j + n_steps <= end) {
       bin_boundaries.push_back(old_bin_boundaries[j]);
-      bin_boundaries.back().set_end(
-        old_bin_boundaries[j + n_steps - 1].get_end());
+      bin_boundaries.back().stop = old_bin_boundaries[j + n_steps - 1].stop;
 
       read_bins_a.push_back(
         std::accumulate(old_read_bins_a.begin() + j,
@@ -247,14 +245,14 @@ AdjustBinSize(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
 }
 
 void
-RemoveDeserts(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
+RemoveDeserts(std::vector<Interval> &old_bin_boundaries,
               std::vector<double> &old_read_bins_a,
               std::vector<double> &old_read_bins_b,
               std::vector<double> &old_nondead_scales,
               std::vector<std::size_t> &old_reset_points,
               const std::size_t bin_size, const std::size_t desert_size,
               const double max_dead_proportion) {
-  std::vector<SimpleGenomicRegion> bin_boundaries;
+  std::vector<Interval> bin_boundaries;
   std::vector<double> read_bins_a;
   std::vector<double> read_bins_b;
   std::vector<double> nondead_scales;

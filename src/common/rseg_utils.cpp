@@ -19,7 +19,8 @@
 
 #include "rseg_utils.hpp"
 #include "Distro.hpp"
-#include "GenomicRegion.hpp"
+#include "Interval.hpp"
+#include "Interval6.hpp"
 #include "SplitDistro.hpp"
 #include "log_sum_log.hpp"
 
@@ -34,6 +35,13 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+template <typename T, typename U>
+[[nodiscard]] static auto
+overlaps(const T &a, const U &b) {
+  return a.chrom == b.chrom &&
+         std::max(a.start, b.start) < std::min(a.stop, b.stop);
+}
 
 void
 pick_training_sample(
@@ -228,7 +236,7 @@ report_final_values(const std::vector<SplitDistro> &distros,
 
 void
 write_read_counts_by_bin(
-  const std::vector<std::vector<SimpleGenomicRegion>> &bin_boundaries,
+  const std::vector<std::vector<Interval>> &bin_boundaries,
   const std::vector<double> &read_bins, const std::vector<double> &scales,
   const std::vector<bool> &classes, const std::string &outfile) {
   std::ofstream out(outfile);
@@ -237,15 +245,15 @@ write_read_counts_by_bin(
   std::size_t k = 0;
   for (std::size_t i = 0; i < bin_boundaries.size(); ++i)
     for (std::size_t j = 0; j < bin_boundaries[i].size(); ++j) {
-      out << bin_boundaries[i][j] << "\t" << read_bins[k] << "\t" << scales[k]
-          << "\t" << classes[k] << '\n';
+      std::println(out, "{}\t{}\t{}\t{}", bin_boundaries[i][j], read_bins[k],
+                   scales[k], classes[k]);
       ++k;
     }
 }
 
 void
 write_read_counts_by_bin(
-  const std::vector<std::vector<SimpleGenomicRegion>> &bin_boundaries,
+  const std::vector<std::vector<Interval>> &bin_boundaries,
   const std::vector<double> &read_bins, const std::vector<double> &read_bins_a,
   const std::vector<double> &read_bins_b, const std::vector<bool> &classes,
   const std::string &outfile) {
@@ -255,16 +263,15 @@ write_read_counts_by_bin(
   std::size_t k = 0;
   for (std::size_t i = 0; i < bin_boundaries.size(); ++i)
     for (std::size_t j = 0; j < bin_boundaries[i].size(); ++j) {
-      out << bin_boundaries[i][j] << "\t" << read_bins[k] << "\t"
-          << read_bins_a[k] << "\t" << read_bins_b[k] << "\t" << classes[k]
-          << '\n';
+      std::println(out, "{}\t{}\t{}\t{}\t{}", bin_boundaries[i][j],
+                   read_bins[k], read_bins_a[k], read_bins_b[k], classes[k]);
       ++k;
     }
 }
 
 void
 write_read_counts_by_bin(
-  const std::vector<std::vector<SimpleGenomicRegion>> &bin_boundaries,
+  const std::vector<std::vector<Interval>> &bin_boundaries,
   const std::vector<double> &read_bins, const std::vector<double> &read_bins_a,
   const std::vector<double> &read_bins_b,
   const std::vector<std::size_t> &classes, const std::string &outfile) {
@@ -275,9 +282,8 @@ write_read_counts_by_bin(
   std::size_t k = 0;
   for (std::size_t i = 0; i < bin_boundaries.size(); ++i)
     for (std::size_t j = 0; j < bin_boundaries[i].size(); ++j) {
-      out << bin_boundaries[i][j] << "\t" << read_bins[k] << "\t"
-          << read_bins_a[k] << "\t" << read_bins_b[k] << "\t" << classes[k]
-          << '\n';
+      std::println(out, "{}\t{}\t{}\t{}\t{}", bin_boundaries[i][j],
+                   read_bins[k], read_bins_a[k], read_bins_b[k], classes[k]);
       ++k;
     }
 }
@@ -297,20 +303,20 @@ strip_path_and_bed_suffix(const std::string &full_path) {
 
 void
 write_wigfile(const std::vector<std::vector<double>> &scores,
-              const std::vector<std::vector<SimpleGenomicRegion>> &bin_bounds,
+              const std::vector<std::vector<Interval>> &bin_bounds,
               const std::string &wigfile_name) {
   std::ofstream wigout(wigfile_name);
   if (!wigout)
     throw std::runtime_error("cannot open: " + wigfile_name);
   for (std::size_t i = 0; i < bin_bounds.size(); ++i)
     for (std::size_t j = 0; j < bin_bounds[i].size(); ++j)
-      wigout << bin_bounds[i][j] << "\t" << scores[i][j] << '\n';
+      std::println(wigout, "{}\t{}", bin_bounds[i][j], scores[i][j]);
 }
 
 void
 write_wigfile(const std::vector<double> &fg_scores,
               const std::vector<double> &bg_scores,
-              const std::vector<std::vector<SimpleGenomicRegion>> &bin_bounds,
+              const std::vector<std::vector<Interval>> &bin_bounds,
               const std::string &wigfile_name) {
   std::ofstream wigout(wigfile_name);
   if (!wigout)
@@ -318,31 +324,31 @@ write_wigfile(const std::vector<double> &fg_scores,
   std::size_t k = 0;
   for (std::size_t i = 0; i < bin_bounds.size(); ++i)
     for (std::size_t j = 0; j < bin_bounds[i].size(); ++j) {
-      wigout << bin_bounds[i][j] << "\t" << fg_scores[k] << "\t" << bg_scores[k]
-             << '\n';
+      std::println(wigout, "{}\t{}\t{}", bin_bounds[i][j], fg_scores[k],
+                   bg_scores[k]);
       ++k;
     }
 }
 
 void
-write_bed_file(const std::vector<std::vector<GenomicRegion>> &regions,
+write_bed_file(const std::vector<std::vector<Interval6>> &regions,
                const std::string &outfile) {
   std::ofstream out(outfile);
   if (!out)
     throw std::runtime_error("failed to open: " + outfile);
-  for (auto i = std::cbegin(regions); i != std::cend(regions); ++i)
-    std::copy(std::cbegin(*i), std::cend(*i),
-              std::ostream_iterator<GenomicRegion>(out, "\n"));
+  for (const auto &region_set : regions)
+    for (const auto &region : region_set)
+      std::println(out, "{}", region);
 }
 
 // for two-state segmentation
 void
-build_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
+build_domains(const std::vector<std::vector<Interval>> &bins,
               const std::vector<std::vector<bool>> &classes,
               // 'scores' is posterior score of classes[i]
               const std::vector<std::vector<double>> &scores,
               const double score_cutoff,
-              std::vector<std::vector<GenomicRegion>> &domains,
+              std::vector<std::vector<Interval6>> &domains,
               const std::size_t undef_domain_cutoff =
                 std::numeric_limits<std::size_t>::max()) {
   static const std::size_t BG_LABEL = 0;
@@ -393,8 +399,7 @@ build_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
       if (start >= lim)
         break;  // no undefined bins in this big region
 
-      if (bins[i][end - 1].get_end() - bins[i][start].get_start() >
-          undef_domain_cutoff) {
+      if (bins[i][end - 1].stop - bins[i][start].start > undef_domain_cutoff) {
         // size of undefined region is big
         start = end;
         continue;
@@ -423,40 +428,38 @@ build_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
   }
 
   // STEP II: Build domains
-  domains.resize(bins.size(), std::vector<GenomicRegion>());
+  domains.resize(bins.size(), std::vector<Interval6>());
   for (std::size_t i = 0; i < bins.size(); ++i) {
-    domains[i].push_back(GenomicRegion(bins[i].front().get_chrom(),
-                                       bins[i].front().get_start(),
-                                       bins[i].front().get_end(), "", 0, '+'));
+    domains[i].push_back(Interval6(bins[i].front().chrom, bins[i].front().start,
+                                   bins[i].front().stop, "", 0, '+'));
 
     double current_score = local_scores[i].front();
     for (std::size_t j = 1; j < labels[i].size(); ++j)
       if (labels[i][j] == labels[i][j - 1])
         current_score += local_scores[i][j];
       else {
-        domains[i].back().set_end(bins[i][j - 1].get_end());
-        domains[i].back().set_name(LABEL_NAMES[labels[i][j - 1]]);
-        domains[i].back().set_score(current_score);
+        domains[i].back().stop = bins[i][j - 1].stop;
+        domains[i].back().name = LABEL_NAMES[labels[i][j - 1]];
+        domains[i].back().score = current_score;
 
-        domains[i].push_back(GenomicRegion(bins[i][j].get_chrom(),
-                                           bins[i][j].get_start(),
-                                           bins[i][j].get_end(), "", 0, '+'));
+        domains[i].push_back(Interval6(bins[i][j].chrom, bins[i][j].start,
+                                       bins[i][j].stop, "", 0, '+'));
         current_score = local_scores[i][j];
       }
-    domains[i].back().set_end(bins[i].back().get_end());
-    domains[i].back().set_name(LABEL_NAMES[labels[i].back()]);
-    domains[i].back().set_score(current_score);
+    domains[i].back().stop = bins[i].back().stop;
+    domains[i].back().name = LABEL_NAMES[labels[i].back()];
+    domains[i].back().score = current_score;
   }
 }
 
 // for three-state segmentation
 void
-build_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
+build_domains(const std::vector<std::vector<Interval>> &bins,
               const std::vector<std::vector<std::size_t>> &classes,
               // 'scores' is posterior score of classes[i]
               const std::vector<std::vector<double>> &scores,
               const double score_cutoff,
-              std::vector<std::vector<GenomicRegion>> &domains,
+              std::vector<std::vector<Interval6>> &domains,
               const std::size_t undef_domain_cutoff =
                 std::numeric_limits<std::size_t>::max()) {
   // static const std::size_t FG_LABEL = 0;
@@ -511,8 +514,7 @@ build_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
         break;  // no undefined bins in this big region
 
       // size of undefined region is big
-      if (bins[i][end - 1].get_end() - bins[i][start].get_start() >
-          undef_domain_cutoff) {
+      if (bins[i][end - 1].stop - bins[i][start].start > undef_domain_cutoff) {
         start = end;
         continue;
       }
@@ -544,36 +546,34 @@ build_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
   // STEP II: Build domains
   domains.resize(n_bins);
   for (std::size_t i = 0; i < n_bins; ++i) {
-    domains[i].push_back(GenomicRegion(bins[i].front().get_chrom(),
-                                       bins[i].front().get_start(),
-                                       bins[i].front().get_end(), "", 0, '+'));
+    domains[i].push_back(Interval6(bins[i].front().chrom, bins[i].front().start,
+                                   bins[i].front().stop, "", 0, '+'));
 
     double current_score = local_scores[i].front();
     for (std::size_t j = 1; j < labels[i].size(); ++j)
       if (labels[i][j] == labels[i][j - 1])
         current_score += local_scores[i][j];
       else {
-        domains[i].back().set_end(bins[i][j - 1].get_end());
-        domains[i].back().set_name(LABEL_NAMES[labels[i][j - 1]]);
-        domains[i].back().set_score(current_score);
+        domains[i].back().stop = bins[i][j - 1].stop;
+        domains[i].back().name = LABEL_NAMES[labels[i][j - 1]];
+        domains[i].back().score = current_score;
 
-        domains[i].push_back(GenomicRegion(bins[i][j].get_chrom(),
-                                           bins[i][j].get_start(),
-                                           bins[i][j].get_end(), "", 0, '+'));
+        domains[i].push_back(Interval6(bins[i][j].chrom, bins[i][j].start,
+                                       bins[i][j].stop, "", 0, '+'));
         current_score = local_scores[i][j];
       }
-    domains[i].back().set_end(bins[i].back().get_end());
-    domains[i].back().set_name(LABEL_NAMES[labels[i].back()]);
-    domains[i].back().set_score(current_score);
+    domains[i].back().stop = bins[i].back().stop;
+    domains[i].back().name = LABEL_NAMES[labels[i].back()];
+    domains[i].back().score = current_score;
   }
 }
 
 void
-pick_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
+pick_domains(const std::vector<std::vector<Interval>> &bins,
              const std::vector<std::vector<double>> &read_counts,
              const std::vector<std::vector<double>> &scales,
              const std::vector<Distro> &distros,
-             std::vector<std::vector<GenomicRegion>> &domains,
+             std::vector<std::vector<Interval6>> &domains,
              const double cdf_cutoff = 0.4) {
   static const std::size_t BG_LABEL = 0;
   static const std::size_t FG_LABEL = 1;
@@ -597,7 +597,7 @@ pick_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
     double domain_read_count = 0;
     double domain_size = 0;
     for (std::size_t j = 0; j < read_counts[i].size(); ++j) {
-      if (!domains[i][k].overlaps(bins[i][j])) {
+      if (!overlaps(domains[i][k], bins[i][j])) {
         domain_means[i][k] = domain_read_count / domain_size;
         domain_read_count = 0;
         domain_size = 0;
@@ -625,17 +625,17 @@ pick_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
 
   for (std::size_t i = 0; i < domains.size(); ++i)
     for (std::size_t j = 0; j < domains[i].size(); ++j) {
-      std::string name = domains[i][j].get_name();
+      auto name = domains[i][j].name;
       const std::size_t c = std::floor(domain_means[i][j]);
       if (name == LABEL_NAMES[FG_LABEL] && fg_cdfs[c] < cdf_cutoff)
         name = LABEL_NAMES[UN_LABEL];
       if (name == LABEL_NAMES[BG_LABEL] && 1 - bg_cdfs[c] < cdf_cutoff)
         name = LABEL_NAMES[UN_LABEL];
-      domains[i][j].set_name(name + "\t" + smithlab::toa(domain_means[i][j]));
+      domains[i][j].name = name + "\t" + std::to_string(domain_means[i][j]);
     }
 
   const auto is_enriched = [](const auto &x) {
-    return x.get_name().find("ENRICHED") != std::string::npos;
+    return x.name.find("ENRICHED") != std::string::npos;
   };
 
   for (std::size_t i = 0; i < std::size(domains); ++i)
@@ -645,11 +645,11 @@ pick_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
 }
 
 void
-pick_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
+pick_domains(const std::vector<std::vector<Interval>> &bins,
              const std::vector<std::vector<double>> &read_counts,
              const std::vector<std::vector<double>> &scales,
              const std::vector<SplitDistro> &distros,
-             std::vector<std::vector<GenomicRegion>> &domains,
+             std::vector<std::vector<Interval6>> &domains,
              const double cdf_cutoff = 0.2) {
   static const std::size_t FG_LABEL = 1;
   static const std::size_t BG_LABEL = 0;
@@ -673,7 +673,7 @@ pick_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
     double domain_read_count = 0;
     double domain_size = 0;
     for (std::size_t j = 0; j < read_counts[i].size(); ++j) {
-      if (!domains[i][k].overlaps(bins[i][j])) {
+      if (!overlaps(domains[i][k], bins[i][j])) {
         domain_means[i][k] = domain_read_count / domain_size;
         domain_read_count = 0;
         domain_size = 0;
@@ -704,22 +704,19 @@ pick_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
 
   for (std::size_t i = 0; i < domains.size(); ++i)
     for (std::size_t j = 0; j < domains[i].size(); ++j) {
-      std::string name = domains[i][j].get_name();
+      auto name = domains[i][j].name;
       const std::size_t c = std::floor(domain_means[i][j]);
-
       if (name == LABEL_NAMES[FG_LABEL] &&
           fg_cdfs[static_cast<std::size_t>(c - offset)] < cdf_cutoff)
         name = LABEL_NAMES[UN_LABEL];
-
       if (name == LABEL_NAMES[BG_LABEL] &&
-          1 - bg_cdfs[static_cast<std::size_t>(c - offset)] < cdf_cutoff)
+          1.0 - bg_cdfs[c - offset] < cdf_cutoff)
         name = LABEL_NAMES[UN_LABEL];
-
-      domains[i][j].set_name(name + "\t" + smithlab::toa(domain_means[i][j]));
+      domains[i][j].name = name + "\t" + std::to_string(domain_means[i][j]);
     }
 
   const auto is_enriched = [](const auto &x) {
-    return x.get_name().find("ENRICHED") != std::string::npos;
+    return x.name.find("ENRICHED") != std::string::npos;
   };
 
   for (std::size_t i = 0; i < std::size(domains); ++i)
@@ -729,11 +726,11 @@ pick_domains(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
 }
 
 void
-pick_domains_3s(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
+pick_domains_3s(const std::vector<std::vector<Interval>> &bins,
                 const std::vector<std::vector<double>> &read_counts,
                 const std::vector<std::vector<double>> &scales,
                 const std::vector<SplitDistro> &distros,
-                std::vector<std::vector<GenomicRegion>> &domains,
+                std::vector<std::vector<Interval6>> &domains,
                 const double cdf_cutoff = 0.4) {
   static const std::size_t FG_LABEL = 0;
   // static const std::size_t MG_LABEL = 1;
@@ -760,7 +757,7 @@ pick_domains_3s(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
     double domain_read_count = 0;
     double domain_size = 0;
     for (std::size_t j = 0; j < read_counts[i].size(); ++j) {
-      if (!domains[i][k].overlaps(bins[i][j])) {
+      if (!overlaps(domains[i][k], bins[i][j])) {
         domain_means[i][k] = domain_read_count / domain_size;
         domain_read_count = 0;
         domain_size = 0;
@@ -794,7 +791,7 @@ pick_domains_3s(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
 
   for (std::size_t i = 0; i < domains.size(); ++i)
     for (std::size_t j = 0; j < domains[i].size(); ++j) {
-      std::string name = domains[i][j].get_name();
+      auto name = domains[i][j].name;
       const double cf = std::floor(domain_means[i][j]);
       const double cc = std::ceil(domain_means[i][j]);
 
@@ -812,11 +809,11 @@ pick_domains_3s(const std::vector<std::vector<SimpleGenomicRegion>> &bins,
           1 - bg_cdfs[static_cast<std::size_t>(cc - offset)] < cdf_cutoff)
         name = LABEL_NAMES[UN_LABEL];
 
-      domains[i][j].set_name(name + "\t" + smithlab::toa(domain_means[i][j]));
+      domains[i][j].name = name + "\t" + std::to_string(domain_means[i][j]);
     }
 
   const auto is_enriched = [](const auto &x) {
-    return x.get_name().find("ENRICHED") != std::string::npos;
+    return x.name.find("ENRICHED") != std::string::npos;
   };
 
   for (std::size_t i = 0; i < std::size(domains); ++i)

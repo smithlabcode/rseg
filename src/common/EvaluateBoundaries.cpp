@@ -1,39 +1,40 @@
 /* Copyright (C) 2011 University of Southern California
  *                    Andrew D Smith and Qiang Song
+ *
  * Author: Qiang Song and Andrew D. Smith
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * This is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 of the License, or (at your option) any later
+ * version.
  *
- * This is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA
+ * You should have received a copy of the GNU General Public License along
+ * with this software; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
+
+#include "EvaluateBoundaries.hpp"
+#include "Interval.hpp"
+#include "Interval6.hpp"
+#include "log_sum_log.hpp"
 
 #include <cassert>
 #include <cstddef>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
-#include "EvaluateBoundaries.hpp"
-#include "GenomicRegion.hpp"
-#include "log_sum_log.hpp"
-
 void
-BoundEval::evaluate(
-  const std::vector<std::vector<SimpleGenomicRegion>> &bin_bounds,
-  const std::vector<std::vector<bool>> &classes,
-  const std::vector<std::vector<double>> &scores,
-  std::vector<std::vector<GenomicRegion>> &boundaries) const {
+BoundEval::evaluate(const std::vector<std::vector<Interval>> &bin_bounds,
+                    const std::vector<std::vector<bool>> &classes,
+                    const std::vector<std::vector<double>> &scores,
+                    std::vector<std::vector<Interval6>> &boundaries) const {
   // Separate the class values for each bin into domains of contiguous
   // bins having the same class
   const std::size_t n_regions = classes.size();
@@ -49,32 +50,31 @@ BoundEval::evaluate(
       Domain(scores[i], prev_end, classes[i].size(), classes[i].back()));
   }
 
-  boundaries.resize(n_regions, std::vector<GenomicRegion>());
+  boundaries.resize(n_regions, std::vector<Interval6>());
   for (std::size_t i = 0; i < domains.size(); ++i) {
-    const std::string chrom(bin_bounds[i].front().get_chrom());
-    boundaries[i].push_back(
-      GenomicRegion(chrom, bin_bounds[i].front().get_start(),
-                    bin_bounds[i].front().get_start() + 1, "END", 0, '+'));
+    const std::string chrom(bin_bounds[i].front().chrom);
+    boundaries[i].push_back(Interval6(chrom, bin_bounds[i].front().start,
+                                      bin_bounds[i].front().start + 1, "END", 0,
+                                      '+'));
     std::size_t offset = 0;
     for (std::size_t j = 0; j < domains[i].size() - 1; ++j) {
       offset += domains[i][j].vals.size();
       const double peak_score = domains[i][j + 1].vals.front();
       const std::string peak_name(
         "B:" + std::to_string(static_cast<std::size_t>(peak_score * 1000)));
-      boundaries[i].push_back(GenomicRegion(
-        chrom, bin_bounds[i][offset].get_start(),
-        bin_bounds[i][offset].get_start() + 1, peak_name, peak_score, '+'));
+      boundaries[i].push_back(Interval6(chrom, bin_bounds[i][offset].start,
+                                        bin_bounds[i][offset].start + 1,
+                                        peak_name, peak_score, '+'));
     }
     boundaries[i].push_back(boundaries[i].back());
   }
 }
 
 void
-BoundEval::evaluate(
-  const std::vector<std::vector<SimpleGenomicRegion>> &bin_bounds,
-  const std::vector<std::vector<std::size_t>> &classes,
-  const std::vector<std::vector<double>> &scores,
-  std::vector<std::vector<GenomicRegion>> &boundaries) const {
+BoundEval::evaluate(const std::vector<std::vector<Interval>> &bin_bounds,
+                    const std::vector<std::vector<std::size_t>> &classes,
+                    const std::vector<std::vector<double>> &scores,
+                    std::vector<std::vector<Interval6>> &boundaries) const {
 
   // Separate the class values for each bin into domains of contiguous
   // bins having the same class
@@ -91,21 +91,21 @@ BoundEval::evaluate(
       Domain(scores[i], prev_end, classes[i].size(), classes[i].back()));
   }
 
-  boundaries.resize(n_regions, std::vector<GenomicRegion>());
+  boundaries.resize(n_regions, std::vector<Interval6>());
   for (std::size_t i = 0; i < domains.size(); ++i) {
-    const std::string chrom(bin_bounds[i].front().get_chrom());
-    boundaries[i].push_back(
-      GenomicRegion(chrom, bin_bounds[i].front().get_start(),
-                    bin_bounds[i].front().get_start() + 1, "END", 0, '+'));
+    const std::string chrom(bin_bounds[i].front().chrom);
+    boundaries[i].push_back(Interval6(chrom, bin_bounds[i].front().start,
+                                      bin_bounds[i].front().start + 1, "END", 0,
+                                      '+'));
     std::size_t offset = 0;
     for (std::size_t j = 0; j < domains[i].size() - 1; ++j) {
       offset += domains[i][j].vals.size();
       const double peak_score = domains[i][j + 1].vals.front();
       const std::string peak_name(
         "B:" + std::to_string(static_cast<std::size_t>(peak_score * 1000)));
-      boundaries[i].push_back(GenomicRegion(
-        chrom, bin_bounds[i][offset].get_start(),
-        bin_bounds[i][offset].get_start() + 1, peak_name, peak_score, '+'));
+      boundaries[i].push_back(Interval6(chrom, bin_bounds[i][offset].start,
+                                        bin_bounds[i][offset].start + 1,
+                                        peak_name, peak_score, '+'));
     }
     boundaries[i].push_back(boundaries[i].back());
   }
@@ -121,11 +121,11 @@ Domain::tostring() const {
 
 void
 BoundEval::evaluate(
-  const std::vector<std::vector<SimpleGenomicRegion>> &bin_bounds,
+  const std::vector<std::vector<Interval>> &bin_bounds,
   const std::vector<std::vector<bool>> &classes,
   const std::vector<std::vector<double>> &scores,
-  std::vector<std::vector<GenomicRegion>> &boundaries,
-  std::vector<std::vector<GenomicRegion>> &boundary_peaks,
+  std::vector<std::vector<Interval6>> &boundaries,
+  std::vector<std::vector<Interval6>> &boundary_peaks,
   std::vector<std::vector<std::size_t>> &boundary_sizes) const {
   const std::size_t n_regions = classes.size();
   std::vector<std::vector<Domain>> domains(n_regions);
@@ -140,17 +140,17 @@ BoundEval::evaluate(
       Domain(scores[i], prev_end, classes[i].size(), classes[i].back()));
   }
 
-  boundaries.resize(n_regions, std::vector<GenomicRegion>());
-  boundary_peaks.resize(n_regions, std::vector<GenomicRegion>());
+  boundaries.resize(n_regions, std::vector<Interval6>());
+  boundary_peaks.resize(n_regions, std::vector<Interval6>());
   boundary_sizes.resize(n_regions, std::vector<std::size_t>());
   for (std::size_t i = 0; i < domains.size(); ++i) {
-    const std::string chrom(bin_bounds[i].front().get_chrom());
-    boundaries[i].push_back(
-      GenomicRegion(chrom, bin_bounds[i].front().get_start(),
-                    bin_bounds[i].front().get_start() + 1, "END", 0, '+'));
-    boundary_peaks[i].push_back(
-      GenomicRegion(chrom, bin_bounds[i].front().get_start(),
-                    bin_bounds[i].front().get_start() + 1, "END", 0, '+'));
+    const std::string chrom(bin_bounds[i].front().chrom);
+    boundaries[i].push_back(Interval6(chrom, bin_bounds[i].front().start,
+                                      bin_bounds[i].front().start + 1, "END", 0,
+                                      '+'));
+    boundary_peaks[i].push_back(Interval6(chrom, bin_bounds[i].front().start,
+                                          bin_bounds[i].front().start + 1,
+                                          "END", 0, '+'));
     boundary_sizes[i].push_back(0);
 
     std::size_t offset = 0;
@@ -181,10 +181,8 @@ BoundEval::evaluate(
       // area_under_curve = std::max(0.01, area_under_curve);
 
       offset += domains[i][j].vals.size();
-      const std::size_t bound_start =
-        bin_bounds[i][offset - left_index].get_start();
-      const std::size_t bound_end =
-        bin_bounds[i][offset + right_index].get_end();
+      const std::size_t bound_start = bin_bounds[i][offset - left_index].start;
+      const std::size_t bound_end = bin_bounds[i][offset + right_index].stop;
       const std::size_t bound_bins = left_index + right_index;
       const double peak_score = domains[i][j + 1].vals.front();
       const double denom = bound_bins > 2 ? bound_bins - 1 : 1;
@@ -195,16 +193,16 @@ BoundEval::evaluate(
         "B:" + std::to_string(static_cast<std::size_t>(bound_score * 1000)));
       const std::string peak_name(
         "B:" + std::to_string(static_cast<std::size_t>(peak_score * 1000)));
-      boundaries[i].push_back(GenomicRegion(chrom, bound_start, bound_end,
-                                            bound_name, bound_score, '+'));
-      boundary_peaks[i].push_back(GenomicRegion(
-        chrom, bin_bounds[i][offset].get_start(),
-        bin_bounds[i][offset].get_end(), peak_name, peak_score, '+'));
+      boundaries[i].push_back(
+        Interval6(chrom, bound_start, bound_end, bound_name, bound_score, '+'));
+      boundary_peaks[i].push_back(Interval6(chrom, bin_bounds[i][offset].start,
+                                            bin_bounds[i][offset].stop,
+                                            peak_name, peak_score, '+'));
       boundary_sizes[i].push_back(bound_bins);
     }
-    boundaries[i].push_back(
-      GenomicRegion(chrom, bin_bounds[i].back().get_start(),
-                    bin_bounds[i].back().get_end(), "END", 0, '+'));
+    boundaries[i].push_back(Interval6(chrom, bin_bounds[i].back().start,
+                                      bin_bounds[i].back().stop, "END", 0,
+                                      '+'));
     boundary_peaks[i].push_back(boundaries[i].back());
     boundary_sizes[i].push_back(0);
   }
@@ -212,11 +210,11 @@ BoundEval::evaluate(
 
 void
 BoundEval::evaluate(
-  const std::vector<std::vector<SimpleGenomicRegion>> &bin_bounds,
+  const std::vector<std::vector<Interval>> &bin_bounds,
   const std::vector<std::vector<std::size_t>> &classes,
   const std::vector<std::vector<double>> &scores,
-  std::vector<std::vector<GenomicRegion>> &boundaries,
-  std::vector<std::vector<GenomicRegion>> &boundary_peaks,
+  std::vector<std::vector<Interval6>> &boundaries,
+  std::vector<std::vector<Interval6>> &boundary_peaks,
   std::vector<std::vector<std::size_t>> &boundary_sizes) const {
 
   const std::size_t n_regions = classes.size();
@@ -232,17 +230,17 @@ BoundEval::evaluate(
       Domain(scores[i], prev_end, classes[i].size(), classes[i].back()));
   }
 
-  boundaries.resize(n_regions, std::vector<GenomicRegion>());
-  boundary_peaks.resize(n_regions, std::vector<GenomicRegion>());
+  boundaries.resize(n_regions, std::vector<Interval6>());
+  boundary_peaks.resize(n_regions, std::vector<Interval6>());
   boundary_sizes.resize(n_regions, std::vector<std::size_t>());
   for (std::size_t i = 0; i < domains.size(); ++i) {
-    const std::string chrom(bin_bounds[i].front().get_chrom());
-    boundaries[i].push_back(
-      GenomicRegion(chrom, bin_bounds[i].front().get_start(),
-                    bin_bounds[i].front().get_end(), "END", 0, '+'));
-    boundary_peaks[i].push_back(
-      GenomicRegion(chrom, bin_bounds[i].front().get_start(),
-                    bin_bounds[i].front().get_end(), "END", 0, '+'));
+    const std::string chrom(bin_bounds[i].front().chrom);
+    boundaries[i].push_back(Interval6(chrom, bin_bounds[i].front().start,
+                                      bin_bounds[i].front().stop, "END", 0,
+                                      '+'));
+    boundary_peaks[i].push_back(Interval6(chrom, bin_bounds[i].front().start,
+                                          bin_bounds[i].front().stop, "END", 0,
+                                          '+'));
     boundary_sizes[i].push_back(0);
 
     std::size_t offset = 0;
@@ -273,10 +271,8 @@ BoundEval::evaluate(
       // area_under_curve = max(0.01, area_under_curve);
 
       offset += domains[i][j].vals.size();
-      const std::size_t bound_start =
-        bin_bounds[i][offset - left_index].get_start();
-      const std::size_t bound_end =
-        bin_bounds[i][offset + right_index].get_end();
+      const std::size_t bound_start = bin_bounds[i][offset - left_index].start;
+      const std::size_t bound_end = bin_bounds[i][offset + right_index].stop;
       const std::size_t bound_bins = left_index + right_index;
       const double peak_score = domains[i][j + 1].vals.front();
       const double denom = bound_bins > 2 ? bound_bins - 1 : 1;
@@ -287,16 +283,16 @@ BoundEval::evaluate(
         "B:" + std::to_string(static_cast<std::size_t>(bound_score * 1000)));
       const std::string peak_name(
         "B:" + std::to_string(static_cast<std::size_t>(peak_score * 1000)));
-      boundaries[i].push_back(GenomicRegion(chrom, bound_start, bound_end,
-                                            bound_name, bound_score, '+'));
-      boundary_peaks[i].push_back(GenomicRegion(
-        chrom, bin_bounds[i][offset].get_start(),
-        bin_bounds[i][offset].get_end(), peak_name, peak_score, '+'));
+      boundaries[i].push_back(
+        Interval6(chrom, bound_start, bound_end, bound_name, bound_score, '+'));
+      boundary_peaks[i].push_back(Interval6(chrom, bin_bounds[i][offset].start,
+                                            bin_bounds[i][offset].stop,
+                                            peak_name, peak_score, '+'));
       boundary_sizes[i].push_back(bound_bins);
     }
-    boundaries[i].push_back(
-      GenomicRegion(chrom, bin_bounds[i].back().get_start(),
-                    bin_bounds[i].back().get_end(), "END", 0, '+'));
+    boundaries[i].push_back(Interval6(chrom, bin_bounds[i].back().start,
+                                      bin_bounds[i].back().stop, "END", 0,
+                                      '+'));
     boundary_peaks[i].push_back(boundaries[i].back());
     boundary_sizes[i].push_back(0);
   }
@@ -356,7 +352,7 @@ bound_trans_prob(const std::vector<double> &ff_probs,
 }
 
 void
-make_boundary(const std::vector<std::vector<SimpleGenomicRegion>> &bin_bounds,
+make_boundary(const std::vector<std::vector<Interval>> &bin_bounds,
               const std::vector<double> &trans_scores,
               const std::vector<double> &fg_to_fg_trans_score,
               const std::vector<double> &fg_to_bg_trans_score,
@@ -364,20 +360,17 @@ make_boundary(const std::vector<std::vector<SimpleGenomicRegion>> &bin_bounds,
               const std::vector<double> &bg_to_bg_trans_score,
               const std::size_t i, const std::size_t offset,
               const std::size_t left_index, const std::size_t right_index,
-              GenomicRegion &bound) {
-  const std::string bound_chrom =
-    bin_bounds[i][left_index - offset].get_chrom();
-  const std::size_t bound_start =
-    bin_bounds[i][left_index - offset].get_start();
-  const std::size_t bound_end =
-    bin_bounds[i][right_index - offset - 1].get_end();
+              Interval6 &bound) {
+  const std::string bound_chrom = bin_bounds[i][left_index - offset].chrom;
+  const std::size_t bound_start = bin_bounds[i][left_index - offset].start;
+  const std::size_t bound_end = bin_bounds[i][right_index - offset - 1].stop;
 
   const std::size_t peak_index =
     std::max_element(trans_scores.begin() + left_index,
                      trans_scores.begin() + right_index) -
     trans_scores.begin();
   const double peak_score = trans_scores[peak_index];
-  const std::size_t peak_loc = bin_bounds[i][peak_index - offset].get_start();
+  const std::size_t peak_loc = bin_bounds[i][peak_index - offset].start;
 
   const double bound_score =
     std::max(bound_trans_prob(bg_to_bg_trans_score, bg_to_fg_trans_score,
@@ -390,24 +383,25 @@ make_boundary(const std::vector<std::vector<SimpleGenomicRegion>> &bin_bounds,
     "B:" + std::to_string(right_index - left_index) + ":" +
     std::to_string(peak_loc) + ":" + std::to_string(peak_score);
 
-  bound.set_chrom(bound_chrom);
-  bound.set_start(bound_start);
-  bound.set_end(bound_end);
-  bound.set_name(bound_name);
-  bound.set_score(bound_score);
-  bound.set_strand('+');
+  bound.chrom = bound_chrom;
+  bound.start = bound_start;
+  bound.stop = bound_end;
+  bound.name = bound_name;
+  bound.score = bound_score;
+  bound.strand = '+';
 }
 
 void
-BoundEval::evaluate(
-  const std::vector<std::vector<SimpleGenomicRegion>> &bin_bounds,
-  const std::vector<std::size_t> &reset_points,
-  const std::vector<bool> &classes, const std::vector<double> &trans_scores,
-  const std::vector<double> &fg_to_fg_trans_score,
-  const std::vector<double> &fg_to_bg_trans_score,
-  const std::vector<double> &bg_to_fg_trans_score,
-  const std::vector<double> &bg_to_bg_trans_score, const double cutoff,
-  const bool Both_Domain_Ends, std::vector<GenomicRegion> &boundaries) const {
+BoundEval::evaluate(const std::vector<std::vector<Interval>> &bin_bounds,
+                    const std::vector<std::size_t> &reset_points,
+                    const std::vector<bool> &classes,
+                    const std::vector<double> &trans_scores,
+                    const std::vector<double> &fg_to_fg_trans_score,
+                    const std::vector<double> &fg_to_bg_trans_score,
+                    const std::vector<double> &bg_to_fg_trans_score,
+                    const std::vector<double> &bg_to_bg_trans_score,
+                    const double cutoff, const bool Both_Domain_Ends,
+                    std::vector<Interval6> &boundaries) const {
   for (std::size_t i = 0; i < reset_points.size() - 1; ++i) {
 
     const std::size_t offset = reset_points[i];
@@ -463,7 +457,7 @@ BoundEval::evaluate(
 
       // output first bound
       if (first_left_index < first_right_index) {
-        GenomicRegion bound;
+        Interval6 bound;
         make_boundary(bin_bounds, trans_scores, fg_to_fg_trans_score,
                       fg_to_bg_trans_score, bg_to_fg_trans_score,
                       bg_to_bg_trans_score, i, offset, first_left_index,
@@ -473,7 +467,7 @@ BoundEval::evaluate(
 
       // output second bound
       if (second_left_index < second_right_index) {
-        GenomicRegion bound;
+        Interval6 bound;
         make_boundary(bin_bounds, trans_scores, fg_to_fg_trans_score,
                       fg_to_bg_trans_score, bg_to_fg_trans_score,
                       bg_to_bg_trans_score, i, offset, second_left_index,
@@ -485,16 +479,16 @@ BoundEval::evaluate(
 }
 
 void
-BoundEval::evaluate(
-  const std::vector<std::vector<SimpleGenomicRegion>> &bin_bounds,
-  const std::vector<std::size_t> &reset_points,
-  // const std::vector<bool> &classes,
-  const std::vector<double> &trans_scores,
-  const std::vector<double> &fg_to_fg_trans_score,
-  const std::vector<double> &fg_to_bg_trans_score,
-  const std::vector<double> &bg_to_fg_trans_score,
-  const std::vector<double> &bg_to_bg_trans_score, const double cutoff,
-  std::vector<GenomicRegion> &boundaries) const {
+BoundEval::evaluate(const std::vector<std::vector<Interval>> &bin_bounds,
+                    const std::vector<std::size_t> &reset_points,
+                    // const std::vector<bool> &classes,
+                    const std::vector<double> &trans_scores,
+                    const std::vector<double> &fg_to_fg_trans_score,
+                    const std::vector<double> &fg_to_bg_trans_score,
+                    const std::vector<double> &bg_to_fg_trans_score,
+                    const std::vector<double> &bg_to_bg_trans_score,
+                    const double cutoff,
+                    std::vector<Interval6> &boundaries) const {
   for (std::size_t i = 0; i < reset_points.size() - 1; ++i) {
     const std::size_t offset = reset_points[i];
     const std::size_t start = reset_points[i];
@@ -511,19 +505,18 @@ BoundEval::evaluate(
         ++right_index;
       if (left_index < end) {
         const std::string bound_chrom =
-          bin_bounds[i][left_index - offset].get_chrom();
+          bin_bounds[i][left_index - offset].chrom;
         const std::size_t bound_start =
-          bin_bounds[i][left_index - offset].get_start();
+          bin_bounds[i][left_index - offset].start;
         const std::size_t bound_end =
-          bin_bounds[i][right_index - offset - 1].get_end();
+          bin_bounds[i][right_index - offset - 1].stop;
 
         const std::size_t peak_index =
           std::max_element(trans_scores.begin() + left_index,
                            trans_scores.begin() + right_index) -
           trans_scores.begin();
         const double peak_score = trans_scores[peak_index];
-        const std::size_t peak_loc =
-          bin_bounds[i][peak_index - offset].get_start();
+        const std::size_t peak_loc = bin_bounds[i][peak_index - offset].start;
 
         const double bound_score =
           std::max(bound_trans_prob(bg_to_bg_trans_score, bg_to_fg_trans_score,
@@ -535,8 +528,8 @@ BoundEval::evaluate(
         const std::string bound_name =
           "B:" + std::to_string(right_index - left_index) + ":" +
           std::to_string(peak_loc) + ":" + std::to_string(peak_score);
-        boundaries.push_back(GenomicRegion(bound_chrom, bound_start, bound_end,
-                                           bound_name, bound_score, '+'));
+        boundaries.push_back(Interval6(bound_chrom, bound_start, bound_end,
+                                       bound_name, bound_score, '+'));
       }
       left_index = right_index;
     }
@@ -596,12 +589,12 @@ bound_trans_prob(
 
 void
 BoundEval::evaluate(
-  const std::vector<std::vector<SimpleGenomicRegion>> &bin_bounds,
+  const std::vector<std::vector<Interval>> &bin_bounds,
   const std::vector<std::size_t> &reset_points,
   const std::vector<std::size_t> &classes,
   const std::vector<double> &trans_scores,
   const std::vector<std::vector<std::vector<double>>> &post_trans,
-  const double cutoff, std::vector<GenomicRegion> &boundaries) const {
+  const double cutoff, std::vector<Interval6> &boundaries) const {
   for (std::size_t i = 0; i < reset_points.size() - 1; ++i) {
     const std::size_t offset = reset_points[i];
     const std::size_t start = reset_points[i];
@@ -627,19 +620,18 @@ BoundEval::evaluate(
 
       if (left_index < right_index) {
         const std::string bound_chrom =
-          bin_bounds[i][left_index - offset].get_chrom();
+          bin_bounds[i][left_index - offset].chrom;
         const std::size_t bound_start =
-          bin_bounds[i][left_index - offset].get_start();
+          bin_bounds[i][left_index - offset].start;
         const std::size_t bound_end =
-          bin_bounds[i][right_index - offset - 1].get_end();
+          bin_bounds[i][right_index - offset - 1].stop;
 
         const std::size_t peak_index =
           std::max_element(trans_scores.begin() + left_index,
                            trans_scores.begin() + right_index) -
           trans_scores.begin();
         const double peak_score = trans_scores[peak_index];
-        const std::size_t peak_loc =
-          bin_bounds[i][peak_index - offset].get_start();
+        const std::size_t peak_loc = bin_bounds[i][peak_index - offset].start;
 
         const std::size_t state_a = classes[left_index];
         std::size_t state_b, state_c;
@@ -651,8 +643,7 @@ BoundEval::evaluate(
           state_b = 0;
           state_c = 2;
         }
-        else  // if (state_a == 2)
-        {
+        else {  // if (state_a == 2)
           state_b = 0;
           state_c = 1;
         }
@@ -669,8 +660,8 @@ BoundEval::evaluate(
         const std::string bound_name =
           "B:" + std::to_string(right_index - left_index) + ":" +
           std::to_string(peak_loc) + ":" + std::to_string(peak_score);
-        boundaries.push_back(GenomicRegion(bound_chrom, bound_start, bound_end,
-                                           bound_name, bound_score, '+'));
+        boundaries.push_back(Interval6(bound_chrom, bound_start, bound_end,
+                                       bound_name, bound_score, '+'));
       }
     }
   }

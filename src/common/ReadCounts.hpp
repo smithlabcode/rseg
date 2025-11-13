@@ -23,7 +23,7 @@
 
 #include <vector>
 
-struct SimpleGenomicRegion;
+struct Interval;
 
 void
 AdjustBinSize(const std::vector<double> &old_read_bins,
@@ -40,21 +40,21 @@ GetCorrectedReadCounts(const std::vector<double> &read_bins,
                        const double max_dead_proportion);
 
 void
-AdjustBinSize(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
+AdjustBinSize(std::vector<Interval> &old_bin_boundaries,
               std::vector<double> &old_read_bins,
               std::vector<double> &old_nondead_scales,
               std::vector<size_t> &old_reset_points, const size_t old_bin_size,
               const size_t bin_size);
 
 void
-RemoveDeserts(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
+RemoveDeserts(std::vector<Interval> &old_bin_boundaries,
               std::vector<double> &old_read_bins,
               std::vector<double> &old_nondead_scales,
               std::vector<size_t> &old_reset_points, const size_t bin_size,
               const size_t desert_size, const double max_dead_proportion);
 
 void
-AdjustBinSize(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
+AdjustBinSize(std::vector<Interval> &old_bin_boundaries,
               std::vector<double> &old_read_bins_a,
               std::vector<double> &old_read_bins_b,
               std::vector<double> &old_nondead_scales,
@@ -62,7 +62,7 @@ AdjustBinSize(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
               const size_t bin_size);
 
 void
-RemoveDeserts(std::vector<SimpleGenomicRegion> &old_bin_boundaries,
+RemoveDeserts(std::vector<Interval> &old_bin_boundaries,
               std::vector<double> &old_read_bins_a,
               std::vector<double> &old_read_bins_b,
               std::vector<double> &old_nondead_scales,

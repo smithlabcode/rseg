@@ -25,27 +25,27 @@
 #include <string>
 #include <vector>
 
-struct GenomicRegion;
-struct SimpleGenomicRegion;
+struct Interval;
 
 void
-LoadReadsByRegion(
-  const bool VERBOSE, const std::string &regions_file,
-  const std::string &reads_file, const std::string &deads_file,
-  const std::size_t bin_size, std::vector<SimpleGenomicRegion> &boundaries,
-  std::vector<double> &read_bins, std::vector<double> &nondead_scales,
-  std::vector<std::size_t> &reset_points, const std::size_t FRAGMENT_LEN = 0,
-  const bool BAM_FORMAT = false, const bool REMOVE_JACKPOT = true);
+LoadReadsByRegion(const bool VERBOSE, const std::string &regions_file,
+                  const std::string &reads_file, const std::string &deads_file,
+                  const std::size_t bin_size, std::vector<Interval> &boundaries,
+                  std::vector<double> &read_bins,
+                  std::vector<double> &nondead_scales,
+                  std::vector<std::size_t> &reset_points,
+                  const std::size_t FRAGMENT_LEN = 0,
+                  const bool BAM_FORMAT = false,
+                  const bool REMOVE_JACKPOT = true);
 
 void
 LoadReadsByRegion(
   const bool VERBOSE, const std::string &regions_file,
   const std::string &reads_file_a, const std::string &reads_file_b,
   const std::string &deads_file, const std::size_t bin_size,
-  std::vector<SimpleGenomicRegion> &boundaries,
-  std::vector<double> &read_bins_a, std::vector<double> &read_bins_b,
-  std::vector<double> &nondead_scales, std::vector<std::size_t> &reset_points,
-  const std::size_t FRAGMENT_LEN = 0, const bool BAM_FORMAT = false,
-  const bool REMOVE_JACKPOT = true);
+  std::vector<Interval> &boundaries, std::vector<double> &read_bins_a,
+  std::vector<double> &read_bins_b, std::vector<double> &nondead_scales,
+  std::vector<std::size_t> &reset_points, const std::size_t FRAGMENT_LEN = 0,
+  const bool BAM_FORMAT = false, const bool REMOVE_JACKPOT = true);
 
 #endif  // LOAD_READS_BY_REGION_HPP
